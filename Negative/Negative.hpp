@@ -10,6 +10,8 @@
 #include "../imageAlgorithms/getExtremePixels.hpp"
 #include "../imageAlgorithms/levels.hpp"
 #include "../imageAlgorithms/crudeInversion.hpp"
+#include "../imageAlgorithms/densityInvert.hpp"
+#include "../imageAlgorithms/gamma.hpp"
 
 struct ImageData {
     std::vector<uint8_t> data;
@@ -111,21 +113,24 @@ class Negative {
         
         std::cout << "starting image processign pipeline" << std::endl;
 
+        std::cout << "Performing a density inversion" << std::endl;
+        densityInvert(this->editedPixels);
+
         std::cout << "getting the brightest and darkest pixels" << std::endl;
 
-        // RGB
-        std::tuple<float, float, float> brightest = getBrightestPixel(this->pixels, MaxChannel::RGB);
-        std::tuple<float, float, float> darkest = getDarkestPixel(this->pixels, MaxChannel::RGB);
+        // // RGB
+        // std::tuple<float, float, float> brightest = getBrightestPixel(this->pixels, MaxChannel::RGB);
+        // std::tuple<float, float, float> darkest = getDarkestPixel(this->pixels, MaxChannel::RGB);
 
         // R
-        std::tuple<float, float, float> brightestR = getBrightestPixel(this->pixels, MaxChannel::R);
-        std::tuple<float, float, float> darkestR = getDarkestPixel(this->pixels, MaxChannel::R);
+        std::tuple<float, float, float> brightestR = getBrightestPixel(this->editedPixels, MaxChannel::R);
+        std::tuple<float, float, float> darkestR = getDarkestPixel(this->editedPixels, MaxChannel::R);
         // G
-        std::tuple<float, float, float> brightestG = getBrightestPixel(this->pixels, MaxChannel::G);
-        std::tuple<float, float, float> darkestG = getDarkestPixel(this->pixels, MaxChannel::G);
+        std::tuple<float, float, float> brightestG = getBrightestPixel(this->editedPixels, MaxChannel::G);
+        std::tuple<float, float, float> darkestG = getDarkestPixel(this->editedPixels, MaxChannel::G);
         // B
-        std::tuple<float, float, float> brightestB = getBrightestPixel(this->pixels, MaxChannel::B);
-        std::tuple<float, float, float> darkestB = getDarkestPixel(this->pixels, MaxChannel::B);
+        std::tuple<float, float, float> brightestB = getBrightestPixel(this->editedPixels, MaxChannel::B);
+        std::tuple<float, float, float> darkestB = getDarkestPixel(this->editedPixels, MaxChannel::B);
     
         std::cout << "applying levels adjustment for the r channel" << std::endl;
         levelsR(this->editedPixels, std::get<0>(darkestR), std::get<0>(brightestR), 0.0, 1.0);
@@ -135,9 +140,18 @@ class Negative {
 
         std::cout << "applying levels adjustment for the b channel" << std::endl;
         levelsB(this->editedPixels, std::get<2>(darkestB), std::get<2>(brightestB), 0.0, 1.0);
+
+        // std::cout << "applying gamma correction to the b channel" << std::endl;
+        // gamma(this->editedPixels, 0.65, GammaChannel::B);
+
+        // std::cout << "applying gamma correction to the g channel" << std::endl;
+        // gamma(this->editedPixels, 0.85, GammaChannel::G);
         
-        std::cout << "Performing a crude inversion" << std::endl;
-        crudeInversion(this->editedPixels);
+        // std::cout << "Performing a crude inversion" << std::endl;
+        // crudeInversion(this->editedPixels);
+
+        // std::cout << "applying general display gamma correction" << std::endl;
+        // gamma(this->editedPixels, 1.7, GammaChannel::RGB);
 
         return;
     }

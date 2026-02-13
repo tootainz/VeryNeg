@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "iterateImage.hpp"
 
 void crudeInversion(std::vector<float>& image) {

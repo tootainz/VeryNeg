@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.24)
 # create project
 project("VeryNeg" VERSION 0.0.1)
 
+set(CMAKE_CXX_STANDARD 23)
+
 # add executable
 add_executable(VeryNeg main.cpp)
 
