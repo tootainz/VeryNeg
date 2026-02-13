@@ -14,7 +14,9 @@
 
 int main() {
     // SETUP
-    sf::RenderWindow window(sf::VideoMode({1000, 1000}), "Very Negative Image Editor");
+    sf::ContextSettings settings;
+    settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, higher values = more smoothing
+    sf::RenderWindow window(sf::VideoMode({1000, 1000}), "Very Negative Image Editor", sf::State::Windowed, settings);
     Model model;
     View view(window);
     Controller controller(window, view, model);

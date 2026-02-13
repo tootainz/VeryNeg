@@ -6,7 +6,10 @@ project("VeryNeg" VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 23)
 
 # add executable
-add_executable(VeryNeg main.cpp)
+add_executable(VeryNeg main.cpp
+  Controller/Controller.cpp
+  Negative/Negative.cpp
+)
 
 # ------------------------------------------------
 # Add libraries

@@ -4,24 +4,18 @@
 #include <vector>
 
 #include "iterateImage.hpp"
+#include "EditChannel.hpp"
 
-enum class MaxChannel {
-    RGB,
-    R,
-    G,
-    B
-};
-
-std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bool measureBrightest, MaxChannel channel) {
+inline std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bool measureBrightest, EditChannel channel) {
 
     std::tuple<float, float, float> max(image[0],image[1],image[2]);
     float maxAverage;
 
-    if (channel == MaxChannel::RGB) {
+    if (channel == EditChannel::RGB) {
         maxAverage = (std::get<0>(max) + std::get<1>(max) + std::get<2>(max))/3.0;
-    } else if (channel == MaxChannel::R) {
+    } else if (channel == EditChannel::R) {
         maxAverage = std::get<0>(max);
-    } else if (channel == MaxChannel::G) {
+    } else if (channel == EditChannel::G) {
         maxAverage = std::get<1>(max);
     } else {
         maxAverage = std::get<2>(max);
@@ -30,11 +24,11 @@ std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bool meas
     auto compareValue = [&max, &maxAverage, &measureBrightest, &channel](float red, float green, float blue) {
         float currentAverage;
         
-        if (channel == MaxChannel::RGB) {
+        if (channel == EditChannel::RGB) {
             currentAverage = (red + green + blue)/3.0;
-        } else if (channel == MaxChannel::R) {
+        } else if (channel == EditChannel::R) {
             currentAverage = red;
-        } else if (channel == MaxChannel::G) {
+        } else if (channel == EditChannel::G) {
             currentAverage = green;
         } else {
             currentAverage = blue;
@@ -57,10 +51,10 @@ std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bool meas
     return max;
 }
 
-std::tuple<float, float, float> getBrightestPixel(std::vector<float>& image, MaxChannel channel) {
+inline std::tuple<float, float, float> getBrightestPixel(std::vector<float>& image, EditChannel channel) {
     return getMaxPixel(image, true, channel);
 }
 
-std::tuple<float, float, float> getDarkestPixel(std::vector<float> image, MaxChannel channel) {
+inline std::tuple<float, float, float> getDarkestPixel(std::vector<float> image, EditChannel channel) {
     return getMaxPixel(image, false, channel);
 }
