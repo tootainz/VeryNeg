@@ -57,8 +57,8 @@ class View {
         tgui::Slider::Ptr exposureSlider = tgui::Slider::create();
         exposureSlider->setPosition(500, 300);
         exposureSlider->setSize(140, 20);
-        exposureSlider->setMinimum(-20.0f);
-        exposureSlider->setMaximum(20.0f);
+        exposureSlider->setMinimum(-10.0f);
+        exposureSlider->setMaximum(10.0f);
         exposureSlider->setStep(2.0f);
         exposureSlider->setValue(0.0f);
         gui.add(exposureSlider, "exposureSlider");
