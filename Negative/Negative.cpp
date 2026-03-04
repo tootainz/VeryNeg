@@ -15,6 +15,8 @@
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/myExposure.hpp"
 #include "../imageAlgorithms/charCurves.hpp"
+#include "../imageAlgorithms/grayWorld.hpp"
+#include "../imageAlgorithms/multiply.hpp"
 
 Negative::Negative(std::string imagePath) {
     this->initializeNegative(imagePath);
@@ -155,69 +157,76 @@ void Negative::render() {
     std::println("opaquestsGMeasurement: {}", std::get<1>(opaquestsG));
     std::println("opaquestsBMeasurement: {}", std::get<2>(opaquestsB));
 
-    float brightestRDensity = scanToDensity(std::get<0>(opaquestsR));
-    float brightestGDensity = scanToDensity(std::get<1>(opaquestsG));
-    float brightestBDensity = scanToDensity(std::get<2>(opaquestsB));
+    std::println("Performing a density inversion");
+    densityInvert(this->convertedPixels);
 
-    std::println("brightestRDensity: {}", brightestRDensity);
-    std::println("brightestGDensity: {}", brightestGDensity);
-    std::println("brightestBDensity: {}", brightestBDensity);
+    grayWorld(this->convertedPixels);
 
-    float brightestRLogExposure = charCurveInverse(brightestRDensity, FilmStock::Gold_200, EditChannel::R);
-    float brightestGLogExposure = charCurveInverse(brightestGDensity, FilmStock::Gold_200, EditChannel::G);
-    float brightestBLogExposure = charCurveInverse(brightestBDensity, FilmStock::Gold_200, EditChannel::B);
 
-    std::println("brightestRLogExposure: {}", brightestRLogExposure);
-    std::println("brightestGLogExposure: {}", brightestGLogExposure);
-    std::println("brightestBLogExposure: {}", brightestBLogExposure);
 
-    float correctedBDensityHighest = brightestBDensity;
-    float correctedGDensityHighest = charCurveFunction(brightestBLogExposure, FilmStock::Gold_200, EditChannel::G);
-    float correctedRDensityHighest = charCurveFunction(brightestBLogExposure, FilmStock::Gold_200, EditChannel::R);
+    // float brightestRDensity = scanToDensity(std::get<0>(opaquestsR));
+    // float brightestGDensity = scanToDensity(std::get<1>(opaquestsG));
+    // float brightestBDensity = scanToDensity(std::get<2>(opaquestsB));
 
-    float darkestRDensity = scanToDensity(std::get<0>(transparentsR));
-    float darkestGDensity = scanToDensity(std::get<1>(transparentsG));
-    float darkestBDensity = scanToDensity(std::get<2>(transparentsB));
+    // std::println("brightestRDensity: {}", brightestRDensity);
+    // std::println("brightestGDensity: {}", brightestGDensity);
+    // std::println("brightestBDensity: {}", brightestBDensity);
 
-    std::println("darkestRDensity: {}", darkestRDensity);
-    std::println("darkestGDensity: {}", darkestGDensity);
-    std::println("darkestBDensity: {}", darkestBDensity);
+    // float brightestRLogExposure = charCurveInverse(brightestRDensity, FilmStock::Gold_200, EditChannel::R);
+    // float brightestGLogExposure = charCurveInverse(brightestGDensity, FilmStock::Gold_200, EditChannel::G);
+    // float brightestBLogExposure = charCurveInverse(brightestBDensity, FilmStock::Gold_200, EditChannel::B);
 
-    float darkestRLogExposure = charCurveInverse(darkestRDensity, FilmStock::Gold_200, EditChannel::R);
-    float darkestGLogExposure = charCurveInverse(darkestGDensity, FilmStock::Gold_200, EditChannel::G);
-    float darkestBLogExposure = charCurveInverse(darkestBDensity, FilmStock::Gold_200, EditChannel::B);
+    // std::println("brightestRLogExposure: {}", brightestRLogExposure);
+    // std::println("brightestGLogExposure: {}", brightestGLogExposure);
+    // std::println("brightestBLogExposure: {}", brightestBLogExposure);
 
-    std::println("darkestRLogExposure: {}", darkestRLogExposure);
-    std::println("darkestGLogExposure: {}", darkestGLogExposure);
-    std::println("darkestBLogExposure: {}", darkestBLogExposure);
+    // float correctedBDensityHighest = brightestBDensity;
+    // float correctedGDensityHighest = charCurveFunction(brightestBLogExposure, FilmStock::Gold_200, EditChannel::G);
+    // float correctedRDensityHighest = charCurveFunction(brightestBLogExposure, FilmStock::Gold_200, EditChannel::R);
 
-    float correctedRDensityDarkest = darkestRDensity;
-    float correctedGDensityDarkest = charCurveFunction(darkestRLogExposure, FilmStock::Gold_200, EditChannel::G);
-    float correctedBDensityDarkest = charCurveFunction(darkestRLogExposure, FilmStock::Gold_200, EditChannel::B);
+    // float darkestRDensity = scanToDensity(std::get<0>(transparentsR));
+    // float darkestGDensity = scanToDensity(std::get<1>(transparentsG));
+    // float darkestBDensity = scanToDensity(std::get<2>(transparentsB));
 
-    levelsR(this->convertedPixels, std::get<0>(opaquestsR), std::get<0>(transparentsR), densityToScan(correctedRDensityHighest), densityToScan(correctedRDensityDarkest));
-    levelsG(this->convertedPixels, std::get<1>(opaquestsG), std::get<1>(transparentsG), densityToScan(correctedGDensityHighest), densityToScan(correctedGDensityDarkest));
-    levelsB(this->convertedPixels, std::get<2>(opaquestsB), std::get<2>(transparentsB), densityToScan(correctedBDensityHighest), densityToScan(correctedBDensityDarkest));
+    // std::println("darkestRDensity: {}", darkestRDensity);
+    // std::println("darkestGDensity: {}", darkestGDensity);
+    // std::println("darkestBDensity: {}", darkestBDensity);
 
-    charCurveInvert(this->convertedPixels, brightestBLogExposure, darkestRLogExposure, EditChannel::RGB);
+    // float darkestRLogExposure = charCurveInverse(darkestRDensity, FilmStock::Gold_200, EditChannel::R);
+    // float darkestGLogExposure = charCurveInverse(darkestGDensity, FilmStock::Gold_200, EditChannel::G);
+    // float darkestBLogExposure = charCurveInverse(darkestBDensity, FilmStock::Gold_200, EditChannel::B);
 
-    // R
-    std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->convertedPixels, EditChannel::R);
-    std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->convertedPixels, EditChannel::R);
-    // G
-    std::tuple<float, float, float> brightestAfterG = getBrightestPixel(this->convertedPixels, EditChannel::G);
-    std::tuple<float, float, float> darkestAfterG = getDarkestPixel(this->convertedPixels, EditChannel::G);
-    // B
-    std::tuple<float, float, float> brightestAfterB = getBrightestPixel(this->convertedPixels, EditChannel::B);
-    std::tuple<float, float, float> darkestAfterB = getDarkestPixel(this->convertedPixels, EditChannel::B);
+    // std::println("darkestRLogExposure: {}", darkestRLogExposure);
+    // std::println("darkestGLogExposure: {}", darkestGLogExposure);
+    // std::println("darkestBLogExposure: {}", darkestBLogExposure);
 
-    std::println("brightestRMeasurement after conversion: {}", std::get<0>(brightestAfterR));
-    std::println("brightestGMeasurement after conversion: {}", std::get<1>(brightestAfterG));
-    std::println("brightestBMeasurement after conversion: {}", std::get<2>(brightestAfterB));
+    // float correctedRDensityDarkest = darkestRDensity;
+    // float correctedGDensityDarkest = charCurveFunction(darkestRLogExposure, FilmStock::Gold_200, EditChannel::G);
+    // float correctedBDensityDarkest = charCurveFunction(darkestRLogExposure, FilmStock::Gold_200, EditChannel::B);
 
-    std::println("darkestRMeasurement after conversion: {}", std::get<0>(darkestAfterR));
-    std::println("darkestGMeasurement after conversion: {}", std::get<1>(darkestAfterG));
-    std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
+    // levelsR(this->convertedPixels, std::get<0>(opaquestsR), std::get<0>(transparentsR), densityToScan(correctedRDensityHighest), densityToScan(correctedRDensityDarkest));
+    // levelsG(this->convertedPixels, std::get<1>(opaquestsG), std::get<1>(transparentsG), densityToScan(correctedGDensityHighest), densityToScan(correctedGDensityDarkest));
+    // levelsB(this->convertedPixels, std::get<2>(opaquestsB), std::get<2>(transparentsB), densityToScan(correctedBDensityHighest), densityToScan(correctedBDensityDarkest));
+
+    // charCurveInvert(this->convertedPixels, brightestBLogExposure, darkestRLogExposure, EditChannel::RGB);
+
+    // // R
+    // std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->convertedPixels, EditChannel::R);
+    // std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->convertedPixels, EditChannel::R);
+    // // G
+    // std::tuple<float, float, float> brightestAfterG = getBrightestPixel(this->convertedPixels, EditChannel::G);
+    // std::tuple<float, float, float> darkestAfterG = getDarkestPixel(this->convertedPixels, EditChannel::G);
+    // // B
+    // std::tuple<float, float, float> brightestAfterB = getBrightestPixel(this->convertedPixels, EditChannel::B);
+    // std::tuple<float, float, float> darkestAfterB = getDarkestPixel(this->convertedPixels, EditChannel::B);
+
+    // std::println("brightestRMeasurement after conversion: {}", std::get<0>(brightestAfterR));
+    // std::println("brightestGMeasurement after conversion: {}", std::get<1>(brightestAfterG));
+    // std::println("brightestBMeasurement after conversion: {}", std::get<2>(brightestAfterB));
+
+    // std::println("darkestRMeasurement after conversion: {}", std::get<0>(darkestAfterR));
+    // std::println("darkestGMeasurement after conversion: {}", std::get<1>(darkestAfterG));
+    // std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
 
     // std::println("applying levels adjustment for the g channel");
     // levelsG(this->convertedPixels, std::get<1>(darkestG), std::get<1>(brightestG), std::get<0>(darkestR), std::get<0>(brightestR));
@@ -231,9 +240,6 @@ void Negative::render() {
 
     // std::println("applying gamma correction to the g channel");
     // gamma(this->convertedPixels, 0.88f, EditChannel::G);
-
-    // std::println("Performing a density inversion");
-    // densityInvert(this->convertedPixels);
 
     // // R
     // std::tuple<float, float, float> brightestR1 = getBrightestPixel(this->convertedPixels, EditChannel::R);
@@ -263,8 +269,8 @@ void Negative::render() {
     // std::println("Performing a crude inversion");
     // crudeInversion(this->convertedPixels);
 
-    std::println("applying general display gamma correction");
-    gamma(this->convertedPixels, 1.0/2.2, EditChannel::RGB);
+    // std::println("applying general display gamma correction");
+    // gamma(this->convertedPixels, 1.0/2.2, EditChannel::RGB);
 
     this->editedPixels = this->convertedPixels;
 
