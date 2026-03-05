@@ -34,6 +34,14 @@ class Model {
         this->negative.setExposure(value);
     };
 
+    void setBSlope(float value) {
+        this->negative.setBSlope(value);
+    }
+
+    void setGSlope(float value) {
+        this->negative.setGSlope(value);
+    }
+
     ImageData getPreview() {
         return negative.getPreview();
     }

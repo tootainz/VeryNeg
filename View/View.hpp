@@ -28,6 +28,8 @@ class View {
     std::function<void()> onButtonPress_LoadNegative;
     std::function<void()> onButtonPress_SavePositive;
     std::function<void(float)> onSliderChange_SetExposure;
+    std::function<void(float)> onSliderChange_SetBSlope;
+    std::function<void(float)> onSliderChange_SetGSlope;
 
     void addGuiWidgets() {
         // Open negative button
@@ -58,12 +60,36 @@ class View {
         exposureSlider->setPosition(500, 300);
         exposureSlider->setSize(140, 20);
         exposureSlider->setMinimum(-10.0f);
-        exposureSlider->setMaximum(10.0f);
+        exposureSlider->setMaximum(160.0f);
         exposureSlider->setStep(2.0f);
         exposureSlider->setValue(0.0f);
         gui.add(exposureSlider, "exposureSlider");
 
         exposureSlider->onValueChange(this->onSliderChange_SetExposure);
+
+        // Blue slope
+        tgui::Slider::Ptr bSlopeSlider = tgui::Slider::create();
+        bSlopeSlider->setPosition(500, 400);
+        bSlopeSlider->setSize(300, 20);
+        bSlopeSlider->setMinimum(-2.0f);
+        bSlopeSlider->setMaximum(2.0f);
+        bSlopeSlider->setStep(0.1f);
+        bSlopeSlider->setValue(1.0f);
+        gui.add(bSlopeSlider, "bSlopeSlider");
+
+        bSlopeSlider->onValueChange(this->onSliderChange_SetBSlope);
+
+        // Green slope
+        tgui::Slider::Ptr gSlopeSlider = tgui::Slider::create();
+        gSlopeSlider->setPosition(500, 500);
+        gSlopeSlider->setSize(300, 20);
+        gSlopeSlider->setMinimum(-2.0f);
+        gSlopeSlider->setMaximum(2.0f);
+        gSlopeSlider->setStep(0.1f);
+        gSlopeSlider->setValue(1.0f);
+        gui.add(gSlopeSlider, "gSlopeSlider");
+
+        gSlopeSlider->onValueChange(this->onSliderChange_SetGSlope);
     }
 
     void handleEvent(sf::Event event){

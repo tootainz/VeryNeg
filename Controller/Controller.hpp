@@ -30,6 +30,9 @@ class Controller {
 
     void SliderChangeSetExposure(float value);
 
+    void SliderChangeSetBSlope(float value);
+    void SliderChangeSetGSlope(float value);
+
     // MAIN LOOP
 
     void mainLoop();

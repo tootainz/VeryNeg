@@ -19,6 +19,8 @@ class Negative {
     int numberOfChannels;
 
     float exposure;
+    float bSlope = 1;
+    float gSlope = 1;
     
     Negative(std::string imagePath);
 
@@ -32,6 +34,9 @@ class Negative {
     ImageData getPreview();
 
     void setExposure(float value);
+
+    void setBSlope(float value);
+    void setGSlope(float value);
 
     void renderEdits();
 

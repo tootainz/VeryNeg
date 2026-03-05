@@ -24,6 +24,8 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onButtonPress_LoadNegative = [this]() { this->ButtonPressChooseNegative(); };
     view.onButtonPress_SavePositive = [this]() { this->ButtonPressSavePositive(); };
     view.onSliderChange_SetExposure = [this](float value) { this->SliderChangeSetExposure(value); };
+    view.onSliderChange_SetBSlope = [this](float value) { this->SliderChangeSetBSlope(value); };
+    view.onSliderChange_SetGSlope = [this](float value) { this->SliderChangeSetGSlope(value); };
     view.addGuiWidgets();
 }
 
@@ -36,6 +38,16 @@ void Controller::ButtonPressConvert() {
     std::println("button pressed convert");
     this->model.render();
     this->updatePreview();
+}
+
+void Controller::SliderChangeSetBSlope(float value) {
+    std::println("B slope slider value was changed to {}", value);
+    this->model.setBSlope(value);
+}
+
+void Controller::SliderChangeSetGSlope(float value) {
+    std::println("G slope slider value was changed to {}", value);
+    this->model.setGSlope(value);
 }
 
 void Controller::SliderChangeSetExposure(float value) {
