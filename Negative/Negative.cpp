@@ -18,6 +18,7 @@
 #include "../imageAlgorithms/grayWorld.hpp"
 #include "../imageAlgorithms/multiply.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
+#include "../imageAlgorithms/boxFilter.hpp"
 
 Negative::Negative(std::string imagePath) {
     this->initializeNegative(imagePath);
@@ -131,6 +132,16 @@ void Negative::setGSlope(float value) {
     std::println("gSlope is now {}", this->gSlope);
 }
 
+void Negative::setRBalance(float value) {
+    this->rBalance = value;
+}
+void Negative::setGBalance(float value) {
+    this->gBalance = value;
+}
+void Negative::setBBalance(float value) {
+    this->bBalance = value;
+}
+
 void Negative::renderEdits() {
 
     this->editedPixels = this->convertedPixels;
@@ -139,6 +150,14 @@ void Negative::renderEdits() {
 
     std::println("Editing exposure");
     myExposure(this->editedPixels, this->exposure, EditChannel::RGB);
+
+    gamma(this->editedPixels, this->rBalance, EditChannel::R);
+    gamma(this->editedPixels, this->gBalance, EditChannel::G);
+    gamma(this->editedPixels, this->bBalance, EditChannel::B);
+
+    // Apply display gamma
+    std::println("applying general display gamma correction");
+    gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
 }
 
 void Negative::render() {
@@ -149,19 +168,23 @@ void Negative::render() {
 
     std::println("getting the brightest and darkest pixels");
 
-    // Measuer brightest and darkest pixels
+    // First blur the image slightly to remove noise and extremities
+    std::vector<float> blurredPixels = this->convertedPixels;
+    boxFilter(blurredPixels, this->width, this->height, 40);
+
+    // Measure brightest and darkest pixels from the blurred image
     // Brightest = most transparent = low density
     // Darkest = most opaque = high density
 
     // R
-    std::tuple<float, float, float> transparentsR = getBrightestPixel(this->convertedPixels, EditChannel::R);
-    std::tuple<float, float, float> opaquestsR = getDarkestPixel(this->convertedPixels, EditChannel::R);
+    std::tuple<float, float, float> transparentsR = getBrightestPixel(blurredPixels, EditChannel::R);
+    std::tuple<float, float, float> opaquestsR = getDarkestPixel(blurredPixels, EditChannel::R);
     // G
-    std::tuple<float, float, float> transparentsG = getBrightestPixel(this->convertedPixels, EditChannel::G);
-    std::tuple<float, float, float> opaquestsG = getDarkestPixel(this->convertedPixels, EditChannel::G);
+    std::tuple<float, float, float> transparentsG = getBrightestPixel(blurredPixels, EditChannel::G);
+    std::tuple<float, float, float> opaquestsG = getDarkestPixel(blurredPixels, EditChannel::G);
     // B
-    std::tuple<float, float, float> transparentsB = getBrightestPixel(this->convertedPixels, EditChannel::B);
-    std::tuple<float, float, float> opaquestsB = getDarkestPixel(this->convertedPixels, EditChannel::B);
+    std::tuple<float, float, float> transparentsB = getBrightestPixel(blurredPixels, EditChannel::B);
+    std::tuple<float, float, float> opaquestsB = getDarkestPixel(blurredPixels, EditChannel::B);
 
     std::println("transparentsRMeasurement: {}", std::get<0>(transparentsR));
     std::println("transparentsGMeasurement: {}", std::get<1>(transparentsG));
@@ -197,7 +220,7 @@ void Negative::render() {
 
     // perform the compromise inversion
 
-    compromiseInvert(this->convertedPixels, darkestRDensity, this->bSlope, this->gSlope, darkestRDensity, brightestGDensity);
+    compromiseInvert(this->convertedPixels, darkestRDensity, this->bSlope, this->gSlope, darkestRDensity, brightestRDensity);
 
     std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->convertedPixels, EditChannel::R);
     std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->convertedPixels, EditChannel::R);
@@ -216,9 +239,11 @@ void Negative::render() {
     std::println("darkestGMeasurement after conversion: {}", std::get<1>(darkestAfterG));
     std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
 
-    // // Apply display gamma
-    // std::println("applying general display gamma correction");
-    // gamma(this->convertedPixels, 1.0/2.2, EditChannel::RGB);
+    // Normalize
+    levelsRGB(this->convertedPixels, std::get<0>(darkestAfterR), std::get<0>(brightestAfterR), 0, 1);
+
+    // Auto White balance
+    // grayWorld(this->convertedPixels);
 
     // // Density inversion
 
@@ -292,6 +317,10 @@ void Negative::render() {
 
     // std::println("applying general display gamma correction");
     // gamma(this->convertedPixels, 1.0/2.2, EditChannel::RGB);
+
+    //boxFilter(this->convertedPixels, this->width, this->height, 40);
+    //boxFilterSlow(this->convertedPixels, this->width, this->height, 40);
+
 
     this->editedPixels = this->convertedPixels;
 

@@ -10,7 +10,7 @@
 #include "multiply.hpp"
 #include "gamma.hpp"
 
-inline void grayWorld(std::vector<float>& image) {
+inline void whitePatch(std::vector<float>& image) {
 
     std::println("Starting Gray World algorithm");
 

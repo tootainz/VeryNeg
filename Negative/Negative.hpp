@@ -21,13 +21,15 @@ class Negative {
     float exposure;
     float bSlope = 1;
     float gSlope = 1;
+    float rBalance = 1.0;
+    float gBalance = 1.0;
+    float bBalance = 1.0;
     
     Negative(std::string imagePath);
 
     Negative();
 
     bool initializeNegative(std::string imagePath);
-
     bool savePositive(std::string imagePath);
     
     // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
@@ -37,6 +39,10 @@ class Negative {
 
     void setBSlope(float value);
     void setGSlope(float value);
+
+    void setRBalance(float value);
+    void setGBalance(float value);
+    void setBBalance(float value);
 
     void renderEdits();
 

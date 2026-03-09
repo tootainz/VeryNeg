@@ -55,7 +55,7 @@ inline float logToExposure(float logExposure) {
 
 // The characteristic curves
 inline float charCurveFunction(float x, FilmStock filmStock, EditChannel channel) {
-        float blackCorrection = 0;
+        float blackCorrection = -0.5;
 
         if (filmStock == FilmStock::Gold_200) {
             if (channel == EditChannel::R) {

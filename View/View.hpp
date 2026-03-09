@@ -30,6 +30,9 @@ class View {
     std::function<void(float)> onSliderChange_SetExposure;
     std::function<void(float)> onSliderChange_SetBSlope;
     std::function<void(float)> onSliderChange_SetGSlope;
+    std::function<void(float)> onSliderChange_SetRBalance;
+    std::function<void(float)> onSliderChange_SetGBalance;
+    std::function<void(float)> onSliderChange_SetBBalance;
 
     void addGuiWidgets() {
         // Open negative button
@@ -59,9 +62,9 @@ class View {
         tgui::Slider::Ptr exposureSlider = tgui::Slider::create();
         exposureSlider->setPosition(500, 300);
         exposureSlider->setSize(140, 20);
-        exposureSlider->setMinimum(-10.0f);
-        exposureSlider->setMaximum(160.0f);
-        exposureSlider->setStep(2.0f);
+        exposureSlider->setMinimum(-3.0f);
+        exposureSlider->setMaximum(3.0f);
+        exposureSlider->setStep(0.01f);
         exposureSlider->setValue(0.0f);
         gui.add(exposureSlider, "exposureSlider");
 
@@ -90,6 +93,42 @@ class View {
         gui.add(gSlopeSlider, "gSlopeSlider");
 
         gSlopeSlider->onValueChange(this->onSliderChange_SetGSlope);
+
+        // R balance
+        tgui::Slider::Ptr rBalanceSlider = tgui::Slider::create();
+        rBalanceSlider->setPosition(500, 600);
+        rBalanceSlider->setSize(300, 20);
+        rBalanceSlider->setMinimum(0.0f);
+        rBalanceSlider->setMaximum(2.0f);
+        rBalanceSlider->setStep(0.01f);
+        rBalanceSlider->setValue(1.0f);
+        gui.add(rBalanceSlider, "cBalanceSlider");
+
+        rBalanceSlider->onValueChange(this->onSliderChange_SetRBalance);
+
+        // G balance
+        tgui::Slider::Ptr gBalanceSlider = tgui::Slider::create();
+        gBalanceSlider->setPosition(500, 650);
+        gBalanceSlider->setSize(300, 20);
+        gBalanceSlider->setMinimum(0.0f);
+        gBalanceSlider->setMaximum(2.0f);
+        gBalanceSlider->setStep(0.01f);
+        gBalanceSlider->setValue(1.0f);
+        gui.add(gBalanceSlider, "gBalanceSlider");
+
+        gBalanceSlider->onValueChange(this->onSliderChange_SetGBalance);
+
+        // B balance
+        tgui::Slider::Ptr bBalanceSlider = tgui::Slider::create();
+        bBalanceSlider->setPosition(500, 700);
+        bBalanceSlider->setSize(300, 20);
+        bBalanceSlider->setMinimum(0.0f);
+        bBalanceSlider->setMaximum(2.0f);
+        bBalanceSlider->setStep(0.01f);
+        bBalanceSlider->setValue(1.0f);
+        gui.add(bBalanceSlider, "bBalanceSlider");
+
+        bBalanceSlider->onValueChange(this->onSliderChange_SetBBalance);
     }
 
     void handleEvent(sf::Event event){

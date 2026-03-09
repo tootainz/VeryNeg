@@ -26,6 +26,9 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onSliderChange_SetExposure = [this](float value) { this->SliderChangeSetExposure(value); };
     view.onSliderChange_SetBSlope = [this](float value) { this->SliderChangeSetBSlope(value); };
     view.onSliderChange_SetGSlope = [this](float value) { this->SliderChangeSetGSlope(value); };
+    view.onSliderChange_SetRBalance = [this](float value) { this->SliderChangeSetRBalance(value); };
+    view.onSliderChange_SetGBalance = [this](float value) { this->SliderChangeSetGBalance(value); };
+    view.onSliderChange_SetBBalance = [this](float value) { this->SliderChangeSetBBalance(value); };
     view.addGuiWidgets();
 }
 
@@ -40,8 +43,29 @@ void Controller::ButtonPressConvert() {
     this->updatePreview();
 }
 
+void Controller::SliderChangeSetRBalance(float value) {
+    std::println("R balance slider value was changed to {}", value);
+    this->model.setRBalance(value);
+    this->model.renderEdits();
+    this->updatePreview();
+}
+
+void Controller::SliderChangeSetGBalance(float value) {
+    std::println("G balance slider value was changed to {}", value);
+    this->model.setGBalance(value);
+    this->model.renderEdits();
+    this->updatePreview();
+}
+
+void Controller::SliderChangeSetBBalance(float value) {
+    std::println("R balance slider value was changed to {}", value);
+    this->model.setBBalance(value);
+    this->model.renderEdits();
+    this->updatePreview();
+}
+
 void Controller::SliderChangeSetBSlope(float value) {
-    std::println("B slope slider value was changed to {}", value);
+    std::println("G slope slider value was changed to {}", value);
     this->model.setBSlope(value);
 }
 

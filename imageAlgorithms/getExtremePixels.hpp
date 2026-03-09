@@ -47,7 +47,7 @@ inline std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bo
         }
     };
 
-    iterateImageImmutable(image, compareValue);
+    iterateImageImmutableSingleThread(image, compareValue);
     return max;
 }
 

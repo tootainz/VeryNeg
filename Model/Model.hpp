@@ -42,6 +42,19 @@ class Model {
         this->negative.setGSlope(value);
     }
 
+    void setRBalance(float value) {
+        this->negative.setRBalance(value);
+    }
+
+    void setGBalance(float value) {
+        this->negative.setGBalance(value);
+    }
+
+    void setBBalance(float value) {
+        this->negative.setBBalance(value);
+    }
+
+
     ImageData getPreview() {
         return negative.getPreview();
     }
