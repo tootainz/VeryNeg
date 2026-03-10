@@ -22,11 +22,10 @@ class Controller {
     // GUI CALLBACKS
     // These will be passsed to view after it is constructed
 
-    void ButtonPressConvert();
-
     void ButtonPressChooseNegative();
-
     void ButtonPressSavePositive();
+    
+    void ButtonPressConvert();
 
     void SliderChangeSetExposure(float value);
 
@@ -36,8 +35,10 @@ class Controller {
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
-    
 
+    void ButtonPressNextNegative();
+    void ButtonPressPreviousNegative();
+    
     // MAIN LOOP
 
     void mainLoop();

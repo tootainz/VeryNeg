@@ -6,12 +6,11 @@
 
 class Model {
 
-    private:
+    public:
 
-        Negative negative;
         std::vector<Negative> negatives;
-        
-        int currentNegative;
+        int currentNegativeIndex;
+
         // crop region
         // white point region
         // black point region
@@ -20,43 +19,60 @@ class Model {
 
     public:
 
-    Model() :
-        negative("input.tif")
-    {}
+    Model() {}
 
-    void render() {
-        negative.renderWorking();
+    void renderWorking() {
+        this->negatives[this->currentNegativeIndex].renderWorking();
     }
-
     void renderEdits() {
-        negative.renderEdits();
+        this->negatives[this->currentNegativeIndex].renderEdits();
     }
 
-    void initializeNegative(std::string imagePath) {
-        this->negative.initializeNegative(imagePath);
+    void changeCurrentNegativeByIndex(int i) {
+        this->currentNegativeIndex = i;
+        std::println("current negative is: {}", this->currentNegativeIndex);
     }
 
-    void savePositive(std::string imagePath) {
-        this->negative.savePositive(imagePath);
+    void previousNegative() {
+        this->currentNegativeIndex = std::max(0, this->currentNegativeIndex - 1);
+        std::println("current negative is: {}", this->currentNegativeIndex);
     }
+
+    void nextNegative() {
+        int size = this->negatives.size();
+        this->currentNegativeIndex = std::min(size - 1, this->currentNegativeIndex + 1);
+        std::println("current negative is: {}", this->currentNegativeIndex);
+    }
+
+    void addNegative(std::string imagePath) {
+        this->negatives.push_back(Negative(imagePath));
+        if (negatives.size() == 1) currentNegativeIndex = 0;
+        else currentNegativeIndex += 1;
+    }
+
+    void removeNegative(int i);
+
+    void savePositive(std::string imagePath) {};
 
     void setExposure(float value) {
-        this->negative.setExposure(value);
+        this->negatives[this->currentNegativeIndex].setExposure(value);
+    };
+    void setRBalance(float value) {
+        this->negatives[this->currentNegativeIndex].setRBalance(value);
+    };
+    void setGBalance(float value) {
+        this->negatives[this->currentNegativeIndex].setGBalance(value);
+    };
+    void setBBalance(float value) {
+        this->negatives[this->currentNegativeIndex].setBBalance(value);
     };
 
-    void setRBalance(float value) {
-        this->negative.setRBalance(value);
-    }
-
-    void setGBalance(float value) {
-        this->negative.setGBalance(value);
-    }
-
-    void setBBalance(float value) {
-        this->negative.setBBalance(value);
-    }
-
+    float getExposure();
+    float getRBalance();
+    float getGBalance();
+    float getBBalance();
+    
     ImageData getPreview() {
-        return negative.getPreview();
+        return this->negatives[this->currentNegativeIndex].getPreview();
     }
 };

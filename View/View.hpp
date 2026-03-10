@@ -27,6 +27,8 @@ class View {
     std::function<void()> onButtonPress_Convert;
     std::function<void()> onButtonPress_LoadNegative;
     std::function<void()> onButtonPress_SavePositive;
+    std::function<void()> onButtonPress_NextNegative;
+    std::function<void()> onButtonPress_PreviousNegative;
 
     std::function<void(float)> onSliderChange_SetExposure;
     std::function<void(float)> onSliderChange_SetRBalance;
@@ -132,6 +134,23 @@ class View {
         labelBBalance->setTextSize(14);
         labelBBalance->getRenderer()->setTextColor(sf::Color::White);
         gui.add(labelBBalance);
+
+        // Film roll navigation buttons
+        // Next negative
+        tgui::Button::Ptr nextNegativeButton = tgui::Button::create("Next negative");
+        nextNegativeButton->setPosition(100, 900);
+        nextNegativeButton->setSize(120, 20);
+        gui.add(nextNegativeButton, "nextNegativeButton");
+        
+        nextNegativeButton->onPress(this->onButtonPress_NextNegative);
+
+        // Previous negative
+        tgui::Button::Ptr previousNegativeButton = tgui::Button::create("Previous negative");
+        previousNegativeButton->setPosition(600, 900);
+        previousNegativeButton->setSize(120, 20);
+        gui.add(previousNegativeButton, "previousNegativeButton");
+        
+        previousNegativeButton->onPress(this->onButtonPress_PreviousNegative);
     }
 
     void handleEvent(sf::Event event){
