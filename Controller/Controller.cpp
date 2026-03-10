@@ -24,6 +24,9 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onButtonPress_LoadNegative = [this]() { this->ButtonPressChooseNegative(); };
     view.onButtonPress_SavePositive = [this]() { this->ButtonPressSavePositive(); };
     view.onSliderChange_SetExposure = [this](float value) { this->SliderChangeSetExposure(value); };
+    view.onSliderChange_SetRBalance = [this](float value) { this->SliderChangeSetRBalance(value); };
+    view.onSliderChange_SetGBalance = [this](float value) { this->SliderChangeSetGBalance(value); };
+    view.onSliderChange_SetBBalance = [this](float value) { this->SliderChangeSetBBalance(value); };
     view.addGuiWidgets();
 }
 
@@ -35,6 +38,27 @@ void Controller::updatePreview() {
 void Controller::ButtonPressConvert() {
     std::println("button pressed convert");
     this->model.render();
+    this->updatePreview();
+}
+
+void Controller::SliderChangeSetRBalance(float value) {
+    std::println("R balance slider value was changed to {}", value);
+    this->model.setRBalance(value);
+    this->model.renderEdits();
+    this->updatePreview();
+}
+
+void Controller::SliderChangeSetGBalance(float value) {
+    std::println("G balance slider value was changed to {}", value);
+    this->model.setGBalance(value);
+    this->model.renderEdits();
+    this->updatePreview();
+}
+
+void Controller::SliderChangeSetBBalance(float value) {
+    std::println("R balance slider value was changed to {}", value);
+    this->model.setBBalance(value);
+    this->model.renderEdits();
     this->updatePreview();
 }
 

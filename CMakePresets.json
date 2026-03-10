@@ -2,8 +2,8 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "default",
-            "description": "default preset",
+            "name": "default debug",
+            "description": "default debug preset",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
@@ -11,6 +11,18 @@
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "default production",
+            "description": "default preset",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/clang",
+                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+                "CMAKE_BUILD_TYPE": "Production"
             }
         }
     ]
