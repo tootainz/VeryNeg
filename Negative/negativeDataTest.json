@@ -1,0 +1,32 @@
+{
+    "version": "0.1.0",
+
+    "conversion": {
+        "isConverted": false,
+        "samplingBlur": 40,
+        "whitePoint": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0
+        },
+        "blackPoint": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0
+        }
+    },
+
+    "edits": {
+        "exposure": 0.0,
+        "contrast": 0.0,
+        "highlights": 0.0,
+        "shadows": 0.0,
+        "blacks": 0.0,
+        "whites": 0.0,
+        "rBalance": 0.0,
+        "gBalance": 0.0,
+        "bBalance": 0.0,
+        "saturation": 0.0,
+        "sharpening": 0
+    }
+}

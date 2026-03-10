@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <nlohmann/json.hpp>
+#include <fstream>
 
 struct ImageData {
     std::vector<uint8_t> data;
@@ -11,35 +13,25 @@ struct ImageData {
 class Negative {
 
     private:
-    std::vector<float> pixels;
-    std::vector<float> convertedPixels;
-    std::vector<float> editedPixels;
+
+    // Original specs and data of the image
+    std::vector<float> originalPixels;
+    int numberOfChannels;
     int width;
     int height;
-    int numberOfChannels;
+    
+    // Working image is a smaller version of the original in order to speed up the live editing process
+    std::vector<float> workingPixels;
+    std::vector<float> convertedPixels;
+    std::vector<float> editedPixels;
+    int workingScale;
+    int workingWidth;
+    int workingHeight;
 
-    // Edit stats, should these be their own class??
-    float exposure = 0.0f;
-    float rBalance = 1.0f;
-    float gBalance = 1.0f;
-    float bBalance = 1.0f;
-    float blackPoint = 0.0f;
-    float whitePoint = 0.0f;
-    float highlights = 0.0f;
-    float shadows = 0.0f;
-    float sharpening = 0.0f;
+    std::vector<uint8_t> thumbnailPixels;
 
-    float rBlack = 0.0f;
-    float gBlack = 0.0f;
-    float bBlack = 0.0f;
-
-    float rMiddle = 0.0f;
-    float gMiddle = 0.0f;
-    float bMiddle = 0.0f;
-
-    float rWhite = 0.0f;
-    float gWhite = 0.0f;
-    float bWhite = 0.0f;
+    // Edit settings
+    nlohmann::json negativeData;
 
     public:
     
@@ -51,15 +43,22 @@ class Negative {
     
     // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
     ImageData getPreview();
+    ImageData getSharpnessPreview();
+
+    // Reading and writing the edit data
+    void readNegativeData();
+    void writeNegativeData();
 
     void setExposure(float value);
-
     void setRBalance(float value);
     void setGBalance(float value);
     void setBBalance(float value);
 
-    void renderEdits();
+    bool cacheConversion();
+    bool readCacheConversion();
 
-    // Renders the initial conversion with the given pipeline
-    void render();
+    void renderThumbnail();
+    void renderEdits();
+    void renderWorking();
+    void renderFinal();
 };

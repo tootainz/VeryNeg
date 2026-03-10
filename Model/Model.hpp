@@ -10,8 +10,8 @@ class Model {
 
         Negative negative;
         std::vector<Negative> negatives;
-
-        // current negative index
+        
+        int currentNegative;
         // crop region
         // white point region
         // black point region
@@ -25,7 +25,7 @@ class Model {
     {}
 
     void render() {
-        negative.render();
+        negative.renderWorking();
     }
 
     void renderEdits() {
