@@ -6,7 +6,8 @@
 #include "iterateImage.hpp"
 
 inline float multiplyFunction(float input, float value) {
-    return input * value;
+    float linearOut = input * std::pow(2.0f, value);
+    return linearOut;
 }
 
 inline void multiply(std::vector<float>& image, float multiplier, EditChannel channel) {

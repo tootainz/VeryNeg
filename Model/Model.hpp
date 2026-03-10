@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "../Negative/Negative.hpp"
 
 class Model {
@@ -7,6 +9,14 @@ class Model {
     private:
 
         Negative negative;
+        std::vector<Negative> negatives;
+
+        // current negative index
+        // crop region
+        // white point region
+        // black point region
+        // middle grey region
+        // sharpness region
 
     public:
 
@@ -34,14 +44,6 @@ class Model {
         this->negative.setExposure(value);
     };
 
-    void setBSlope(float value) {
-        this->negative.setBSlope(value);
-    }
-
-    void setGSlope(float value) {
-        this->negative.setGSlope(value);
-    }
-
     void setRBalance(float value) {
         this->negative.setRBalance(value);
     }
@@ -53,7 +55,6 @@ class Model {
     void setBBalance(float value) {
         this->negative.setBBalance(value);
     }
-
 
     ImageData getPreview() {
         return negative.getPreview();

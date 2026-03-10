@@ -50,7 +50,7 @@ inline void grayWorld(std::vector<float>& image) {
     std::println("Scaling factor for g: {}", gScaling);
     std::println("Scaling factor for b: {}", bScaling);
 
-    gamma(image, 1.0/rScaling, EditChannel::R);
-    gamma(image, 1.0/gScaling, EditChannel::G);
-    gamma(image, 1.0/bScaling, EditChannel::B);
+    multiply(image, rScaling, EditChannel::R);
+    multiply(image, gScaling, EditChannel::G);
+    multiply(image, bScaling, EditChannel::B);
 }

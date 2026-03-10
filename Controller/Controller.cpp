@@ -24,8 +24,6 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onButtonPress_LoadNegative = [this]() { this->ButtonPressChooseNegative(); };
     view.onButtonPress_SavePositive = [this]() { this->ButtonPressSavePositive(); };
     view.onSliderChange_SetExposure = [this](float value) { this->SliderChangeSetExposure(value); };
-    view.onSliderChange_SetBSlope = [this](float value) { this->SliderChangeSetBSlope(value); };
-    view.onSliderChange_SetGSlope = [this](float value) { this->SliderChangeSetGSlope(value); };
     view.onSliderChange_SetRBalance = [this](float value) { this->SliderChangeSetRBalance(value); };
     view.onSliderChange_SetGBalance = [this](float value) { this->SliderChangeSetGBalance(value); };
     view.onSliderChange_SetBBalance = [this](float value) { this->SliderChangeSetBBalance(value); };
@@ -62,16 +60,6 @@ void Controller::SliderChangeSetBBalance(float value) {
     this->model.setBBalance(value);
     this->model.renderEdits();
     this->updatePreview();
-}
-
-void Controller::SliderChangeSetBSlope(float value) {
-    std::println("G slope slider value was changed to {}", value);
-    this->model.setBSlope(value);
-}
-
-void Controller::SliderChangeSetGSlope(float value) {
-    std::println("G slope slider value was changed to {}", value);
-    this->model.setGSlope(value);
 }
 
 void Controller::SliderChangeSetExposure(float value) {
