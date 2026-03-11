@@ -268,6 +268,15 @@ void Negative::renderThumbnail() {
     std::println("generated thumbnail data");
 }
 
+ImageData Negative::getThumbnail() {
+    // Return an ImageData struct
+    return {
+        this->thumbnailPixels,
+        THUMBNAIL_SIZE,
+        THUMBNAIL_SIZE
+    };
+}
+
 void Negative::renderEdits() {
 
     this->editedPixels = this->convertedPixels;

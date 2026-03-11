@@ -44,10 +44,11 @@ class Model {
         std::println("current negative is: {}", this->currentNegativeIndex);
     }
 
-    void addNegative(std::string imagePath) {
+    ImageData addNegative(std::string imagePath) {
         this->negatives.push_back(Negative(imagePath));
         if (negatives.size() == 1) currentNegativeIndex = 0;
         else currentNegativeIndex += 1;
+        return this->negatives[this->currentNegativeIndex].getThumbnail();
     }
 
     void removeNegative(int i);

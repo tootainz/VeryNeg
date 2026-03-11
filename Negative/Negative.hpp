@@ -44,6 +44,7 @@ class Negative {
     // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
     ImageData getPreview();
     ImageData getSharpnessPreview();
+    ImageData getThumbnail();
 
     // Reading and writing the edit data
     void readNegativeData();

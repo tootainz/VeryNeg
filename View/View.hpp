@@ -1,6 +1,7 @@
 #pragma once
 
 #include <print>
+#include <format>
 
 #include <SFML/Graphics.hpp>
 #include <TGUI/TGUI.hpp>
@@ -14,6 +15,7 @@ class View {
     sf::Texture previewTexture;
     sf::Sprite previewSprite;
     sf::RenderWindow& window;
+    int lastThumbnailposition = 0;
 
     public:
 
@@ -138,7 +140,7 @@ class View {
         // Film roll navigation buttons
         // Next negative
         tgui::Button::Ptr nextNegativeButton = tgui::Button::create("Next negative");
-        nextNegativeButton->setPosition(100, 900);
+        nextNegativeButton->setPosition(600, 900);
         nextNegativeButton->setSize(120, 20);
         gui.add(nextNegativeButton, "nextNegativeButton");
         
@@ -146,11 +148,22 @@ class View {
 
         // Previous negative
         tgui::Button::Ptr previousNegativeButton = tgui::Button::create("Previous negative");
-        previousNegativeButton->setPosition(600, 900);
+        previousNegativeButton->setPosition(100, 900);
         previousNegativeButton->setSize(120, 20);
         gui.add(previousNegativeButton, "previousNegativeButton");
         
         previousNegativeButton->onPress(this->onButtonPress_PreviousNegative);
+    }
+
+    void addThumbnail(sf::Texture thumbnailTexture, int id) {
+        auto thumbnail = tgui::Picture::create(thumbnailTexture);
+        //thumbnail->getRenderer()->setTexture("image2.png"); // To change image after construction
+        //thumbnail->onClick(this->onButtonPress_Thumbnail);
+        thumbnail->setSize(50,50);
+        thumbnail->setPosition(100+60*this->lastThumbnailposition, 800);
+        this->lastThumbnailposition += 1;
+        std::string name = std::format("thumbnail_{}", id);
+        gui.add(thumbnail, name);
     }
 
     void handleEvent(sf::Event event){

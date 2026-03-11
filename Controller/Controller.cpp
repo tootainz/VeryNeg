@@ -81,7 +81,8 @@ void Controller::ButtonPressChooseNegative() {
     } else {
         std::string path = paths[0];
         std::cout << "Trying to open negative at: " << std::endl << path << std::endl;
-        model.addNegative(path);
+        ImageData thumbnail = model.addNegative(path);
+        view.addThumbnail(createPreviewtexture(thumbnail), 1);
     }
     this->updatePreview();
 }
