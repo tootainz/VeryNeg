@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <filesystem>
 
 #include "../Negative/Negative.hpp"
 
@@ -44,7 +45,7 @@ class Model {
         std::println("current negative is: {}", this->currentNegativeIndex);
     }
 
-    ImageData addNegative(std::string imagePath) {
+    ImageData addNegative(std::filesystem::path imagePath) {
         this->negatives.push_back(Negative(imagePath));
         if (negatives.size() == 1) currentNegativeIndex = 0;
         else currentNegativeIndex += 1;

@@ -14,6 +14,12 @@ class Negative {
 
     private:
 
+    static int nextId;
+
+    int id;
+    std::string name;
+    std::filesystem::path path;
+
     // Original specs and data of the image
     std::vector<float> originalPixels;
     int numberOfChannels;
@@ -35,11 +41,11 @@ class Negative {
 
     public:
     
-    Negative(std::string imagePath);
+    Negative(std::filesystem::path imagePath);
     Negative();
 
-    bool initializeNegative(std::string imagePath);
-    bool savePositive(std::string imagePath);
+    bool initializeNegative(std::filesystem::path imagePath);
+    bool savePositive(std::filesystem::path imagePath);
     
     // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
     ImageData getPreview();

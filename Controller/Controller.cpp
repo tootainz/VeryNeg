@@ -1,6 +1,7 @@
 #include "Controller.hpp"
 
 #include <print>
+#include <filesystem>
 
 #include "../libraries/portable-file-dialogs.h"
 
@@ -79,7 +80,7 @@ void Controller::ButtonPressChooseNegative() {
         std::cout << "didn't choose a file" << std::endl;
         return;
     } else {
-        std::string path = paths[0];
+        std::filesystem::path path = paths[0];
         std::cout << "Trying to open negative at: " << std::endl << path << std::endl;
         ImageData thumbnail = model.addNegative(path);
         view.addThumbnail(createPreviewtexture(thumbnail), 1);
@@ -90,8 +91,8 @@ void Controller::ButtonPressChooseNegative() {
 void Controller::ButtonPressSavePositive() {
     std::println("button pressed save positive");
     pfd::save_file fileSaver("Choose positive location", "/");
-    std::string path = fileSaver.result();
-    std::println("save path is {}", path);
+    std::filesystem::path path = fileSaver.result();
+    std::println("save path is {}", path.string());
     this->model.savePositive(path);
 }
 

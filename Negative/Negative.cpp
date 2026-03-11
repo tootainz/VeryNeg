@@ -3,6 +3,7 @@
 #include <iostream>
 #include <print>
 #include <format>
+#include <filesystem>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -22,22 +23,30 @@
 const int PREVIEW_SIZE = 800;
 const int THUMBNAIL_SIZE = 500;
 
-Negative::Negative(std::string imagePath) {
+int Negative::nextId = 0;
+
+Negative::Negative(std::filesystem::path imagePath) {
+    this->id = this->nextId;
+    this->nextId++;
     this->initializeNegative(imagePath);
     return;
 }
 
 Negative::Negative() {};
 
-bool Negative::initializeNegative(std::string imagePath) {
+bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
+    this->path = imagePath;
+    
     // 1. Read the full original image
-    auto input = OIIO::ImageInput::open(imagePath);
+    auto input = OIIO::ImageInput::open(imagePath.string());
 
     if (!input) {
         std::println("Failed to open file");
         return false;
     }
+
+    this->name = imagePath.stem();
     
     const OIIO::ImageSpec& spec = input->spec();
     this->width = spec.width;
@@ -91,33 +100,33 @@ bool Negative::initializeNegative(std::string imagePath) {
 
     this->convertedPixels = this->workingPixels;
 
-    std::ifstream f("negativeDataTest.json");
-    this->negativeData = nlohmann::json::parse(f);
+    // 3. Read saved NegativeData if exists
+    this->readNegativeData();
     
-    // 3. Check if the image has been converted and if a cached conversion exists
+    // 4. Check if the image has been converted and if a cached conversion exists
     if(this->negativeData["conversion"]["isConverted"] && !this->readCacheConversion()) {
         this->renderWorking();
     }
 
-    // 4. Get data from the saved settings
+    // 5. apply edits from the saved data
     this->renderEdits();
 
-    // 5. Create a thumbnail
+    // 6. Create a thumbnail
     this->renderThumbnail();
 
     return true;
 }
 
-bool Negative::savePositive(std::string imagePath) {
+bool Negative::savePositive(std::filesystem::path imagePath) {
     std::println("Saving positive");
-    std::string fileName = std::format("{}.tif", imagePath);
+    std::string filePath = std::format("{}.tif", imagePath.string());
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
 
     // For now we want to save images as 16bit
-    if (!originalBuf.write(fileName, OIIO::TypeDesc::UINT16)) {
+    if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
         std::println("Failed to save image");
         return false;
     }
@@ -125,24 +134,6 @@ bool Negative::savePositive(std::string imagePath) {
     
     return true;
 }
-
-// bool Negative::savePositive(std::string imagePath) {
-//     std::println("Saving positive");
-//     std::string fileName = std::format("{}.tif", imagePath);
-
-//     // Use OIIO::ImageBuf for ease of transformign the pixel data type
-//     OIIO::ImageSpec originalSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-//     OIIO::ImageBuf originalBuf(originalSpec, this->workingPixels.data());
-
-//     // For now we want to save images as 16bit
-//     if (!originalBuf.write(fileName, OIIO::TypeDesc::UINT16)) {
-//         std::println("Failed to save image");
-//         return false;
-//     }
-//     std::println("Saved positive successfully");
-    
-//     return true;
-// }
 
 // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
 ImageData Negative::getPreview() {
@@ -206,7 +197,7 @@ void Negative::setBBalance(float value) {
 
 bool Negative::cacheConversion() {
     std::println("Saving cahched conversion");
-    std::string fileName = std::format("chache.tif");
+    std::string fileName = std::format("{}_chache.tif", this->name);
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -225,7 +216,8 @@ bool Negative::cacheConversion() {
 bool Negative::readCacheConversion() {
 
     std::println("trying to open cache");
-    auto input = OIIO::ImageInput::open("chache.tif");
+    std::string fileName = std::format("{}_chache.tif", this->name);
+    auto input = OIIO::ImageInput::open(fileName);
 
     if (!input) {
         std::println("Failed to open/find cache");
@@ -236,6 +228,23 @@ bool Negative::readCacheConversion() {
     std::println("loaded cahce");
     input->close();
     return true;
+}
+
+void Negative::readNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ifstream file(dataName);
+    if (!file) {
+        std::println("failed to find negativeData file called {}", dataName);
+        std::println("generating default data");
+        file.open("negativeDataTemplate.neg");
+    }
+    this->negativeData = nlohmann::json::parse(file);
+}
+
+void Negative::writeNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ofstream file(dataName);
+    file << this->negativeData << std::endl;
 }
 
 void Negative::renderThumbnail() {
@@ -305,6 +314,8 @@ void Negative::renderEdits() {
     // Apply display gamma
     std::println("applying general display gamma correction");
     gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+
+    this->writeNegativeData();
 }
 
 void Negative::renderWorking() {
@@ -400,6 +411,10 @@ void Negative::renderWorking() {
     this->cacheConversion();
 
     this->editedPixels = this->convertedPixels;
+
+    this->negativeData["conversion"]["isConverted"] = true;
+
+    this->writeNegativeData();
 
     return;
 }

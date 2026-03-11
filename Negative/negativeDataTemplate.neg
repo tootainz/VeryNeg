@@ -3,7 +3,7 @@
 
     "conversion": {
         "isConverted": false,
-        "samplingBlur": 40,
+        "samplingBlur": 20,
         "whitePoint": {
             "r": 0.0,
             "g": 0.0,
