@@ -20,6 +20,7 @@
 #include "../imageAlgorithms/compromiseInvert.hpp"
 #include "../imageAlgorithms/boxFilter.hpp"
 #include "../imageAlgorithms/crop.hpp"
+#include "../imageAlgorithms/eyedropper.hpp"
 
 const int PREVIEW_SIZE = 800;
 const int THUMBNAIL_SIZE = 500;
@@ -349,6 +350,8 @@ void Negative::renderWorking() {
     // B
     std::tuple<float, float, float> transparentsB = getBrightestPixel(blurredPixels, EditChannel::B);
     std::tuple<float, float, float> opaquestsB = getDarkestPixel(blurredPixels, EditChannel::B);
+
+    auto eyeropperResults = eyedropper(this->originalPixels, this->width, this->height, 10, 10, 10);
 
     std::println("transparentsRMeasurement: {}", std::get<0>(transparentsR));
     std::println("transparentsGMeasurement: {}", std::get<1>(transparentsG));
