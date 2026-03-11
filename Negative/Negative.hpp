@@ -3,12 +3,9 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <fstream>
-
-struct ImageData {
-    std::vector<uint8_t> data;
-    int width;
-    int height;
-};
+#include <tuple>
+#include "ImageData.hpp"
+#include "ImageArea.hpp"
 
 class Negative {
 
@@ -33,6 +30,7 @@ class Negative {
     int workingScale;
     int workingWidth;
     int workingHeight;
+    ImageArea scanArea;
 
     std::vector<uint8_t> thumbnailPixels;
 
@@ -45,7 +43,8 @@ class Negative {
     Negative();
 
     bool initializeNegative(std::filesystem::path imagePath);
-    bool savePositive(std::filesystem::path imagePath);
+    
+    bool exportPositive(std::filesystem::path imagePath);
     
     // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
     ImageData getPreview();
@@ -61,8 +60,8 @@ class Negative {
     void setGBalance(float value);
     void setBBalance(float value);
 
-    bool cacheConversion();
-    bool readCacheConversion();
+    bool writeConversionCache();
+    bool readConversionCache();
 
     void renderThumbnail();
     void renderEdits();

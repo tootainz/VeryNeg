@@ -1,12 +1,19 @@
-// #pragma once
+#pragma once
 
-// #include <tuple>
-// #include <vector>
-// #include <functional>
-// #include <algorithm>
-// #include <execution>
+#include <vector>
+#include <functional>
+#include <thread>
 
 inline void iterateImageImmutableSingleThread(std::vector<float>& image, std::function<void(float, float, float)> operation) {
+    for (int pixel = 0; pixel < image.size(); pixel += 3) {
+        float red = image[pixel];
+        float green = image[pixel+1];
+        float blue = image[pixel+2];
+        operation(red, green, blue);
+    }
+}
+
+inline void iterateImageAreaImmutableSingleThread(std::vector<float>& image, std::function<void(float, float, float)> operation, ImageArea area) {
     for (int pixel = 0; pixel < image.size(); pixel += 3) {
         float red = image[pixel];
         float green = image[pixel+1];
@@ -22,12 +29,6 @@ inline void iterateImageImmutableSingleThread(std::vector<float>& image, std::fu
 // }
 
 // LOL, below is an improved and parallelized version of my code by chatGPT
-
-#pragma once
-
-#include <vector>
-#include <functional>
-#include <thread>
 
 inline void iterateImageImmutable(
     const std::vector<float>& image,

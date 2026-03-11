@@ -19,6 +19,7 @@
 #include "../imageAlgorithms/multiply.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
 #include "../imageAlgorithms/boxFilter.hpp"
+#include "../imageAlgorithms/crop.hpp"
 
 const int PREVIEW_SIZE = 800;
 const int THUMBNAIL_SIZE = 500;
@@ -100,11 +101,13 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     this->convertedPixels = this->workingPixels;
 
+    this->scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};
+
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
     
     // 4. Check if the image has been converted and if a cached conversion exists
-    if(this->negativeData["conversion"]["isConverted"] && !this->readCacheConversion()) {
+    if(this->negativeData["conversion"]["isConverted"] && !this->readConversionCache()) {
         this->renderWorking();
     }
 
@@ -117,7 +120,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     return true;
 }
 
-bool Negative::savePositive(std::filesystem::path imagePath) {
+bool Negative::exportPositive(std::filesystem::path imagePath) {
     std::println("Saving positive");
     std::string filePath = std::format("{}.tif", imagePath.string());
 
@@ -195,7 +198,7 @@ void Negative::setBBalance(float value) {
     this->negativeData["edits"]["bBalance"] = value;
 }
 
-bool Negative::cacheConversion() {
+bool Negative::writeConversionCache() {
     std::println("Saving cahched conversion");
     std::string fileName = std::format("{}_chache.tif", this->name);
 
@@ -213,7 +216,7 @@ bool Negative::cacheConversion() {
     return true;
 }
 
-bool Negative::readCacheConversion() {
+bool Negative::readConversionCache() {
 
     std::println("trying to open cache");
     std::string fileName = std::format("{}_chache.tif", this->name);
@@ -303,14 +306,6 @@ void Negative::renderEdits() {
     // std::println("Editing exposure");
     multiply(this->editedPixels, this->negativeData["edits"]["exposure"], EditChannel::RGB);
 
-    // // Get the brightest and darkest pixels
-    // std::tuple<float, float, float> brightestTotal = getBrightestPixel(this->editedPixels, EditChannel::RGB);
-    // std::tuple<float, float, float> darkestTotal = getDarkestPixel(this->editedPixels, EditChannel::RGB);
-    // float brightestAverage = (std::get<0>(brightestTotal) + std::get<1>(brightestTotal) + std::get<2>(brightestTotal))/3.0f;
-    // float darkestAverage = (std::get<0>(darkestTotal) + std::get<1>(darkestTotal) + std::get<2>(darkestTotal))/3.0f;
-
-    // levelsRGB(this->editedPixels, darkestAverage, brightestAverage, 0.0f, 1.0f);
-
     // Apply display gamma
     std::println("applying general display gamma correction");
     gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
@@ -327,8 +322,17 @@ void Negative::renderWorking() {
     std::println("starting negative conversion pipeline");
 
     // First blur the image slightly to remove noise and extremities
-    std::vector<float> blurredPixels = this->convertedPixels;
-    boxFilter(blurredPixels, this->workingWidth, this->workingHeight, 20);
+
+    // Only sample the area indicated by this->scanArea
+    std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, this->scanArea);
+
+    std::vector<float> blurredPixels = std::get<0>(blurredCropResult);
+    int blurredWidth = std::get<1>(blurredCropResult);
+    int blurredHeight = std::get<2>(blurredCropResult);
+    std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
+
+    // Perform the actual blur
+    boxFilter(blurredPixels, blurredWidth, blurredHeight, 20);
 
     // Measure brightest and darkest pixels from the blurred image
     // Brightest = most transparent = low density
@@ -408,7 +412,7 @@ void Negative::renderWorking() {
     // Auto White balance
     grayWorld(this->convertedPixels);
 
-    this->cacheConversion();
+    this->writeConversionCache();
 
     this->editedPixels = this->convertedPixels;
 
