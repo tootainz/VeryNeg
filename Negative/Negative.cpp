@@ -22,10 +22,11 @@
 #include "../imageAlgorithms/crop.hpp"
 #include "../imageAlgorithms/eyedropper.hpp"
 
-const int PREVIEW_SIZE = 800;
-const int THUMBNAIL_SIZE = 500;
-
 int Negative::nextId = 0;
+
+
+// CONSTRUCTORS AND INITIALIZERS
+// ----------------------------------------------------------------------------------------------------------------
 
 Negative::Negative(std::filesystem::path imagePath) {
     this->id = this->nextId;
@@ -73,8 +74,8 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
         return a / b + (a % b != 0);
     };
 
-    const int widthScale = ceilDiv(this->width, PREVIEW_SIZE);
-    const int heightScale = ceilDiv(this->height, PREVIEW_SIZE);
+    const int widthScale = ceilDiv(this->width, this->PREVIEW_SIZE);
+    const int heightScale = ceilDiv(this->height, this->PREVIEW_SIZE);
     this->workingScale = std::max(widthScale, heightScale);
 
     std::println("the working scale for this image is {}", this->workingScale);
@@ -121,6 +122,10 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     return true;
 }
 
+
+// EXPORTING
+// ----------------------------------------------------------------------------------------------------------------
+
 bool Negative::exportPositive(std::filesystem::path imagePath) {
     std::println("Saving positive");
     std::string filePath = std::format("{}.tif", imagePath.string());
@@ -138,6 +143,10 @@ bool Negative::exportPositive(std::filesystem::path imagePath) {
     
     return true;
 }
+
+
+// GETTERS FOR THE GUI
+// ----------------------------------------------------------------------------------------------------------------
 
 // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
 ImageData Negative::getPreview() {
@@ -185,6 +194,19 @@ ImageData Negative::getPreview() {
     };
 }
 
+ImageData Negative::getThumbnail() {
+    // Return an ImageData struct
+    return {
+        this->thumbnailPixels,
+        this->THUMBNAIL_SIZE,
+        this->THUMBNAIL_SIZE
+    };
+}
+
+
+// SETTERS FOR EDIT SETTINGS
+// ----------------------------------------------------------------------------------------------------------------
+
 void Negative::setExposure(float value) {
     this->negativeData["edits"]["exposure"] = value;
 }
@@ -192,12 +214,18 @@ void Negative::setExposure(float value) {
 void Negative::setRBalance(float value) {
     this->negativeData["edits"]["rBalance"] = value;
 }
+
 void Negative::setGBalance(float value) {
     this->negativeData["edits"]["gBalance"] = value;
 }
+
 void Negative::setBBalance(float value) {
     this->negativeData["edits"]["bBalance"] = value;
 }
+
+
+// CACHING
+// ----------------------------------------------------------------------------------------------------------------
 
 bool Negative::writeConversionCache() {
     std::println("Saving cahched conversion");
@@ -234,6 +262,10 @@ bool Negative::readConversionCache() {
     return true;
 }
 
+
+// READING AND WRITING EDIT DATA
+// ----------------------------------------------------------------------------------------------------------------
+
 void Negative::readNegativeData() {
     std::string dataName = this->path.replace_extension(".neg").string();
     std::ifstream file(dataName);
@@ -250,6 +282,10 @@ void Negative::writeNegativeData() {
     std::ofstream file(dataName);
     file << this->negativeData << std::endl;
 }
+
+
+// RENDERING
+// ----------------------------------------------------------------------------------------------------------------
 
 void Negative::renderThumbnail() {
     std::println("generating thumbnail");
@@ -271,23 +307,14 @@ void Negative::renderThumbnail() {
     OIIO::ImageBuf uint8Buf = OIIO::ImageBufAlgo::copy(workingBuf, OIIO::TypeDesc::UINT8);
 
     // Resize the image for the preview
-    OIIO::ROI roi(0, THUMBNAIL_SIZE, 0, THUMBNAIL_SIZE, 0, 1, /*chans:*/ 0, uint8Buf.nchannels());
+    OIIO::ROI roi(0, this->THUMBNAIL_SIZE, 0, this->THUMBNAIL_SIZE, 0, 1, /*chans:*/ 0, uint8Buf.nchannels());
     OIIO::ImageBuf thumbnailBuf = OIIO::ImageBufAlgo::resample(uint8Buf, true, roi);
     
     // Extact the preview data from the ImageBuf
-    this->thumbnailPixels.resize(THUMBNAIL_SIZE*THUMBNAIL_SIZE*4);
+    this->thumbnailPixels.resize(this->THUMBNAIL_SIZE*this->THUMBNAIL_SIZE*4);
     thumbnailBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::UINT8, this->thumbnailPixels.data());
 
     std::println("generated thumbnail data");
-}
-
-ImageData Negative::getThumbnail() {
-    // Return an ImageData struct
-    return {
-        this->thumbnailPixels,
-        THUMBNAIL_SIZE,
-        THUMBNAIL_SIZE
-    };
 }
 
 void Negative::renderEdits() {
@@ -351,7 +378,8 @@ void Negative::renderWorking() {
     std::tuple<float, float, float> transparentsB = getBrightestPixel(blurredPixels, EditChannel::B);
     std::tuple<float, float, float> opaquestsB = getDarkestPixel(blurredPixels, EditChannel::B);
 
-    auto eyeropperResults = eyedropper(this->originalPixels, this->width, this->height, 10, 10, 10);
+    // auto eyeropperResults = eyedropper(this->originalPixels, this->width, this->height, 10, 10, 10);
+    // std::println("the eyedropper at (10,10) with size 10 gives an average R of {}", std::get<0>(eyeropperResults));
 
     std::println("transparentsRMeasurement: {}", std::get<0>(transparentsR));
     std::println("transparentsGMeasurement: {}", std::get<1>(transparentsG));

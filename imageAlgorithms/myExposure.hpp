@@ -5,6 +5,7 @@
 #include "gamma.hpp"
 #include "EditChannel.hpp"
 
+
 inline float myExposureFunction(float input, float value) {
     return input * value;
 }
@@ -35,6 +36,6 @@ inline void myExposure(std::vector<float>& image, float value, EditChannel chann
             blue = myExposureFunction(blue, finalValue);
         }
     };
-    iterateImageMutable(image, applyMyExposure);
+    iterateImageMutableMultiThread(image, applyMyExposure);
     return;
 };

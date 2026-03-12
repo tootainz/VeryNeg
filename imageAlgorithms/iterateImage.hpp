@@ -4,7 +4,9 @@
 #include <functional>
 #include <thread>
 
+
 inline void iterateImageImmutableSingleThread(std::vector<float>& image, std::function<void(float, float, float)> operation) {
+
     for (int pixel = 0; pixel < image.size(); pixel += 3) {
         float red = image[pixel];
         float green = image[pixel+1];
@@ -30,18 +32,17 @@ inline void iterateImageAreaImmutableSingleThread(std::vector<float>& image, std
     }
 }
 
-// inline void iterateImageMutable(std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
-//     for (int pixel = 0; pixel < image.size(); pixel += 3) {
-//         operation(image[pixel], image[pixel+1], image[pixel+2]);
-//     }
-// }
+inline void iterateImageMutableSingleThread(std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
+    
+    for (int pixel = 0; pixel < image.size(); pixel += 3) {
+        operation(image[pixel], image[pixel+1], image[pixel+2]);
+    }
+}
 
-// LOL, below is an improved and parallelized version of my code by chatGPT
+// LOL, below is an improved and parallelized versions of my code by chatGPT
 
-inline void iterateImageImmutable(
-    const std::vector<float>& image,
-    std::function<void(float, float, float)> operation
-) {
+inline void iterateImageImmutableMultiThread( const std::vector<float>& image, std::function<void(float, float, float)> operation) {
+
     const size_t pixelCount = image.size() / 3;
     const unsigned threadCount = std::thread::hardware_concurrency();
     const size_t chunkSize = pixelCount / threadCount;
@@ -65,10 +66,8 @@ inline void iterateImageImmutable(
         th.join();
 }
 
-inline void iterateImageMutable(
-    std::vector<float>& image,
-    std::function<void(float&, float&, float&)> operation
-) {
+inline void iterateImageMutableMultiThread( std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
+    
     const size_t pixelCount = image.size() / 3;
     const unsigned threadCount = std::thread::hardware_concurrency();
     const size_t chunkSize = pixelCount / threadCount;

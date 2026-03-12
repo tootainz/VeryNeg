@@ -6,6 +6,7 @@
 #include "../Negative/ImageArea.hpp"
 #include "samplePixelArea.hpp"
 
+
 inline std::tuple<float, float, float> eyedropper(std::vector<float>& image, int imageWidth, int imageHeight, int x, int y, int sampleSize) {
 
     int top = std::max(0, y - sampleSize/2);

@@ -10,6 +10,7 @@
 #include "multiply.hpp"
 #include "gamma.hpp"
 
+
 inline void whitePatch(std::vector<float>& image) {
 
     std::println("Starting Gray World algorithm");
@@ -28,7 +29,7 @@ inline void whitePatch(std::vector<float>& image) {
         bSum += blue;
     };
 
-    iterateImageImmutable(image, countSums);
+    iterateImageImmutableSingleThread(image, countSums);
 
     float rAverage = rSum/pixelAmount;
     float gAverage = gSum/pixelAmount; 

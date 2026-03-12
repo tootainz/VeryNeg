@@ -7,6 +7,7 @@
 #include "iterateImage.hpp"
 #include "../Negative/ImageArea.hpp"
 
+
 inline std::tuple<std::vector<float>, int, int> crop(std::vector<float>& image, int width, int height, ImageArea area) {
     
     auto xyToPixelIndex = [](int x, int y, int channel, int imageWidth) -> int {

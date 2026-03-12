@@ -6,6 +6,9 @@
 #include "../libraries/portable-file-dialogs.h"
 
 
+// HELPERS
+// ----------------------------------------------------------------------------------------------------------------
+
 // SFML specific helper function for transforming the preview ImageData from Negative to a texture for SFML
 static sf::Texture createPreviewtexture(ImageData previewData) {
     std::cout << "creating texture" << std::endl;
@@ -14,6 +17,10 @@ static sf::Texture createPreviewtexture(ImageData previewData) {
     auto previewTexture = sf::Texture(previewImage, false);
     return previewTexture;
 }
+
+
+// CONSTRUCTOR
+// ----------------------------------------------------------------------------------------------------------------
 
 Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view(view),
@@ -32,11 +39,19 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.addGuiWidgets();
 }
 
+
+// METHODS
+// ----------------------------------------------------------------------------------------------------------------
+
 void Controller::updatePreview() {
     sf::Texture previewTexture = createPreviewtexture(this->model.getPreview());
     std::println("preview successfully recovered from model");
     this->view.setPreviewTexture(previewTexture);
 }
+
+
+// GUI CALLBACKS
+// ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressConvert() {
     std::println("button pressed convert");
@@ -93,7 +108,7 @@ void Controller::ButtonPressSavePositive() {
     pfd::save_file fileSaver("Choose positive location", "/");
     std::filesystem::path path = fileSaver.result();
     std::println("save path is {}", path.string());
-    this->model.savePositive(path);
+    this->model.exportPositive(path);
 }
 
 void Controller::ButtonPressNextNegative() {
@@ -101,11 +116,16 @@ void Controller::ButtonPressNextNegative() {
     this->model.nextNegative();
     this->updatePreview();
 }
+
 void Controller::ButtonPressPreviousNegative() {
     std::println("button pressed next negative");
     this->model.previousNegative();
     this->updatePreview();
 }
+
+
+// MAIN LOOP
+// ----------------------------------------------------------------------------------------------------------------
 
 void Controller::mainLoop() {
     while (this->window.isOpen())

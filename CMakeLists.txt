@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 23)
 add_executable(VeryNeg main.cpp
   Controller/Controller.cpp
   Negative/Negative.cpp
+  Model/Model.cpp
 )
 
 # ------------------------------------------------

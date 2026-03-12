@@ -6,6 +6,7 @@
 #include "../Negative/ImageArea.hpp"
 #include "iterateImage.hpp"
 
+
 inline std::tuple<float, float, float> samplePixelArea(std::vector<float>& image, int imageWidth, int imageHeight, ImageArea area) {
 
     double rSum = 0.0;

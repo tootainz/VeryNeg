@@ -5,21 +5,25 @@
 #include "../Model/Model.hpp"
 #include "../View/View.hpp"
 
-class Controller {
 
-    private:
+class Controller {
     
+    private:
+
+    // Data members
     View& view;
     Model& model;
     sf::RenderWindow& window;
 
     public:
 
+    // Constructor
     Controller(sf::RenderWindow& window, View& view, Model& model);
 
+    // Update GUI preview
     void updatePreview();
 
-    // GUI CALLBACKS
+    // Gui callbacks
     // These will be passsed to view after it is constructed
 
     void ButtonPressChooseNegative();
@@ -39,7 +43,6 @@ class Controller {
     void ButtonPressNextNegative();
     void ButtonPressPreviousNegative();
     
-    // MAIN LOOP
-
+    // Main loop
     void mainLoop();
 };

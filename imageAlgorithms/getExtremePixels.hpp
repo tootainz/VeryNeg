@@ -6,6 +6,7 @@
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 
+
 inline std::tuple<float, float, float> getMaxPixel(std::vector<float>& image, bool measureBrightest, EditChannel channel) {
 
     std::tuple<float, float, float> max(image[0],image[1],image[2]);
