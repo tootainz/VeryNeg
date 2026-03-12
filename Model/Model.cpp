@@ -1,5 +1,7 @@
 #include "Model.hpp"
 
+#include <algorithm>
+
 Model::Model() {}
 
 void Model::renderWorking() {
@@ -9,8 +11,16 @@ void Model::renderEdits() {
     this->negatives[this->currentNegativeIndex].renderEdits();
 }
 
-void Model::changeCurrentNegativeByIndex(int i) {
-    this->currentNegativeIndex = i;
+void Model::changeCurrentNegativeById(int id) {
+
+    auto iterator = std::find_if(this->negatives.begin(), this->negatives.end(), [&id](Negative& negative) {
+        return negative.getId() == id;
+    });
+
+    if (iterator != this->negatives.end()) {
+        int index = std::distance(this->negatives.begin(), iterator);
+        this->currentNegativeIndex = index;
+    }
     std::println("current negative is: {}", this->currentNegativeIndex);
 }
 
@@ -25,11 +35,11 @@ void Model::nextNegative() {
     std::println("current negative is: {}", this->currentNegativeIndex);
 }
 
-ImageData Model::addNegative(std::filesystem::path imagePath) {
+Negative& Model::addNegative(std::filesystem::path imagePath) {
     this->negatives.push_back(Negative(imagePath));
     if (negatives.size() == 1) currentNegativeIndex = 0;
     else currentNegativeIndex += 1;
-    return this->negatives[this->currentNegativeIndex].getThumbnail();
+    return this->negatives[this->currentNegativeIndex];
 }
 
 void Model::exportPositive(std::string imagePath) {

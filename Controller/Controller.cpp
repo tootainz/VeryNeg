@@ -36,6 +36,7 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onButtonPress_SavePositive = [this]() { this->ButtonPressSavePositive(); };
     view.onButtonPress_NextNegative = [this]() { this->ButtonPressNextNegative(); };
     view.onButtonPress_PreviousNegative = [this]() { this->ButtonPressPreviousNegative(); };
+    view.onButtonPress_Thumbnail = [this](int id) {this->ButtonPressThumbnail(id); };
     view.onSliderChange_SetExposure = [this](float value) { this->SliderChangeSetExposure(value); };
     view.onSliderChange_SetRBalance = [this](float value) { this->SliderChangeSetRBalance(value); };
     view.onSliderChange_SetGBalance = [this](float value) { this->SliderChangeSetGBalance(value); };
@@ -53,8 +54,22 @@ void Controller::updatePreview() {
     this->view.setPreviewTexture(previewTexture);
 }
 
+void Controller::updateEditSettings() {
+    this->disableCallbacks = true;
+        float exposure = this->model.getExposure();
+        float rBalance = this->model.getRBalance();
+        float gBalance = this->model.getGBalance();
+        float bBalance = this->model.getBBalance();
+        this->view.setSliderValue("rBalanceSlider", rBalance);
+        this->view.setSliderValue("gBalanceSlider", gBalance);
+        this->view.setSliderValue("bBalanceSlider", bBalance);
+        this->view.setSliderValue("exposureSlider", exposure);
+    this->disableCallbacks = false;
+}
+
 void Controller::undo() {
     if (this->history.undo()) {
+        this->updateEditSettings();
         this->model.renderEdits();
         this->updatePreview();
     }
@@ -62,6 +77,7 @@ void Controller::undo() {
 
 void Controller::redo() {
     if (this->history.redo()) {
+        this->updateEditSettings();
         this->model.renderEdits();
         this->updatePreview();
     }
@@ -78,31 +94,39 @@ void Controller::ButtonPressConvert() {
 }
 
 void Controller::SliderChangeSetRBalance(float value) {
-    std::println("R balance slider value was changed to {}", value);
-    this->history.addCommand(std::make_unique<Command_SetRBalance>(this->model, value));
-    this->model.renderEdits();
-    this->updatePreview();
+    if (!this->disableCallbacks) {
+        std::println("R balance slider value was changed to {}", value);
+        this->history.addCommand(std::make_unique<Command_SetRBalance>(this->model, value));
+        this->model.renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetGBalance(float value) {
-    std::println("G balance slider value was changed to {}", value);
-    this->history.addCommand(std::make_unique<Command_SetGBalance>(this->model, value));
-    this->model.renderEdits();
-    this->updatePreview();
+    if (!this->disableCallbacks) {
+        std::println("G balance slider value was changed to {}", value);
+        this->history.addCommand(std::make_unique<Command_SetGBalance>(this->model, value));
+        this->model.renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetBBalance(float value) {
-    std::println("R balance slider value was changed to {}", value);
-    this->history.addCommand(std::make_unique<Command_SetBBalance>(this->model, value));
-    this->model.renderEdits();
-    this->updatePreview();
+    if (!this->disableCallbacks) {
+        std::println("R balance slider value was changed to {}", value);
+        this->history.addCommand(std::make_unique<Command_SetBBalance>(this->model, value));
+        this->model.renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetExposure(float value) {
-    std::println("Slider value was changed to {}", value);
-    this->history.addCommand(std::make_unique<Command_SetExposure>(this->model, value));
-    this->model.renderEdits();
-    this->updatePreview();
+    if (!this->disableCallbacks) {
+        std::println("Slider value was changed to {}", value);
+        this->history.addCommand(std::make_unique<Command_SetExposure>(this->model, value));
+        this->model.renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::ButtonPressAddNegative() {
@@ -115,9 +139,12 @@ void Controller::ButtonPressAddNegative() {
     } else {
         std::filesystem::path path = paths[0];
         std::cout << "Trying to open negative at: " << std::endl << path << std::endl;
-        ImageData thumbnail = model.addNegative(path);
-        view.addThumbnail(createPreviewtexture(thumbnail), 1);
+        Negative& negative = model.addNegative(path);
+        int id = negative.getId();
+        ImageData thumbnail = negative.getThumbnail();
+        view.addThumbnail(createPreviewtexture(thumbnail), id);
     }
+    this->updateEditSettings();
     this->updatePreview();
 }
 
@@ -138,6 +165,12 @@ void Controller::ButtonPressNextNegative() {
 void Controller::ButtonPressPreviousNegative() {
     std::println("button pressed next negative");
     this->history.addCommand(std::make_unique<Command_PreviousNegative>(this->model));
+    this->updatePreview();
+}
+
+void Controller::ButtonPressThumbnail(int id) {
+    std::println("thumbnail {} pressed", id);
+    this->model.changeCurrentNegativeById(id);
     this->updatePreview();
 }
 

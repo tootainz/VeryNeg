@@ -65,6 +65,7 @@ class Negative {
     ImageData getPreview();
     ImageData getSharpnessPreview();
     ImageData getThumbnail();
+    int getId();
 
     // Exporting
     bool exportPositive(std::filesystem::path imagePath);

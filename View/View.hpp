@@ -32,6 +32,7 @@ class View {
     std::function<void()> onButtonPress_SavePositive;
     std::function<void()> onButtonPress_NextNegative;
     std::function<void()> onButtonPress_PreviousNegative;
+    std::function<void(int)> onButtonPress_Thumbnail;
 
     std::function<void(float)> onSliderChange_SetExposure;
     std::function<void(float)> onSliderChange_SetRBalance;
@@ -89,7 +90,7 @@ class View {
         rBalanceSlider->setMaximum(2.0f);
         rBalanceSlider->setStep(0.01f);
         rBalanceSlider->setValue(1.0f);
-        gui.add(rBalanceSlider, "cBalanceSlider");
+        gui.add(rBalanceSlider, "rBalanceSlider");
 
         rBalanceSlider->onValueChange(this->onSliderChange_SetRBalance);
 
@@ -164,7 +165,26 @@ class View {
         thumbnail->setPosition(100+60*this->lastThumbnailposition, 800);
         this->lastThumbnailposition += 1;
         std::string name = std::format("thumbnail_{}", id);
+        thumbnail->setUserData(id);
+        thumbnail->onMouseEnter([thumbnail]{
+            thumbnail->getRenderer()->setOpacity(0.7f);
+        });
+        thumbnail->onMouseLeave([thumbnail]{
+            thumbnail->getRenderer()->setOpacity(1.0f);
+        });
         gui.add(thumbnail, name);
+
+        thumbnail->onClick([this, thumbnail] {
+            int id = thumbnail->getUserData<int>();
+            this->onButtonPress_Thumbnail(id);
+        });
+    }
+
+    void setSliderValue(std::string name, float value) {
+        auto slider = gui.get<tgui::Slider>(name);
+        if (slider) {
+            slider->setValue(value);
+        }
     }
 
     void handleEvent(sf::Event event){

@@ -17,14 +17,16 @@ class Controller {
     Model& model;
     sf::RenderWindow& window;
     CommandHistory history;
+    bool disableCallbacks = false; 
 
     public:
 
     // Constructor
     Controller(sf::RenderWindow& window, View& view, Model& model);
 
-    // Update GUI preview
+    // Update GUI
     void updatePreview();
+    void updateEditSettings();
 
     // Undo & Redo
     void undo();
@@ -46,6 +48,7 @@ class Controller {
 
     void ButtonPressNextNegative();
     void ButtonPressPreviousNegative();
+    void ButtonPressThumbnail(int id);
     
     // Main loop
     void mainLoop();

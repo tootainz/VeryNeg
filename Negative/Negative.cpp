@@ -203,6 +203,10 @@ ImageData Negative::getThumbnail() {
     };
 }
 
+int Negative::getId() {
+    return this->id;
+}
+
 
 // SETTERS AND GETTERS FOR EDIT SETTINGS
 // ----------------------------------------------------------------------------------------------------------------

@@ -20,11 +20,11 @@ class Model {
     void renderWorking();
     void renderEdits();
 
-    void changeCurrentNegativeByIndex(int i);
+    void changeCurrentNegativeById(int id);
     void previousNegative();
     void nextNegative();
 
-    ImageData addNegative(std::filesystem::path imagePath);
+    Negative& addNegative(std::filesystem::path imagePath);
     void removeNegative(int i);
 
     void exportPositive(std::string imagePath);
