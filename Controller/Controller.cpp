@@ -5,6 +5,8 @@
 
 #include "../libraries/portable-file-dialogs.h"
 
+#include "commands.hpp"
+
 
 // HELPERS
 // ----------------------------------------------------------------------------------------------------------------
@@ -25,10 +27,12 @@ static sf::Texture createPreviewtexture(ImageData previewData) {
 Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view(view),
     model(model),
-    window(window)
+    window(window),
+    history(200)
 {
+    this->window.setKeyRepeatEnabled(false);
     view.onButtonPress_Convert = [this]() { this->ButtonPressConvert(); };
-    view.onButtonPress_LoadNegative = [this]() { this->ButtonPressChooseNegative(); };
+    view.onButtonPress_LoadNegative = [this]() { this->ButtonPressAddNegative(); };
     view.onButtonPress_SavePositive = [this]() { this->ButtonPressSavePositive(); };
     view.onButtonPress_NextNegative = [this]() { this->ButtonPressNextNegative(); };
     view.onButtonPress_PreviousNegative = [this]() { this->ButtonPressPreviousNegative(); };
@@ -49,6 +53,20 @@ void Controller::updatePreview() {
     this->view.setPreviewTexture(previewTexture);
 }
 
+void Controller::undo() {
+    if (this->history.undo()) {
+        this->model.renderEdits();
+        this->updatePreview();
+    }
+}
+
+void Controller::redo() {
+    if (this->history.redo()) {
+        this->model.renderEdits();
+        this->updatePreview();
+    }
+}
+
 
 // GUI CALLBACKS
 // ----------------------------------------------------------------------------------------------------------------
@@ -61,33 +79,33 @@ void Controller::ButtonPressConvert() {
 
 void Controller::SliderChangeSetRBalance(float value) {
     std::println("R balance slider value was changed to {}", value);
-    this->model.setRBalance(value);
+    this->history.addCommand(std::make_unique<Command_SetRBalance>(this->model, value));
     this->model.renderEdits();
     this->updatePreview();
 }
 
 void Controller::SliderChangeSetGBalance(float value) {
     std::println("G balance slider value was changed to {}", value);
-    this->model.setGBalance(value);
+    this->history.addCommand(std::make_unique<Command_SetGBalance>(this->model, value));
     this->model.renderEdits();
     this->updatePreview();
 }
 
 void Controller::SliderChangeSetBBalance(float value) {
     std::println("R balance slider value was changed to {}", value);
-    this->model.setBBalance(value);
+    this->history.addCommand(std::make_unique<Command_SetBBalance>(this->model, value));
     this->model.renderEdits();
     this->updatePreview();
 }
 
 void Controller::SliderChangeSetExposure(float value) {
     std::println("Slider value was changed to {}", value);
-    this->model.setExposure(value);
+    this->history.addCommand(std::make_unique<Command_SetExposure>(this->model, value));
     this->model.renderEdits();
     this->updatePreview();
 }
 
-void Controller::ButtonPressChooseNegative() {
+void Controller::ButtonPressAddNegative() {
     std::println("button pressed choose negative");
     pfd::open_file fileOpener("Choose negative", "/");
     std::vector<std::string> paths = fileOpener.result();
@@ -113,13 +131,13 @@ void Controller::ButtonPressSavePositive() {
 
 void Controller::ButtonPressNextNegative() {
     std::println("button pressed next negative");
-    this->model.nextNegative();
+    this->history.addCommand(std::make_unique<Command_NextNegative>(this->model));
     this->updatePreview();
 }
 
 void Controller::ButtonPressPreviousNegative() {
     std::println("button pressed next negative");
-    this->model.previousNegative();
+    this->history.addCommand(std::make_unique<Command_PreviousNegative>(this->model));
     this->updatePreview();
 }
 
@@ -128,21 +146,32 @@ void Controller::ButtonPressPreviousNegative() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::mainLoop() {
-    while (this->window.isOpen())
-        {
-            while (const std::optional event = this->window.pollEvent())
-            {
-                this->view.handleEvent(*event);
+    while (this->window.isOpen()) {
 
-                if (event->is<sf::Event::Closed>())
-                    this->window.close();
+        while (const std::optional event = this->window.pollEvent()) {
+
+            this->view.handleEvent(*event);
+
+            if (event->is<sf::Event::Closed>()) {
+                this->window.close();
+
+            } else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {   
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Z) {
+                    std::println("z pressed");
+                    this->undo();
+                }
+                if (keyPressed->scancode == sf::Keyboard::Scancode::X) {
+                    std::println("x pressed");
+                    this->redo();
+                }
             }
-
-            this->window.clear();
-
-            // Draw the view
-            this->view.draw();
-
-            this->window.display();
         }
+
+        this->window.clear();
+
+        // Draw the view
+        this->view.draw();
+
+        this->window.display();
+    }
 }

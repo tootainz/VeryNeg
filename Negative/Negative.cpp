@@ -204,10 +204,11 @@ ImageData Negative::getThumbnail() {
 }
 
 
-// SETTERS FOR EDIT SETTINGS
+// SETTERS AND GETTERS FOR EDIT SETTINGS
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::setExposure(float value) {
+    std::println("exposure was set to: {}", value);
     this->negativeData["edits"]["exposure"] = value;
 }
 
@@ -222,6 +223,23 @@ void Negative::setGBalance(float value) {
 void Negative::setBBalance(float value) {
     this->negativeData["edits"]["bBalance"] = value;
 }
+
+float Negative::getExposure() {
+    return this->negativeData["edits"]["exposure"];
+}
+
+float Negative::getRBalance() {
+    return this->negativeData["edits"]["rBalance"];
+}
+
+float Negative::getGBalance() {
+    return this->negativeData["edits"]["gBalance"];
+}
+
+float Negative::getBBalance() {
+    return this->negativeData["edits"]["bBalance"];
+}
+
 
 
 // CACHING

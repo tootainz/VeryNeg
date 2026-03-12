@@ -73,11 +73,16 @@ class Negative {
     void readNegativeData();
     void writeNegativeData();
 
-    // Setters for edit settings
+    // Setters and getters for edit settings
     void setExposure(float value);
     void setRBalance(float value);
     void setGBalance(float value);
     void setBBalance(float value);
+
+    float getExposure();
+    float getRBalance();
+    float getGBalance();
+    float getBBalance();
 
     // Caching methods
     bool writeConversionCache();

@@ -4,6 +4,8 @@
 
 #include "../Model/Model.hpp"
 #include "../View/View.hpp"
+#include "../Command/Command.hpp"
+#include "../Command/CommandHistory.hpp"
 
 
 class Controller {
@@ -14,6 +16,7 @@ class Controller {
     View& view;
     Model& model;
     sf::RenderWindow& window;
+    CommandHistory history;
 
     public:
 
@@ -23,18 +26,19 @@ class Controller {
     // Update GUI preview
     void updatePreview();
 
+    // Undo & Redo
+    void undo();
+    void redo();
+
     // Gui callbacks
     // These will be passsed to view after it is constructed
 
-    void ButtonPressChooseNegative();
+    void ButtonPressAddNegative();
     void ButtonPressSavePositive();
     
     void ButtonPressConvert();
 
     void SliderChangeSetExposure(float value);
-
-    void SliderChangeSetBSlope(float value);
-    void SliderChangeSetGSlope(float value);
     
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
