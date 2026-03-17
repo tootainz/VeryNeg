@@ -357,8 +357,8 @@ void Negative::renderEdits() {
     multiply(this->editedPixels, this->negativeData["edits"]["exposure"], EditChannel::RGB);
 
     // Apply display gamma
-    std::println("applying general display gamma correction");
-    gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+    // std::println("applying general display gamma correction");
+    // gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
 
     this->writeNegativeData();
 }
@@ -463,7 +463,7 @@ void Negative::renderWorking() {
     std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
 
     // Auto White balance
-    grayWorld(this->convertedPixels);
+    //grayWorld(this->convertedPixels);
 
     this->writeConversionCache();
 
