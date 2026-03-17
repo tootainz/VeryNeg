@@ -15,6 +15,6 @@ inline void densityInvert(std::vector<float>& image) {
         green = 0.75f * pow(densityInvertFunction(green), 0.77f);
         blue = 0.55f * pow(densityInvertFunction(blue), 0.63f);
     };
-    iterateImageMutable(image, applyInvert);
+    iterateImageMutableMultiThread(image, applyInvert);
     return;
 }

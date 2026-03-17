@@ -1,62 +1,43 @@
 #pragma once
 
 #include <vector>
+#include <filesystem>
 
 #include "../Negative/Negative.hpp"
 
+
 class Model {
-
-    private:
-
-        Negative negative;
-        std::vector<Negative> negatives;
-
-        // current negative index
-        // crop region
-        // white point region
-        // black point region
-        // middle grey region
-        // sharpness region
 
     public:
 
-    Model() :
-        negative("input.tif")
-    {}
+        std::vector<Negative> negatives;
+        int currentNegativeIndex;
 
-    void render() {
-        negative.render();
-    }
+    public:
 
-    void renderEdits() {
-        negative.renderEdits();
-    }
+    Model();
 
-    void initializeNegative(std::string imagePath) {
-        this->negative.initializeNegative(imagePath);
-    }
+    void renderWorking();
+    void renderEdits();
 
-    void savePositive(std::string imagePath) {
-        this->negative.savePositive(imagePath);
-    }
+    void changeCurrentNegativeById(int id);
+    void previousNegative();
+    void nextNegative();
 
-    void setExposure(float value) {
-        this->negative.setExposure(value);
-    };
+    Negative& addNegative(std::filesystem::path imagePath);
+    void removeNegative(int i);
 
-    void setRBalance(float value) {
-        this->negative.setRBalance(value);
-    }
+    void exportPositive(std::string imagePath);
 
-    void setGBalance(float value) {
-        this->negative.setGBalance(value);
-    }
+    void setExposure(float value);
+    void setRBalance(float value);
+    void setGBalance(float value);
+    void setBBalance(float value);
 
-    void setBBalance(float value) {
-        this->negative.setBBalance(value);
-    }
-
-    ImageData getPreview() {
-        return negative.getPreview();
-    }
+    float getExposure();
+    float getRBalance();
+    float getGBalance();
+    float getBBalance();
+    
+    ImageData getPreview();
 };

@@ -6,6 +6,7 @@
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 
+
 inline float gammaFunction(float inputValue, float gamma) {
     return std::pow(inputValue, gamma);
 }
@@ -24,6 +25,6 @@ inline void gamma(std::vector<float>& image, float gamma, EditChannel channel) {
             blue = gammaFunction(blue, gamma);
         }
     };
-    iterateImageMutable(image, applyGamma);
+    iterateImageMutableMultiThread(image, applyGamma);
     return;
 }

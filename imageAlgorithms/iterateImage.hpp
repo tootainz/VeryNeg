@@ -1,12 +1,12 @@
-// #pragma once
+#pragma once
 
-// #include <tuple>
-// #include <vector>
-// #include <functional>
-// #include <algorithm>
-// #include <execution>
+#include <vector>
+#include <functional>
+#include <thread>
+
 
 inline void iterateImageImmutableSingleThread(std::vector<float>& image, std::function<void(float, float, float)> operation) {
+
     for (int pixel = 0; pixel < image.size(); pixel += 3) {
         float red = image[pixel];
         float green = image[pixel+1];
@@ -15,24 +15,34 @@ inline void iterateImageImmutableSingleThread(std::vector<float>& image, std::fu
     }
 }
 
-// inline void iterateImageMutable(std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
-//     for (int pixel = 0; pixel < image.size(); pixel += 3) {
-//         operation(image[pixel], image[pixel+1], image[pixel+2]);
-//     }
-// }
+inline void iterateImageAreaImmutableSingleThread(std::vector<float>& image, std::function<void(float, float, float)> operation, int imageWidth, ImageArea area) {
 
-// LOL, below is an improved and parallelized version of my code by chatGPT
+    auto xyToPixelIndex = [](int x, int y, int channel, int imageWidth) -> int {
+        return (x + y*imageWidth)*3 + channel;
+    };
 
-#pragma once
+    for (int y = area.top; y < area.bottom; ++y) {
+        for (int x = area.left; x < area.right; ++x) {
+            int pixel = xyToPixelIndex(x, y, 0, imageWidth);
+            float red = image[pixel];
+            float green = image[pixel+1];
+            float blue = image[pixel+2];
+            operation(red, green, blue);
+        }
+    }
+}
 
-#include <vector>
-#include <functional>
-#include <thread>
+inline void iterateImageMutableSingleThread(std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
+    
+    for (int pixel = 0; pixel < image.size(); pixel += 3) {
+        operation(image[pixel], image[pixel+1], image[pixel+2]);
+    }
+}
 
-inline void iterateImageImmutable(
-    const std::vector<float>& image,
-    std::function<void(float, float, float)> operation
-) {
+// LOL, below is an improved and parallelized versions of my code by chatGPT
+
+inline void iterateImageImmutableMultiThread( const std::vector<float>& image, std::function<void(float, float, float)> operation) {
+
     const size_t pixelCount = image.size() / 3;
     const unsigned threadCount = std::thread::hardware_concurrency();
     const size_t chunkSize = pixelCount / threadCount;
@@ -56,10 +66,8 @@ inline void iterateImageImmutable(
         th.join();
 }
 
-inline void iterateImageMutable(
-    std::vector<float>& image,
-    std::function<void(float&, float&, float&)> operation
-) {
+inline void iterateImageMutableMultiThread( std::vector<float>& image, std::function<void(float&, float&, float&)> operation) {
+    
     const size_t pixelCount = image.size() / 3;
     const unsigned threadCount = std::thread::hardware_concurrency();
     const size_t chunkSize = pixelCount / threadCount;

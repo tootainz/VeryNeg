@@ -3,11 +3,11 @@
 #include <iostream>
 #include <print>
 #include <format>
+#include <filesystem>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
-#include <nlohmann/json.hpp>
 
 #include "../imageAlgorithms/getExtremePixels.hpp"
 #include "../imageAlgorithms/levels.hpp"
@@ -19,30 +19,44 @@
 #include "../imageAlgorithms/multiply.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
 #include "../imageAlgorithms/boxFilter.hpp"
+#include "../imageAlgorithms/crop.hpp"
+#include "../imageAlgorithms/eyedropper.hpp"
 
-Negative::Negative(std::string imagePath) {
+int Negative::nextId = 0;
+
+
+// CONSTRUCTORS AND INITIALIZERS
+// ----------------------------------------------------------------------------------------------------------------
+
+Negative::Negative(std::filesystem::path imagePath) {
+    this->id = this->nextId;
+    this->nextId++;
     this->initializeNegative(imagePath);
     return;
 }
 
 Negative::Negative() {};
 
-bool Negative::initializeNegative(std::string imagePath) {
-    auto input = OIIO::ImageInput::open(imagePath);
+bool Negative::initializeNegative(std::filesystem::path imagePath) {
+
+    this->path = imagePath;
+    
+    // 1. Read the full original image
+    auto input = OIIO::ImageInput::open(imagePath.string());
 
     if (!input) {
         std::println("Failed to open file");
         return false;
     }
+
+    this->name = imagePath.stem();
     
     const OIIO::ImageSpec& spec = input->spec();
     this->width = spec.width;
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
-    this->pixels.resize(this->width * this->height * this->numberOfChannels);
-    input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->pixels[0]);
-    this->convertedPixels = this->pixels;
-    this->editedPixels = this->pixels;
+    this->originalPixels.resize(this->width * this->height * this->numberOfChannels);
+    input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->originalPixels[0]);
     std::println("Opened negative successfully");
 
     // Prints handy knowledge about the image
@@ -52,19 +66,76 @@ bool Negative::initializeNegative(std::string imagePath) {
     std::println("{}", metadata);
     
     input->close();
+
+    // 2. Generate the working image
+
+    // First determine the working scale, meaning the amount that it has to be divided by to fit into the preview box as listed in PREVIEW_SIZE
+    auto ceilDiv = [](int a, int b) {
+        return a / b + (a % b != 0);
+    };
+
+    const int widthScale = ceilDiv(this->width, this->PREVIEW_SIZE);
+    const int heightScale = ceilDiv(this->height, this->PREVIEW_SIZE);
+    this->workingScale = std::max(widthScale, heightScale);
+
+    std::println("the working scale for this image is {}", this->workingScale);
+    std::println("Generating working pixels");
+
+    // Then generate the workingPixels array with this info
+    // Use OIIO::ImageBuf for ease of scaling resizing etc
+    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf originalBuf(originalSpec, this->originalPixels.data());
+
+    // Calculate new dimensions for the working image
+    this->workingWidth = this->width*(1.0f/this->workingScale);
+    this->workingHeight = this->height*(1.0f/this->workingScale);
+    std::println("trying to resize resolution to width: {} height: {}", this->workingWidth, this->workingHeight);
+
+    // Resize the working image
+    OIIO::ROI roi(0, this->workingWidth, 0, this->workingHeight, 0, 1, /*chans:*/ 0, 3);
+    OIIO::ImageBuf workingBuf = OIIO::ImageBufAlgo::resample(originalBuf, true, roi);
+    std::println("resized resolution to width: {} height: {}", workingBuf.spec().width, workingBuf.spec().height);
+    
+    // Extract the working data from the ImageBuf
+    this->workingPixels.resize(this->workingWidth*this->workingHeight*3);
+    workingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->workingPixels.data());
+    std::println("Working pixels generated");
+
+    this->convertedPixels = this->workingPixels;
+
+    this->scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};
+
+    // 3. Read saved NegativeData if exists
+    this->readNegativeData();
+    
+    // 4. Check if the image has been converted and if a cached conversion exists
+    if(this->negativeData["conversion"]["isConverted"] && !this->readConversionCache()) {
+        this->renderWorking();
+    }
+
+    // 5. apply edits from the saved data
+    this->renderEdits();
+
+    // 6. Create a thumbnail
+    this->renderThumbnail();
+
     return true;
 }
 
-bool Negative::savePositive(std::string imagePath) {
+
+// EXPORTING
+// ----------------------------------------------------------------------------------------------------------------
+
+bool Negative::exportPositive(std::filesystem::path imagePath) {
     std::println("Saving positive");
-    std::string fileName = std::format("{}.tif", imagePath);
+    std::string filePath = std::format("{}.tif", imagePath.string());
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
 
     // For now we want to save images as 16bit
-    if (!originalBuf.write(fileName, OIIO::TypeDesc::UINT16)) {
+    if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
         std::println("Failed to save image");
         return false;
     }
@@ -73,30 +144,34 @@ bool Negative::savePositive(std::string imagePath) {
     return true;
 }
 
+
+// GETTERS FOR THE GUI
+// ----------------------------------------------------------------------------------------------------------------
+
 // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
 ImageData Negative::getPreview() {
     std::println("generating preview");
 
     // Use OIIO::ImageBuf for ease of scaling resizing etc
-    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-    OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
+    OIIO::ImageSpec workingSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf workingBuf(workingSpec, this->editedPixels.data());
 
     // Make sure the data is in RGBA format since the preview will have to be in RGBA format for SFML
     if (this->numberOfChannels < 4) {
         std::println("changed channels to 4");
         // This is straight from OIIO, it adds an aplha channel to the image
-        originalBuf = OIIO::ImageBufAlgo::channels(originalBuf, 4, { 0, 1, 2, -1 },
+        workingBuf = OIIO::ImageBufAlgo::channels(workingBuf, 4, { 0, 1, 2, -1 },
                                     { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/,
                                         1.0 },
                                     { "", "", "", "A" });
     }
 
     // Calculate new dimensions for the preview
-    int previewWidth = this->width*0.4;
-    int previewHeight = this->height*0.4;
+    int previewWidth = this->workingWidth;
+    int previewHeight = this->workingHeight;
 
     // Change the underlying bit depth of the image to 8bit
-    OIIO::ImageBuf uint8Buf = OIIO::ImageBufAlgo::copy(originalBuf, OIIO::TypeDesc::UINT8);
+    OIIO::ImageBuf uint8Buf = OIIO::ImageBufAlgo::copy(workingBuf, OIIO::TypeDesc::UINT8);
     std::println("changed to uint8");
 
     // Resize the image for the preview
@@ -119,18 +194,149 @@ ImageData Negative::getPreview() {
     };
 }
 
+ImageData Negative::getThumbnail() {
+    // Return an ImageData struct
+    return {
+        this->thumbnailPixels,
+        this->THUMBNAIL_SIZE,
+        this->THUMBNAIL_SIZE
+    };
+}
+
+int Negative::getId() {
+    return this->id;
+}
+
+
+// SETTERS AND GETTERS FOR EDIT SETTINGS
+// ----------------------------------------------------------------------------------------------------------------
+
 void Negative::setExposure(float value) {
-    this->exposure = value;
+    std::println("exposure was set to: {}", value);
+    this->negativeData["edits"]["exposure"] = value;
 }
 
 void Negative::setRBalance(float value) {
-    this->rBalance = value;
+    this->negativeData["edits"]["rBalance"] = value;
 }
+
 void Negative::setGBalance(float value) {
-    this->gBalance = value;
+    this->negativeData["edits"]["gBalance"] = value;
 }
+
 void Negative::setBBalance(float value) {
-    this->bBalance = value;
+    this->negativeData["edits"]["bBalance"] = value;
+}
+
+float Negative::getExposure() {
+    return this->negativeData["edits"]["exposure"];
+}
+
+float Negative::getRBalance() {
+    return this->negativeData["edits"]["rBalance"];
+}
+
+float Negative::getGBalance() {
+    return this->negativeData["edits"]["gBalance"];
+}
+
+float Negative::getBBalance() {
+    return this->negativeData["edits"]["bBalance"];
+}
+
+
+
+// CACHING
+// ----------------------------------------------------------------------------------------------------------------
+
+bool Negative::writeConversionCache() {
+    std::println("Saving cahched conversion");
+    std::string fileName = std::format("{}_chache.tif", this->name);
+
+    // Use OIIO::ImageBuf for ease of transformign the pixel data type
+    OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf convertedBuf(convertedSpec, this->convertedPixels.data());
+
+    // Save the converted pixels vector
+    if (!convertedBuf.write(fileName, OIIO::TypeDesc::FLOAT)) {
+        std::println("Failed to save image");
+        return false;
+    }
+    std::println("Saved positive successfully");
+    
+    return true;
+}
+
+bool Negative::readConversionCache() {
+
+    std::println("trying to open cache");
+    std::string fileName = std::format("{}_chache.tif", this->name);
+    auto input = OIIO::ImageInput::open(fileName);
+
+    if (!input) {
+        std::println("Failed to open/find cache");
+        return false;
+    }
+
+    input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
+    std::println("loaded cahce");
+    input->close();
+    return true;
+}
+
+
+// READING AND WRITING EDIT DATA
+// ----------------------------------------------------------------------------------------------------------------
+
+void Negative::readNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ifstream file(dataName);
+    if (!file) {
+        std::println("failed to find negativeData file called {}", dataName);
+        std::println("generating default data");
+        file.open("negativeDataTemplate.neg");
+    }
+    this->negativeData = nlohmann::json::parse(file);
+}
+
+void Negative::writeNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ofstream file(dataName);
+    file << this->negativeData << std::endl;
+}
+
+
+// RENDERING
+// ----------------------------------------------------------------------------------------------------------------
+
+void Negative::renderThumbnail() {
+    std::println("generating thumbnail");
+
+    // Use OIIO::ImageBuf for ease of scaling resizing etc
+    OIIO::ImageSpec workingSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf workingBuf(workingSpec, this->editedPixels.data());
+
+    // Make sure the data is in RGBA format since it will have to be in RGBA format for SFML
+    if (this->numberOfChannels < 4) {
+        // This is straight from OIIO, it adds an aplha channel to the image
+        workingBuf = OIIO::ImageBufAlgo::channels(workingBuf, 4, { 0, 1, 2, -1 },
+                                    { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/,
+                                        1.0 },
+                                    { "", "", "", "A" });
+    }
+
+    // Change the underlying bit depth of the image to 8bit
+    OIIO::ImageBuf uint8Buf = OIIO::ImageBufAlgo::copy(workingBuf, OIIO::TypeDesc::UINT8);
+
+    // Resize the image for the preview
+    OIIO::ROI roi(0, this->THUMBNAIL_SIZE, 0, this->THUMBNAIL_SIZE, 0, 1, /*chans:*/ 0, uint8Buf.nchannels());
+    OIIO::ImageBuf thumbnailBuf = OIIO::ImageBufAlgo::resample(uint8Buf, true, roi);
+    
+    // Extact the preview data from the ImageBuf
+    this->thumbnailPixels.resize(this->THUMBNAIL_SIZE*this->THUMBNAIL_SIZE*4);
+    thumbnailBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::UINT8, this->thumbnailPixels.data());
+
+    std::println("generated thumbnail data");
 }
 
 void Negative::renderEdits() {
@@ -143,37 +349,40 @@ void Negative::renderEdits() {
     // gamma(this->editedPixels, this->gBalance, EditChannel::G);
     // gamma(this->editedPixels, this->bBalance, EditChannel::B);
 
-    multiply(this->editedPixels, this->rBalance, EditChannel::R);
-    multiply(this->editedPixels, this->gBalance, EditChannel::G);
-    multiply(this->editedPixels, this->bBalance, EditChannel::B);
+    multiply(this->editedPixels, this->negativeData["edits"]["rBalance"], EditChannel::R);
+    multiply(this->editedPixels, this->negativeData["edits"]["gBalance"], EditChannel::G);
+    multiply(this->editedPixels, this->negativeData["edits"]["bBalance"], EditChannel::B);
 
     // std::println("Editing exposure");
-    multiply(this->editedPixels, this->exposure, EditChannel::RGB);
-
-    // Get the brightest adn darkest pixels
-    std::tuple<float, float, float> brightestTotal = getBrightestPixel(this->convertedPixels, EditChannel::RGB);
-    std::tuple<float, float, float> darkestTotal = getDarkestPixel(this->convertedPixels, EditChannel::RGB);
-    float brightestAverage = (std::get<0>(brightestTotal) + std::get<1>(brightestTotal) + std::get<2>(brightestTotal))/3.0f;
-    float darkestAverage = (std::get<0>(darkestTotal) + std::get<1>(darkestTotal) + std::get<2>(darkestTotal))/3.0f;
-
-    levelsRGB(this->convertedPixels, darkestAverage, brightestAverage, 0.0f, 1.0f);
+    multiply(this->editedPixels, this->negativeData["edits"]["exposure"], EditChannel::RGB);
 
     // Apply display gamma
-    std::println("applying general display gamma correction");
-    gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+    // std::println("applying general display gamma correction");
+    // gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+
+    this->writeNegativeData();
 }
 
-void Negative::render() {
+void Negative::renderWorking() {
 
-    this->convertedPixels = this->pixels;
+    this->convertedPixels = this->workingPixels;
 
     gamma(this->convertedPixels, 1.8, EditChannel::RGB);
     
     std::println("starting negative conversion pipeline");
 
     // First blur the image slightly to remove noise and extremities
-    std::vector<float> blurredPixels = this->convertedPixels;
-    boxFilter(blurredPixels, this->width, this->height, 40);
+
+    // Only sample the area indicated by this->scanArea
+    std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, this->scanArea);
+
+    std::vector<float> blurredPixels = std::get<0>(blurredCropResult);
+    int blurredWidth = std::get<1>(blurredCropResult);
+    int blurredHeight = std::get<2>(blurredCropResult);
+    std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
+
+    // Perform the actual blur
+    boxFilter(blurredPixels, blurredWidth, blurredHeight, 20);
 
     // Measure brightest and darkest pixels from the blurred image
     // Brightest = most transparent = low density
@@ -191,6 +400,9 @@ void Negative::render() {
     std::tuple<float, float, float> transparentsB = getBrightestPixel(blurredPixels, EditChannel::B);
     std::tuple<float, float, float> opaquestsB = getDarkestPixel(blurredPixels, EditChannel::B);
 
+    // auto eyeropperResults = eyedropper(this->originalPixels, this->width, this->height, 10, 10, 10);
+    // std::println("the eyedropper at (10,10) with size 10 gives an average R of {}", std::get<0>(eyeropperResults));
+
     std::println("transparentsRMeasurement: {}", std::get<0>(transparentsR));
     std::println("transparentsGMeasurement: {}", std::get<1>(transparentsG));
     std::println("transparentsBMeasurement: {}", std::get<2>(transparentsB));
@@ -200,13 +412,13 @@ void Negative::render() {
     std::println("opaquestsBMeasurement: {}", std::get<2>(opaquestsB));
 
     // Store the measured values
-    this->rBlack = std::get<0>(transparentsR);
-    this->gBlack = std::get<1>(transparentsG);
-    this->bBlack = std::get<2>(transparentsB);
+    this->negativeData["conversion"]["blackPoint"]["r"] = std::get<0>(transparentsR);
+    this->negativeData["conversion"]["blackPoint"]["g"] = std::get<1>(transparentsG);
+    this->negativeData["conversion"]["blackPoint"]["b"] = std::get<2>(transparentsB);
     
-    this->rWhite = std::get<0>(opaquestsR);
-    this->gWhite = std::get<1>(opaquestsG);
-    this->bWhite = std::get<2>(opaquestsB);
+    this->negativeData["conversion"]["whitePoint"]["r"] = std::get<0>(opaquestsR);
+    this->negativeData["conversion"]["whitePoint"]["g"] = std::get<1>(opaquestsG);
+    this->negativeData["conversion"]["whitePoint"]["b"] = std::get<2>(opaquestsB);
 
     // Convert the measured values to actual density values
     float brightestRDensity = scanToDensity(std::get<0>(opaquestsR));
@@ -251,9 +463,15 @@ void Negative::render() {
     std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
 
     // Auto White balance
-    grayWorld(this->convertedPixels);
+    //grayWorld(this->convertedPixels);
+
+    this->writeConversionCache();
 
     this->editedPixels = this->convertedPixels;
+
+    this->negativeData["conversion"]["isConverted"] = true;
+
+    this->writeNegativeData();
 
     return;
 }

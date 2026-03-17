@@ -11,6 +11,9 @@ inline std::vector<double> makeIntegralImage(std::vector<float>& image, int imag
     
     std::vector<double> integralImage(imageWidth*imageHeight*3);
 
+    std::println("image size: {}", image.size());
+    std::println("integralimage size: {}", integralImage.size());
+
     for (int pixel = 0; pixel < integralImage.size()/3; pixel++) {
 
         int y = pixel/imageWidth;

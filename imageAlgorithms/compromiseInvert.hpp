@@ -7,6 +7,7 @@
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 
+
 inline float scanToDensity(float scanInput) {
     return std::log10(1/scanInput);
 }
@@ -50,5 +51,5 @@ inline void compromiseInvert(std::vector<float>& image, float minDensity, float 
         // blue = std::clamp(normalizedBlue, 0.0f, 1.0f);
     };
     
-    iterateImageMutable(image, applyCompromiseInvert);
+    iterateImageMutableMultiThread(image, applyCompromiseInvert);
 }

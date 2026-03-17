@@ -36,6 +36,7 @@ and transmittance is what we get as the pixel value from the scan
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 
+
 enum class FilmStock {
     Gold_200,
     Vision3_250d
@@ -132,6 +133,6 @@ inline void charCurveInvert(std::vector<float>& image, float maxLogExposure, flo
             return 0;
         }
     };
-    iterateImageMutable(image, applyCharCurve);
+    iterateImageMutableMultiThread(image, applyCharCurve);
     return;
 }

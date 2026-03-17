@@ -1,10 +1,12 @@
 #pragma once
 
 #include <print>
+#include <format>
 
 #include <SFML/Graphics.hpp>
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-Graphics.hpp>
+
 
 class View {
 
@@ -14,6 +16,7 @@ class View {
     sf::Texture previewTexture;
     sf::Sprite previewSprite;
     sf::RenderWindow& window;
+    int lastThumbnailposition = 0;
 
     public:
 
@@ -27,6 +30,9 @@ class View {
     std::function<void()> onButtonPress_Convert;
     std::function<void()> onButtonPress_LoadNegative;
     std::function<void()> onButtonPress_SavePositive;
+    std::function<void()> onButtonPress_NextNegative;
+    std::function<void()> onButtonPress_PreviousNegative;
+    std::function<void(int)> onButtonPress_Thumbnail;
 
     std::function<void(float)> onSliderChange_SetExposure;
     std::function<void(float)> onSliderChange_SetRBalance;
@@ -84,7 +90,7 @@ class View {
         rBalanceSlider->setMaximum(2.0f);
         rBalanceSlider->setStep(0.01f);
         rBalanceSlider->setValue(1.0f);
-        gui.add(rBalanceSlider, "cBalanceSlider");
+        gui.add(rBalanceSlider, "rBalanceSlider");
 
         rBalanceSlider->onValueChange(this->onSliderChange_SetRBalance);
 
@@ -132,6 +138,53 @@ class View {
         labelBBalance->setTextSize(14);
         labelBBalance->getRenderer()->setTextColor(sf::Color::White);
         gui.add(labelBBalance);
+
+        // Film roll navigation buttons
+        // Next negative
+        tgui::Button::Ptr nextNegativeButton = tgui::Button::create("Next negative");
+        nextNegativeButton->setPosition(600, 900);
+        nextNegativeButton->setSize(120, 20);
+        gui.add(nextNegativeButton, "nextNegativeButton");
+        
+        nextNegativeButton->onPress(this->onButtonPress_NextNegative);
+
+        // Previous negative
+        tgui::Button::Ptr previousNegativeButton = tgui::Button::create("Previous negative");
+        previousNegativeButton->setPosition(100, 900);
+        previousNegativeButton->setSize(120, 20);
+        gui.add(previousNegativeButton, "previousNegativeButton");
+        
+        previousNegativeButton->onPress(this->onButtonPress_PreviousNegative);
+    }
+
+    void addThumbnail(sf::Texture thumbnailTexture, int id) {
+        auto thumbnail = tgui::Picture::create(thumbnailTexture);
+        //thumbnail->getRenderer()->setTexture("image2.png"); // To change image after construction
+        //thumbnail->onClick(this->onButtonPress_Thumbnail);
+        thumbnail->setSize(50,50);
+        thumbnail->setPosition(100+60*this->lastThumbnailposition, 800);
+        this->lastThumbnailposition += 1;
+        std::string name = std::format("thumbnail_{}", id);
+        thumbnail->setUserData(id);
+        thumbnail->onMouseEnter([thumbnail]{
+            thumbnail->getRenderer()->setOpacity(0.7f);
+        });
+        thumbnail->onMouseLeave([thumbnail]{
+            thumbnail->getRenderer()->setOpacity(1.0f);
+        });
+        gui.add(thumbnail, name);
+
+        thumbnail->onClick([this, thumbnail] {
+            int id = thumbnail->getUserData<int>();
+            this->onButtonPress_Thumbnail(id);
+        });
+    }
+
+    void setSliderValue(std::string name, float value) {
+        auto slider = gui.get<tgui::Slider>(name);
+        if (slider) {
+            slider->setValue(value);
+        }
     }
 
     void handleEvent(sf::Event event){

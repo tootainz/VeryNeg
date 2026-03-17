@@ -5,6 +5,7 @@
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
 
+
 inline float multiplyFunction(float input, float value) {
     float linearOut = input * std::pow(2.0f, value);
     return linearOut;
@@ -25,6 +26,6 @@ inline void multiply(std::vector<float>& image, float multiplier, EditChannel ch
             blue = multiplyFunction(blue, multiplier);
         }
     };
-    iterateImageMutable(image, applyMultiply);
+    iterateImageMutableMultiThread(image, applyMultiply);
     return;
 };
