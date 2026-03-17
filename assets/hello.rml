@@ -1,0 +1,14 @@
+<rml>
+	<head>
+		<title>VeryNeg</title>
+		<link type="text/rcss" href="style.rcss"/>
+	</head>
+	<body>
+        <p>Hello everybody! THIS IS HTML IN C++</p>
+        <select name="graphics">
+            <option value="bad">Bad</option>
+            <option value="ok">OK</option>
+            <option value="good" selected>good</option>
+        </select>
+	</body>
+</rml>
