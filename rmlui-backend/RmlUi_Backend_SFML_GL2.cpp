@@ -125,34 +125,23 @@ static void UpdateWindowDimensions(sf::RenderWindow& window, RenderInterface_GL2
     Lifetime governed by the calls to Backend::Initialize() and Backend::Shutdown().
  */
 struct BackendData {
+
+	BackendData(sf::RenderWindow& window)
+    : window(window)
+	{}
+
 	SystemInterface_SFML system_interface;
 	RenderInterface_GL2_SFML render_interface;
-	sf::RenderWindow window;
+	sf::RenderWindow& window;
 	bool running = true;
 };
 static Rml::UniquePtr<BackendData> data;
 
-bool Backend::Initialize(const char* window_name, int width, int height, bool allow_resize)
+bool RmlBackend::Initialize(sf::RenderWindow& window, bool allow_resize)
 {
 	RMLUI_ASSERT(!data);
 
-	data = Rml::MakeUnique<BackendData>();
-
-	const std::uint32_t style = (allow_resize ? sf::Style::Default : (sf::Style::Titlebar | sf::Style::Close));
-	constexpr unsigned int anti_aliasing_level = 2;
-
-	// Create the window.
-	sf::RenderWindow out_window;
-	sf::ContextSettings context_settings;
-	context_settings.stencilBits = 8;
-
-#if SFML_VERSION_MAJOR >= 3
-	context_settings.antiAliasingLevel = anti_aliasing_level;
-	data->window.create(sf::VideoMode({(unsigned int)width, (unsigned int)height}), window_name, style, sf::State::Windowed, context_settings);
-#else
-	context_settings.antialiasingLevel = anti_aliasing_level;
-	data->window.create(sf::VideoMode(width, height), window_name, style, context_settings);
-#endif
+	data = Rml::MakeUnique<BackendData>(window);
 
 	data->window.setVerticalSyncEnabled(true);
 	if (!data->window.isOpen())
@@ -169,24 +158,24 @@ bool Backend::Initialize(const char* window_name, int width, int height, bool al
 	return true;
 }
 
-void Backend::Shutdown()
+void RmlBackend::Shutdown()
 {
 	data.reset();
 }
 
-Rml::SystemInterface* Backend::GetSystemInterface()
+Rml::SystemInterface* RmlBackend::GetSystemInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->system_interface;
 }
 
-Rml::RenderInterface* Backend::GetRenderInterface()
+Rml::RenderInterface* RmlBackend::GetRenderInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->render_interface;
 }
 
-bool Backend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback, bool power_save)
+bool RmlBackend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback, bool power_save)
 {
 	RMLUI_ASSERT(data && context);
 
@@ -251,19 +240,18 @@ bool Backend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_call
 	return result;
 }
 
-void Backend::RequestExit()
+void RmlBackend::RequestExit()
 {
 	RMLUI_ASSERT(data);
 	data->running = false;
 }
 
-void Backend::BeginFrame()
+void RmlBackend::BeginFrame()
 {
 	RMLUI_ASSERT(data);
 	sf::RenderWindow& window = data->window;
 
 	window.resetGLStates();
-	window.clear();
 
 	data->render_interface.BeginFrame();
 
@@ -284,12 +272,11 @@ void Backend::BeginFrame()
 #endif
 }
 
-void Backend::PresentFrame()
+void RmlBackend::PresentFrame()
 {
 	RMLUI_ASSERT(data);
 
 	data->render_interface.EndFrame();
-	data->window.display();
 
 	// Optional, used to mark frames during performance profiling.
 	RMLUI_FrameMark;

@@ -4,6 +4,10 @@
 #include <filesystem>
 
 #include "../libraries/portable-file-dialogs.h"
+#include "../rmlui-backend/RmlUi_Backend.h"
+#include <RmlUi/Core.h>
+#include <RmlUi_Platform_SFML.h>
+#include <RmlUi_Renderer_GL2.h>
 
 #include "commands.hpp"
 
@@ -41,7 +45,6 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     view.onSliderChange_SetRBalance = [this](float value) { this->SliderChangeSetRBalance(value); };
     view.onSliderChange_SetGBalance = [this](float value) { this->SliderChangeSetGBalance(value); };
     view.onSliderChange_SetBBalance = [this](float value) { this->SliderChangeSetBBalance(value); };
-    view.addGuiWidgets();
 }
 
 
@@ -179,11 +182,10 @@ void Controller::ButtonPressThumbnail(int id) {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::mainLoop() {
-    while (this->window.isOpen()) {
+
+    while (this->window.isOpen() && RmlBackend::ProcessEvents(this->view.getRmlContext())) {
 
         while (const std::optional event = this->window.pollEvent()) {
-
-            this->view.handleEvent(*event);
 
             if (event->is<sf::Event::Closed>()) {
                 this->window.close();
@@ -201,10 +203,12 @@ void Controller::mainLoop() {
         }
 
         this->window.clear();
+        RmlBackend::BeginFrame();
 
         // Draw the view
         this->view.draw();
 
+        RmlBackend::PresentFrame();
         this->window.display();
     }
 }
