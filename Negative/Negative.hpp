@@ -19,14 +19,14 @@
 
 class Negative {
 
-    private:
+private:
 
-    // Static data members
+    // STATIC DATA MEMBERS
     static int nextId;
     static const int PREVIEW_SIZE = 800;
     static const int THUMBNAIL_SIZE = 500;
 
-    // Data members
+    // PRIVATE DATA MEMBERS
 
     // General data
     int id;
@@ -54,14 +54,15 @@ class Negative {
     // Edit settings
     nlohmann::json negativeData;
 
-    public:
+
+public:
 
     // Constructors and initializers
     Negative(std::filesystem::path imagePath);
     Negative();
     bool initializeNegative(std::filesystem::path imagePath);
     
-    // Getters for the GUI
+    // Getters for image data
     ImageData getPreview();
     ImageData getSharpnessPreview();
     ImageData getThumbnail();
@@ -74,13 +75,36 @@ class Negative {
     void readNegativeData();
     void writeNegativeData();
 
-    // Setters and getters for edit settings
-    void setExposure(float value);
-    void setRBalance(float value);
-    void setGBalance(float value);
-    void setBBalance(float value);
+    // SETTING EDIT SETTINGS
 
-    float getExposure();
+    // PRE-CONVERT
+    float setScanGamma(float value);
+
+    // POST-CONVERT
+    // Intensity
+    float setDensity(float value);
+    float setContrast(float value);
+    float setWhites(float value);
+    float setHighlights(float value);
+    float setShadows(float value);
+    float setBlacks(float value);
+
+    // White balance
+    float setRBalance(float value);
+    float setGBalance(float value);
+    float setBBalance(float value);
+
+
+    // GETTING EDIT SETTINGS
+    float getScanGamma();
+
+    float getDensity();
+    float getContrast();
+    float getWhites();
+    float getHighlights();
+    float getShadows();
+    float getBlacks();
+
     float getRBalance();
     float getGBalance();
     float getBBalance();
@@ -93,5 +117,6 @@ class Negative {
     void renderThumbnail();
     void renderEdits();
     void renderWorking();
+    void resetWorking();
     void renderFinal();
 };

@@ -8,7 +8,7 @@
 #include "../Command/CommandHistory.hpp"
 
 
-class Controller {
+class Controller : public Rml::EventListener {
     
     private:
 
@@ -17,7 +17,8 @@ class Controller {
     Model& model;
     sf::RenderWindow& window;
     CommandHistory history;
-    bool disableCallbacks = false; 
+    bool disableCallbacks = false;
+
 
     public:
 
@@ -32,23 +33,36 @@ class Controller {
     void undo();
     void redo();
 
-    // Gui callbacks
-    // These will be passsed to view after it is constructed
-
+    // Gui events
     void ButtonPressAddNegative();
-    void ButtonPressSavePositive();
+    void ButtonPressNextNegative();
+    void ButtonPressPreviousNegative();
+    void ButtonPressThumbnail(int id);
     
+    void ButtonPressSetScanGamma(float value);
+    void ButtonPressSetBorder();
+    void ButtonPressSetDensest();
+    void ButtonPressSetScanArea();
     void ButtonPressConvert();
+    void ButtonPressResetConversion();
 
-    void SliderChangeSetExposure(float value);
-    
+    void SliderChangeSetDensity(float value);
+    void SliderChangeSetContrast(float value);
+    void SliderChangeSetWhites(float value);
+    void SliderChangeSetHighlights(float value);
+    void SliderChangeSetShadows(float value);
+    void SliderChangeSetBlacks(float value);
+
+    void ButtonPressAutoWhiteBalance();
+    void ButtonPressChooseNeutralBalance();
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
 
-    void ButtonPressNextNegative();
-    void ButtonPressPreviousNegative();
-    void ButtonPressThumbnail(int id);
+    void ButtonPressSavePositive();
+
+    // Event listener
+    void ProcessEvent(Rml::Event& event) override;
     
     // Main loop
     void mainLoop();

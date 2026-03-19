@@ -35,8 +35,6 @@ Negative::Negative(std::filesystem::path imagePath) {
     return;
 }
 
-Negative::Negative() {};
-
 bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     this->path = imagePath;
@@ -109,7 +107,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->readNegativeData();
     
     // 4. Check if the image has been converted and if a cached conversion exists
-    if(this->negativeData["conversion"]["isConverted"] && !this->readConversionCache()) {
+    if(this->negativeData["general"]["isConverted"] && !this->readConversionCache()) {
         this->renderWorking();
     }
 
@@ -145,7 +143,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath) {
 }
 
 
-// GETTERS FOR THE GUI
+// GETTERS FOR IMAGE DATA
 // ----------------------------------------------------------------------------------------------------------------
 
 // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
@@ -208,44 +206,6 @@ int Negative::getId() {
 }
 
 
-// SETTERS AND GETTERS FOR EDIT SETTINGS
-// ----------------------------------------------------------------------------------------------------------------
-
-void Negative::setExposure(float value) {
-    std::println("exposure was set to: {}", value);
-    this->negativeData["edits"]["exposure"] = value;
-}
-
-void Negative::setRBalance(float value) {
-    this->negativeData["edits"]["rBalance"] = value;
-}
-
-void Negative::setGBalance(float value) {
-    this->negativeData["edits"]["gBalance"] = value;
-}
-
-void Negative::setBBalance(float value) {
-    this->negativeData["edits"]["bBalance"] = value;
-}
-
-float Negative::getExposure() {
-    return this->negativeData["edits"]["exposure"];
-}
-
-float Negative::getRBalance() {
-    return this->negativeData["edits"]["rBalance"];
-}
-
-float Negative::getGBalance() {
-    return this->negativeData["edits"]["gBalance"];
-}
-
-float Negative::getBBalance() {
-    return this->negativeData["edits"]["bBalance"];
-}
-
-
-
 // CACHING
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -294,7 +254,7 @@ void Negative::readNegativeData() {
     if (!file) {
         std::println("failed to find negativeData file called {}", dataName);
         std::println("generating default data");
-        file.open("negativeDataTemplate.neg");
+        file.open("assets/negativeDataTemplate.neg");
     }
     this->negativeData = nlohmann::json::parse(file);
 }
@@ -303,6 +263,104 @@ void Negative::writeNegativeData() {
     std::string dataName = this->path.replace_extension(".neg").string();
     std::ofstream file(dataName);
     file << this->negativeData << std::endl;
+}
+
+
+// SETTING EDIT SETTINGS
+// ----------------------------------------------------------------------------------------------------------------
+
+float Negative::setScanGamma(float value) {
+    this->negativeData["conversion"]["scanGamma"] = value;
+    return this->getScanGamma();
+}
+
+float Negative::setDensity(float value) {
+    std::println("exposure was set to: {}", value);
+    this->negativeData["edits"]["density"] = value;
+    return this->getDensity();
+}
+
+float Negative::setContrast(float value) {
+    this->negativeData["edits"]["contrast"] = value;
+    return this->getContrast();
+}
+
+float Negative::setWhites(float value) {
+    this->negativeData["edits"]["whites"] = value;
+    return this->getWhites();
+}
+
+float Negative::setHighlights(float value) {
+    this->negativeData["edits"]["highlights"] = value;
+    return this->getHighlights();
+}
+
+float Negative::setShadows(float value) {
+    this->negativeData["edits"]["shadows"] = value;
+    return this->getShadows();
+}
+
+float Negative::setBlacks(float value) {
+    this->negativeData["edits"]["blacks"] = value;
+    return this->getBlacks();
+}
+
+float Negative::setRBalance(float value) {
+    this->negativeData["edits"]["rBalance"] = value;
+    return this->getRBalance();
+}
+
+float Negative::setGBalance(float value) {
+    this->negativeData["edits"]["gBalance"] = value;
+    return this->getGBalance();
+}
+
+float Negative::setBBalance(float value) {
+    this->negativeData["edits"]["bBalance"] = value;
+    return this->getBBalance();
+}
+
+// GETTING EDIT SETTINGS
+// ----------------------------------------------------------------------------------------------------------------
+
+float Negative::getScanGamma() {
+    return this->negativeData["conversion"]["scanGamma"];
+}
+
+float Negative::getDensity() {
+    return this->negativeData["edits"]["density"];
+}
+
+float Negative::getContrast() {
+    return this->negativeData["edits"]["contrast"];
+}
+
+float Negative::getWhites() {
+    return this->negativeData["edits"]["whites"];
+}
+
+float Negative::getHighlights() {
+    return this->negativeData["edits"]["highlights"];
+}
+
+float Negative::getShadows() {
+    return this->negativeData["edits"]["shadows"];
+}
+
+float Negative::getBlacks() {
+    return this->negativeData["edits"]["blacks"];
+}
+
+float Negative::getRBalance() {
+    return this->negativeData["edits"]["rBalance"];
+}
+
+float Negative::getGBalance() {
+    return this->negativeData["edits"]["gBalance"];
+}
+
+float Negative::getBBalance() {
+    return this->negativeData["edits"]["bBalance"];
 }
 
 
@@ -354,7 +412,7 @@ void Negative::renderEdits() {
     multiply(this->editedPixels, this->negativeData["edits"]["bBalance"], EditChannel::B);
 
     // std::println("Editing exposure");
-    multiply(this->editedPixels, this->negativeData["edits"]["exposure"], EditChannel::RGB);
+    multiply(this->editedPixels, this->negativeData["edits"]["density"], EditChannel::RGB);
 
     // Apply display gamma
     // std::println("applying general display gamma correction");
@@ -474,4 +532,7 @@ void Negative::renderWorking() {
     this->writeNegativeData();
 
     return;
+}
+
+void Negative::resetWorking() {
 }

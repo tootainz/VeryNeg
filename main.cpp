@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
+#include <print>
 
 #include <OpenImageIO/imageio.h>
 #include <SFML/Graphics.hpp>
@@ -16,21 +17,35 @@
 #include "Controller/Controller.hpp"
 #include "Model/Model.hpp"
 
+/*
+VeryNeg v0.3.0
+By Joonatan Koponen
+
+VeryNeg is an image editor for converting scanned film negative files
+to beautiful positive digital photographs.
+
+VeryNeg performs a fully automatic conversion but also allows manual setting of some parameters
+You can also apply edits to the image after the covnersion to edit color balance, density, sharpness etc.
+
+Currently the only supported files are 16bit tiff file scans from a flatbed scanner
+*/ 
+
 int main() {
 
     // SETUP
 
     // SFML window
     sf::ContextSettings settings;
-    settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, higher values = more smoothing
-    sf::RenderWindow window(sf::VideoMode({1000, 1000}), "Very Negative Image Editor", sf::State::Windowed, settings);
+    settings.antiAliasingLevel = 12; // 0 = no anti-aliasing, higher values = more smoothing
+    sf::RenderWindow window(sf::VideoMode({1000, 1000}), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi
     RmlBackend::Initialize(window, true);
     Rml::SetRenderInterface(RmlBackend::GetRenderInterface());
     Rml::SetSystemInterface(RmlBackend::GetSystemInterface());
     if (!Rml::Initialise()) {
-        std::cout << "RmlUi failed to initialise\n";
+        std::println("RmlUi failed to initialise");
+        return -1;
     }
 
     // Application logic
@@ -43,4 +58,5 @@ int main() {
 
     // CLEANUP
     Rml::Shutdown();
+    RmlBackend::Shutdown();
 }

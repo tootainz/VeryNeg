@@ -2,14 +2,29 @@
 
 #include <algorithm>
 
+// CONSTRUCTOR
+// ----------------------------------------------------------------------------------------------------------------
+
 Model::Model() {}
+
+
+// RENDER FUNCTIONS FOR IMAGE DATA
+// ----------------------------------------------------------------------------------------------------------------
 
 void Model::renderWorking() {
     this->negatives[this->currentNegativeIndex].renderWorking();
 }
+
 void Model::renderEdits() {
     this->negatives[this->currentNegativeIndex].renderEdits();
 }
+
+void Model::renderFinal() {
+}
+
+
+// NEGATIVE NAVIGATION
+// ----------------------------------------------------------------------------------------------------------------
 
 void Model::changeCurrentNegativeById(int id) {
 
@@ -42,28 +57,127 @@ Negative& Model::addNegative(std::filesystem::path imagePath) {
     return this->negatives[this->currentNegativeIndex];
 }
 
+void Model::removeNegative(int i) {
+}
+
+
+// EXPORT
+// ----------------------------------------------------------------------------------------------------------------
+
 void Model::exportPositive(std::string imagePath) {
-
 }
 
-void Model::setExposure(float value) {
-    this->negatives[this->currentNegativeIndex].setExposure(value);
+
+// PRE-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
+
+float Model::setScanGamma(float value) {
+    this->negatives[this->currentNegativeIndex].setScanGamma(value);
+    return this->getScanGamma();
 }
 
-void Model::setRBalance(float value) {
+void Model::setBorder() {
+}
+
+void Model::setDensest() {
+}
+
+void Model::setScanArea() {
+}
+
+void Model::convert() {
+    this->renderWorking();
+}
+
+void Model::resetConversion() {
+    this->negatives[this->currentNegativeIndex].resetWorking();
+}
+
+
+// POST-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
+
+float Model::setDensity(float value) {
+    this->negatives[this->currentNegativeIndex].setDensity(value);
+    return this->getDensity();
+}
+
+float Model::setContrast(float value) {
+    this->negatives[this->currentNegativeIndex].setContrast(value);
+    return this->getContrast();
+}
+
+float Model::setWhites(float value) {
+    this->negatives[this->currentNegativeIndex].setWhites(value);
+    return this->getWhites();
+}
+
+float Model::setHighlights(float value) {
+    this->negatives[this->currentNegativeIndex].setHighlights(value);
+    return this->getHighlights();
+}
+
+float Model::setShadows(float value) {
+    this->negatives[this->currentNegativeIndex].setShadows(value);
+    return this->getShadows();
+}
+
+float Model::setBlacks(float value) {
+    this->negatives[this->currentNegativeIndex].setBlacks(value);
+    return this->getBlacks();
+}
+
+void Model::autoWhiteBalance() {
+}
+
+void Model::chooseNeutralBalance() {
+}
+
+float Model::setRBalance(float value) {
     this->negatives[this->currentNegativeIndex].setRBalance(value);
+    return this->getRBalance();
 }
 
-void Model::setGBalance(float value) {
+float Model::setGBalance(float value) {
     this->negatives[this->currentNegativeIndex].setGBalance(value);
+    return this->getGBalance();
 }
 
-void Model::setBBalance(float value) {
+float Model::setBBalance(float value) {
     this->negatives[this->currentNegativeIndex].setBBalance(value);
+    return this->getBBalance();
 }
 
-float Model::getExposure() {
-    return this->negatives[this->currentNegativeIndex].getExposure();
+
+// GETTERS
+// ----------------------------------------------------------------------------------------------------------------
+
+float Model::getScanGamma() {
+    return this->negatives[this->currentNegativeIndex].getScanGamma();
+}
+
+float Model::getDensity() {
+    return this->negatives[this->currentNegativeIndex].getDensity();
+}
+
+float Model::getContrast() {
+    return this->negatives[this->currentNegativeIndex].getContrast();
+}
+
+float Model::getWhites() {
+    return this->negatives[this->currentNegativeIndex].getWhites();
+}
+
+float Model::getHighlights() {
+    return this->negatives[this->currentNegativeIndex].getHighlights();
+}
+
+float Model::getShadows() {
+    return this->negatives[this->currentNegativeIndex].getShadows();
+}
+
+float Model::getBlacks() {
+    return this->negatives[this->currentNegativeIndex].getBlacks();
 }
 
 float Model::getRBalance() {
@@ -80,4 +194,12 @@ float Model::getBBalance() {
 
 ImageData Model::getPreview() {
     return this->negatives[this->currentNegativeIndex].getPreview();
+}
+
+ImageData Model::getThumbnail(int id) {
+    return ImageData();
+}
+
+int Model::getCurrentNegativeId() {
+    return this->negatives[this->currentNegativeIndex].getId();
 }

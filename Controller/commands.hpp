@@ -4,144 +4,52 @@
 #include "../Command/Command.hpp"
 
 
-class Command_NextNegative : public Command {
+class Command_Lambda : public Command {
 
-    private:
-    Model& model;
+private:
 
-    public:
+    std::function<void()> executeFunction;
+    std::function<void()> undoFunction;
 
-    Command_NextNegative(Model& model) : model(model) {}
+public:
 
-    void execute() {
-        this->model.nextNegative();
-    }
+    Command_Lambda(std::function<void()> executeFunction, std::function<void()> undoFunction) :
+        executeFunction(executeFunction),
+        undoFunction(undoFunction)
+    {}
 
-    void undo() {
-        this->model.previousNegative();
-    }
+    void execute() override { this->executeFunction(); }
+    void undo() override { this->undoFunction(); }
 };
 
-class Command_PreviousNegative : public Command {
 
-    private:
-    Model& model;
+// A class that takes getter and setter lambdas
+class Command_SetValue : public Command {
 
-    public:
+private:
 
-    Command_PreviousNegative(Model& model) : model(model) {}
-
-    void execute() {
-        this->model.previousNegative();
-    }
-
-    void undo() {
-        this->model.nextNegative();
-    }
-};
-
-class Command_SetExposure: public Command {
-
-    private:
     Model& model;
     float value;
     float oldValue;
+    std::function<float()> getter;
+    std::function<float(float)> setter;
 
-    public:
+public:
 
-    Command_SetExposure(Model& model, float value) :
-        value(value),
+    Command_SetValue(Model& model, float value, std::function<float(float)> setter, std::function<float()> getter) :
         model(model),
-        oldValue(0.0)
-        {}
-
-    void execute() {
-        this->oldValue = this->model.getExposure();
-        this->model.setExposure(this->value);
-    }
-
-    void undo() {
-        this->model.setExposure(this->oldValue);
-    }
-};
-
-class Command_SetRBalance : public Command {
-
-    private:
-    Model& model;
-    float value;
-    float oldValue;
-
-    public:
-
-    Command_SetRBalance(Model& model, float value) :
         value(value),
-        model(model)
-        {}
+        getter(getter),
+        setter(setter)
+    {}
 
-    void execute() {
-        this->oldValue = this->model.getRBalance();
-        this->model.setRBalance(this->value);
+    void execute() override {
+        oldValue = getter();
+        this->setter(this->value);
+        return;
     }
 
-    void undo() {
-        this->model.setRBalance(this->oldValue);
-    }
-};
-
-class Command_SetGBalance : public Command {
-
-    private:
-    Model& model;
-    float value;
-    float oldValue;
-
-    public:
-
-    Command_SetGBalance(Model& model, float value) :
-        value(value),
-        model(model)
-        {}
-
-    void execute() {
-        this->oldValue = this->model.getGBalance();
-        this->model.setGBalance(this->value);
-    }
-
-    void undo() {
-        this->model.setGBalance(this->oldValue);
+    void undo() override {
+        this->setter(this->oldValue);
     }
 };
-
-class Command_SetBBalance : public Command {
-
-    private:
-    Model& model;
-    float value;
-    float oldValue;
-
-    public:
-
-    Command_SetBBalance(Model& model, float value) :
-        value(value),
-        model(model)
-        {}
-
-    void execute() {
-        this->oldValue = this->model.getBBalance();
-        this->model.setBBalance(this->value);
-    }
-
-    void undo() {
-        this->model.setBBalance(this->oldValue);
-    }
-};
-
-
-/*
-Still left to implement:
-
-void ButtonPressAddNegative();
-
-void ButtonPressConvert();
-*/

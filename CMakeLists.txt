@@ -10,8 +10,23 @@ add_executable(VeryNeg main.cpp
   Controller/Controller.cpp
   Negative/Negative.cpp
   Model/Model.cpp
+  View/View.cpp
   rmlui-backend/RmlUi_Backend_SFML_GL2.cpp
 )
+
+# ------------------------------------------------
+# Copy static assets
+
+# Create a target that copies the assets folder
+add_custom_target(CopyAssets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:VeryNeg>/assets"
+    COMMENT "Copying assets to build folder"
+)
+
+# Make sure VeryNeg depends on the assets target
+add_dependencies(VeryNeg CopyAssets)
 
 # ------------------------------------------------
 # Add libraries

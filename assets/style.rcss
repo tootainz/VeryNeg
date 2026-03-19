@@ -2,14 +2,80 @@ body {
     font-family: "Oceert";
     width: 100%;
     height: 100%;
-    background-color: red;
-    font-size: 30px;
+    font-size: 16px;
+    display: flex;
+    justify-content: flex-end;
 }
 
-p {
-    font-size: 60px;
+input.range
+{
+    height: 20px;
+    padding: 5px;
+    margin: 5px;
 }
 
-p:hover {
-    background-color: black;
+input.range slidertrack
+{
+    background-color: #000000;
+    height: 5px;
+}
+
+input.range sliderbar
+{
+    background-color: #6600ff;
+    height: 20px;
+    width: 10px;
+}
+
+button {
+    display: block;
+    background-color: #6600ff;
+    border-radius: 10px;
+    padding: 5px;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #4500ac;
+}
+
+button:active {
+    background-color: #a061ff;
+}
+
+#settings {
+    background-color: #1e1c20;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    margin: 5px;
+}
+
+#preConvertSettings {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+#postConvertSettings {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+#exportSettings {
+    background-color: #c3bdc9;
+}
+
+#c-r sliderbar {
+    background-color: #00d5ff;
+}
+
+#m-g sliderbar {
+    background-color: #e600ff;
+}
+
+#y-b sliderbar {
+    background-color: #ffdd00;
 }
