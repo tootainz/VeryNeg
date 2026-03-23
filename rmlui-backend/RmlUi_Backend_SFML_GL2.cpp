@@ -1,4 +1,4 @@
-#include "RmlUi_Backend.h"
+#include "RmlUi_Backend.hpp"
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
 #include <RmlUi/Core/Context.h>
@@ -173,6 +173,10 @@ Rml::RenderInterface* RmlBackend::GetRenderInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->render_interface;
+}
+
+void RmlBackend::Resize(Rml::Context* context) {
+	UpdateWindowDimensions(data->window, data->render_interface, context);
 }
 
 bool RmlBackend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback, bool power_save)

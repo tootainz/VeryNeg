@@ -11,7 +11,6 @@
 
 #include "../imageAlgorithms/getExtremePixels.hpp"
 #include "../imageAlgorithms/levels.hpp"
-#include "../imageAlgorithms/crudeInversion.hpp"
 #include "../imageAlgorithms/densityInvert.hpp"
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/myExposure.hpp"
@@ -101,14 +100,16 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     this->convertedPixels = this->workingPixels;
 
-    this->scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};
-
+    
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
-    
-    // 4. Check if the image has been converted and if a cached conversion exists
+
     if(this->negativeData["general"]["isConverted"] && !this->readConversionCache()) {
         this->renderWorking();
+    }
+    
+    if(!this->negativeData["conversion"]["hasScanArea"]) {
+        this->setScanArea({0, 0, this->workingWidth, this->workingHeight});
     }
 
     // 5. apply edits from the saved data
@@ -205,7 +206,6 @@ int Negative::getId() {
     return this->id;
 }
 
-
 // CACHING
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -244,6 +244,9 @@ bool Negative::readConversionCache() {
     return true;
 }
 
+std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
+    return eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->SAMPLE_SIZE);
+}
 
 // READING AND WRITING EDIT DATA
 // ----------------------------------------------------------------------------------------------------------------
@@ -272,6 +275,45 @@ void Negative::writeNegativeData() {
 float Negative::setScanGamma(float value) {
     this->negativeData["conversion"]["scanGamma"] = value;
     return this->getScanGamma();
+}
+
+void Negative::setScanArea(ImageArea area) {
+    this->negativeData["conversion"]["scanArea"]["left"] = area.left;
+    this->negativeData["conversion"]["scanArea"]["top"] = area.top;
+    this->negativeData["conversion"]["scanArea"]["right"] = area.right;
+    this->negativeData["conversion"]["scanArea"]["bottom"] = area.bottom;
+}
+
+void Negative::setBorder(float r, float g, float b) {
+    this->negativeData["conversion"]["border"]["r"] = r;
+    this->negativeData["conversion"]["border"]["g"] = g;
+    this->negativeData["conversion"]["border"]["b"] = b;
+    this->negativeData["conversion"]["hasBorder"] = true;
+}
+
+void Negative::setBorderByCoords(int x, int y) {
+    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    this->setBorder(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
+}
+
+void Negative::setDensest(float r, float g, float b) {
+    this->negativeData["conversion"]["densest"]["r"] = r;
+    this->negativeData["conversion"]["densest"]["g"] = g;
+    this->negativeData["conversion"]["densest"]["b"] = b;
+    this->negativeData["conversion"]["hasDensest"] = true;
+}
+
+void Negative::setDensestByCoords(int x, int y) {
+    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    this->setDensest(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
+}
+
+void Negative::convert() {
+    this->renderWorking();
+}
+
+void Negative::resetConversion() {
+    this->convertedPixels = this->workingPixels;
 }
 
 float Negative::setDensity(float value) {
@@ -305,7 +347,20 @@ float Negative::setBlacks(float value) {
     return this->getBlacks();
 }
 
-float Negative::setRBalance(float value) {
+void Negative::setNeutral(float r, float g, float b) {
+    this->negativeData["edits"]["neutralPoint"]["r"] = r;
+    this->negativeData["edits"]["neutralPoint"]["g"] = g;
+    this->negativeData["edits"]["neutralPoint"]["b"] = b;
+        this->negativeData["conversion"]["hasNeutral"] = true;
+}
+
+void Negative::setNeutralByCoords(int x, int y) {
+    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    this->setNeutral(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
+}
+
+float Negative::setRBalance(float value)
+{
     this->negativeData["edits"]["rBalance"] = value;
     return this->getRBalance();
 }
@@ -325,6 +380,29 @@ float Negative::setBBalance(float value) {
 
 float Negative::getScanGamma() {
     return this->negativeData["conversion"]["scanGamma"];
+}
+
+ImageArea Negative::getScanArea() {
+    ImageArea scanArea;
+    scanArea.left = this->negativeData["conversion"]["scanArea"]["left"];
+    scanArea.top = this->negativeData["conversion"]["scanArea"]["top"];
+    scanArea.right = this->negativeData["conversion"]["scanArea"]["right"];
+    scanArea.bottom = this->negativeData["conversion"]["scanArea"]["bottom"];
+    return scanArea;
+}
+
+std::tuple<float, float, float> Negative::getBorder() {
+    float r = this->negativeData["conversion"]["border"]["r"];
+    float g = this->negativeData["conversion"]["border"]["g"];
+    float b = this->negativeData["conversion"]["border"]["b"];
+    return { r, g, b };
+}
+
+std::tuple<float, float, float> Negative::getDensest() {
+    float r = this->negativeData["conversion"]["densest"]["r"];
+    float g = this->negativeData["conversion"]["densest"]["g"];
+    float b = this->negativeData["conversion"]["densest"]["b"];
+    return { r, g, b };
 }
 
 float Negative::getDensity() {
@@ -349,6 +427,13 @@ float Negative::getShadows() {
 
 float Negative::getBlacks() {
     return this->negativeData["edits"]["blacks"];
+}
+
+std::tuple<float, float, float> Negative::getNeutral() {
+    float r = this->negativeData["edits"]["neutralPoint"]["r"];
+    float g = this->negativeData["edits"]["neutralPoint"]["g"];
+    float b = this->negativeData["edits"]["neutralPoint"]["b"];
+    return { r, g, b };
 }
 
 float Negative::getRBalance() {
@@ -429,76 +514,104 @@ void Negative::renderWorking() {
     
     std::println("starting negative conversion pipeline");
 
-    // First blur the image slightly to remove noise and extremities
+    float transparentsR;
+    float transparentsG;
+    float transparentsB;
 
-    // Only sample the area indicated by this->scanArea
-    std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, this->scanArea);
+    float opaquestsR;
+    float opaquestsG;
+    float opaquestsB;
 
-    std::vector<float> blurredPixels = std::get<0>(blurredCropResult);
-    int blurredWidth = std::get<1>(blurredCropResult);
-    int blurredHeight = std::get<2>(blurredCropResult);
-    std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
+    if (!this->negativeData["conversion"]["hasDensest"] || !this->negativeData["conversion"]["hasBorder"]) {
 
-    // Perform the actual blur
-    boxFilter(blurredPixels, blurredWidth, blurredHeight, 20);
+        // First blur the image slightly to remove noise and extremities
 
-    // Measure brightest and darkest pixels from the blurred image
-    // Brightest = most transparent = low density
-    // Darkest = most opaque = high density
+        // Only sample the area indicated by this->scanArea
+        std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, this->getScanArea());
 
-    std::println("getting the brightest and darkest pixels");
+        std::vector<float> blurredPixels = std::get<0>(blurredCropResult);
+        int blurredWidth = std::get<1>(blurredCropResult);
+        int blurredHeight = std::get<2>(blurredCropResult);
+        std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
 
-    // R
-    std::tuple<float, float, float> transparentsR = getBrightestPixel(blurredPixels, EditChannel::R);
-    std::tuple<float, float, float> opaquestsR = getDarkestPixel(blurredPixels, EditChannel::R);
-    // G
-    std::tuple<float, float, float> transparentsG = getBrightestPixel(blurredPixels, EditChannel::G);
-    std::tuple<float, float, float> opaquestsG = getDarkestPixel(blurredPixels, EditChannel::G);
-    // B
-    std::tuple<float, float, float> transparentsB = getBrightestPixel(blurredPixels, EditChannel::B);
-    std::tuple<float, float, float> opaquestsB = getDarkestPixel(blurredPixels, EditChannel::B);
+        // Perform the actual blur
+        boxFilter(blurredPixels, blurredWidth, blurredHeight, 20);
+
+        // Measure brightest and darkest pixels from the blurred image
+        // Brightest = most transparent = low density
+        // Darkest = most opaque = high density
+
+        std::println("getting the brightest and darkest pixels");
+
+        if (!this->negativeData["conversion"]["hasBorder"]) {
+            // sampling border
+            std::println("sampling border");
+            transparentsR = std::get<0>(getBrightestPixel(blurredPixels, EditChannel::R));
+            transparentsG = std::get<1>(getBrightestPixel(blurredPixels, EditChannel::G));
+            transparentsB = std::get<2>(getBrightestPixel(blurredPixels, EditChannel::B));
+        }
+        else {
+            transparentsR = this->negativeData["conversion"]["border"]["r"];
+            transparentsG = this->negativeData["conversion"]["border"]["g"];
+            transparentsB = this->negativeData["conversion"]["border"]["b"];
+        }
+
+        if (!this->negativeData["conversion"]["hasDensest"]) {
+            std::println("sampling densest");
+            // sampling densest
+            opaquestsR = std::get<0>(getDarkestPixel(blurredPixels, EditChannel::R));
+            opaquestsG = std::get<1>(getDarkestPixel(blurredPixels, EditChannel::G));
+            opaquestsB = std::get<2>(getDarkestPixel(blurredPixels, EditChannel::B));
+        }
+        else {
+            opaquestsR = this->negativeData["conversion"]["densest"]["r"];
+            opaquestsG = this->negativeData["conversion"]["densest"]["g"];
+            opaquestsB = this->negativeData["conversion"]["densest"]["b"];
+        }
+
+    }
+    else {
+        transparentsR = this->negativeData["conversion"]["border"]["r"];
+        transparentsG = this->negativeData["conversion"]["border"]["g"];
+        transparentsB = this->negativeData["conversion"]["border"]["b"];
+
+        opaquestsR = this->negativeData["conversion"]["densest"]["r"];
+        opaquestsG = this->negativeData["conversion"]["densest"]["g"];
+        opaquestsB = this->negativeData["conversion"]["densest"]["b"];
+    }
 
     // auto eyeropperResults = eyedropper(this->originalPixels, this->width, this->height, 10, 10, 10);
     // std::println("the eyedropper at (10,10) with size 10 gives an average R of {}", std::get<0>(eyeropperResults));
 
-    std::println("transparentsRMeasurement: {}", std::get<0>(transparentsR));
-    std::println("transparentsGMeasurement: {}", std::get<1>(transparentsG));
-    std::println("transparentsBMeasurement: {}", std::get<2>(transparentsB));
+    std::println("transparentsRMeasurement: {}", transparentsR);
+    std::println("transparentsGMeasurement: {}", transparentsG);
+    std::println("transparentsBMeasurement: {}", transparentsB);
 
-    std::println("opaquestsRMeasurement: {}", std::get<0>(opaquestsR));
-    std::println("opaquestsGMeasurement: {}", std::get<1>(opaquestsG));
-    std::println("opaquestsBMeasurement: {}", std::get<2>(opaquestsB));
-
-    // Store the measured values
-    this->negativeData["conversion"]["blackPoint"]["r"] = std::get<0>(transparentsR);
-    this->negativeData["conversion"]["blackPoint"]["g"] = std::get<1>(transparentsG);
-    this->negativeData["conversion"]["blackPoint"]["b"] = std::get<2>(transparentsB);
-    
-    this->negativeData["conversion"]["whitePoint"]["r"] = std::get<0>(opaquestsR);
-    this->negativeData["conversion"]["whitePoint"]["g"] = std::get<1>(opaquestsG);
-    this->negativeData["conversion"]["whitePoint"]["b"] = std::get<2>(opaquestsB);
+    std::println("opaquestsRMeasurement: {}", opaquestsR);
+    std::println("opaquestsGMeasurement: {}", opaquestsG);
+    std::println("opaquestsBMeasurement: {}", opaquestsB);
 
     // Convert the measured values to actual density values
-    float brightestRDensity = scanToDensity(std::get<0>(opaquestsR));
-    float brightestGDensity = scanToDensity(std::get<1>(opaquestsG));
-    float brightestBDensity = scanToDensity(std::get<2>(opaquestsB));
+    float brightestRDensity = scanToDensity(opaquestsR);
+    float brightestGDensity = scanToDensity(opaquestsG);
+    float brightestBDensity = scanToDensity(opaquestsB);
 
     std::println("brightestRDensity: {}", brightestRDensity);
     std::println("brightestGDensity: {}", brightestGDensity);
     std::println("brightestBDensity: {}", brightestBDensity);
 
-    float darkestRDensity = scanToDensity(std::get<0>(transparentsR));
-    float darkestGDensity = scanToDensity(std::get<1>(transparentsG));
-    float darkestBDensity = scanToDensity(std::get<2>(transparentsB));
+    float darkestRDensity = scanToDensity(transparentsR);
+    float darkestGDensity = scanToDensity(transparentsG);
+    float darkestBDensity = scanToDensity(transparentsB);
 
     std::println("darkestRDensity: {}", darkestRDensity);
     std::println("darkestGDensity: {}", darkestGDensity);
     std::println("darkestBDensity: {}", darkestBDensity);
 
     // Balance the black point and white point densities to all match the red channel
-    levelsR(this->convertedPixels, std::get<0>(opaquestsR), std::get<0>(transparentsR), densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsG(this->convertedPixels, std::get<1>(opaquestsG), std::get<1>(transparentsG), densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsB(this->convertedPixels, std::get<2>(opaquestsB), std::get<2>(transparentsB), densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsR(this->convertedPixels, opaquestsR, transparentsR, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsG(this->convertedPixels, opaquestsG, transparentsG, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsB(this->convertedPixels, opaquestsB, transparentsB, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
 
     // Perform the inversion and normalize to the highest and darkest values
     compromiseInvert(this->convertedPixels, darkestRDensity, brightestRDensity);

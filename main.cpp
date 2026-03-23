@@ -7,7 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
-#include "rmlui-backend/RmlUi_Backend.h"
+#include "rmlui-backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
@@ -25,7 +25,7 @@ VeryNeg is an image editor for converting scanned film negative files
 to beautiful positive digital photographs.
 
 VeryNeg performs a fully automatic conversion but also allows manual setting of some parameters
-You can also apply edits to the image after the covnersion to edit color balance, density, sharpness etc.
+You can also apply edits to the image after the conversion to edit color balance, density, sharpness etc.
 
 Currently the only supported files are 16bit tiff file scans from a flatbed scanner
 */ 
@@ -33,11 +33,12 @@ Currently the only supported files are 16bit tiff file scans from a flatbed scan
 int main() {
 
     // SETUP
+    // ------------------------------------------------------------------------------------------------------
 
     // SFML window
     sf::ContextSettings settings;
     settings.antiAliasingLevel = 12; // 0 = no anti-aliasing, higher values = more smoothing
-    sf::RenderWindow window(sf::VideoMode({1000, 1000}), "VeryNeg", sf::State::Windowed, settings);
+    sf::RenderWindow window(sf::VideoMode({1600, 1000}), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi
     RmlBackend::Initialize(window, true);
@@ -48,15 +49,23 @@ int main() {
         return -1;
     }
 
-    // Application logic
+    // Application logic following MVC pattern
     Model model;
     View view(window);
     Controller controller(window, view, model);
 
+
     // MAIN LOOP
+    // ------------------------------------------------------------------------------------------------------
+
     controller.mainLoop();
 
+
     // CLEANUP
+    // ------------------------------------------------------------------------------------------------------
+
     Rml::Shutdown();
     RmlBackend::Shutdown();
+
+    return 1;
 }

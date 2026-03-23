@@ -10,7 +10,7 @@
 
 class Controller : public Rml::EventListener {
     
-    private:
+private:
 
     // Data members
     View& view;
@@ -19,11 +19,25 @@ class Controller : public Rml::EventListener {
     CommandHistory history;
     bool disableCallbacks = false;
 
+    // UI interactions
+    sf::Vector2i selectionStart;  
+    bool selecting = false;
+    bool readyToSelect = false;
+    bool selectingCrop = false;
+    bool selectingScanArea = false;
+    bool selectingBorder = false;
+    bool selectingDensest = false;
+    bool selectingNeutral = false;
 
-    public:
+public:
 
     // Constructor
     Controller(sf::RenderWindow& window, View& view, Model& model);
+
+    // Main loop
+    void mainLoop();
+
+private:
 
     // Update GUI
     void updatePreview();
@@ -41,7 +55,9 @@ class Controller : public Rml::EventListener {
     
     void ButtonPressSetScanGamma(float value);
     void ButtonPressSetBorder();
+    void SetBorder(int x, int y);
     void ButtonPressSetDensest();
+    void SetDensest(int x, int y);
     void ButtonPressSetScanArea();
     void ButtonPressConvert();
     void ButtonPressResetConversion();
@@ -55,6 +71,7 @@ class Controller : public Rml::EventListener {
 
     void ButtonPressAutoWhiteBalance();
     void ButtonPressChooseNeutralBalance();
+    void SetNeutralBalance(int x, int y);
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
@@ -64,6 +81,8 @@ class Controller : public Rml::EventListener {
     // Event listener
     void ProcessEvent(Rml::Event& event) override;
     
-    // Main loop
-    void mainLoop();
+    // Main Loop helpers
+    bool handleKeyboardEvents(std::optional<sf::Event> event);
+    bool handleMouseEvents(std::optional<sf::Event> event);
+    void eventLoop();
 };

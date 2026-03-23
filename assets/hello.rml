@@ -4,8 +4,13 @@
 		<link type="text/rcss" href="style.rcss"/>
 	</head>
 	<body>
-        <div id="preview">
+        <div id="left">
+            <div id="preview"></div>
+            <div id="filmRoll">
+                <img src="" alt="thumbnail"/>
+            </div>
         </div>
+        
         <div id="settings">
             <div id="preConvertSettings">
                 <p>Pre-Convert</p>

@@ -25,6 +25,7 @@ private:
     static int nextId;
     static const int PREVIEW_SIZE = 800;
     static const int THUMBNAIL_SIZE = 500;
+    static const int SAMPLE_SIZE = 5;
 
     // PRIVATE DATA MEMBERS
 
@@ -46,7 +47,6 @@ private:
     int workingScale;
     int workingWidth;
     int workingHeight;
-    ImageArea scanArea;
 
     // Thumbnail
     std::vector<uint8_t> thumbnailPixels;
@@ -59,7 +59,6 @@ public:
 
     // Constructors and initializers
     Negative(std::filesystem::path imagePath);
-    Negative();
     bool initializeNegative(std::filesystem::path imagePath);
     
     // Getters for image data
@@ -77,8 +76,16 @@ public:
 
     // SETTING EDIT SETTINGS
 
+    
     // PRE-CONVERT
     float setScanGamma(float value);
+    void setScanArea(ImageArea area);
+    void setBorder(float r, float g, float b);
+    void setBorderByCoords(int x, int y);
+    void setDensest(float r, float g, float b);
+    void setDensestByCoords(int x, int y);
+    void convert();
+    void resetConversion();
 
     // POST-CONVERT
     // Intensity
@@ -90,13 +97,17 @@ public:
     float setBlacks(float value);
 
     // White balance
+    void setNeutral(float r, float g, float b);
+    void setNeutralByCoords(int x, int y);
     float setRBalance(float value);
     float setGBalance(float value);
     float setBBalance(float value);
 
-
     // GETTING EDIT SETTINGS
     float getScanGamma();
+    std::tuple<float, float, float> getBorder();
+    std::tuple<float, float, float> getDensest();
+    ImageArea getScanArea();
 
     float getDensity();
     float getContrast();
@@ -105,6 +116,7 @@ public:
     float getShadows();
     float getBlacks();
 
+    std::tuple<float, float, float> getNeutral();
     float getRBalance();
     float getGBalance();
     float getBBalance();
@@ -112,6 +124,9 @@ public:
     // Caching methods
     bool writeConversionCache();
     bool readConversionCache();
+
+    // Helper for sampling an average from a specific area of the image
+    std::tuple<float,float,float> samplePixels(int workingX, int workingY);
 
     // Rendering methods
     void renderThumbnail();

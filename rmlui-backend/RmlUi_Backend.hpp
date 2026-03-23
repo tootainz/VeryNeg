@@ -28,6 +28,8 @@ Rml::SystemInterface* GetSystemInterface();
 // Returns a pointer to the custom render interface which should be provided to RmlUi.
 Rml::RenderInterface* GetRenderInterface();
 
+void Resize(Rml::Context* context);
+
 // Polls and processes events from the current platform, and applies any relevant events to the provided RmlUi context and the key down callback.
 // @return False to indicate that the application should be closed.
 bool ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback = nullptr, bool power_save = false);

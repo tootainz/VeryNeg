@@ -4,12 +4,13 @@
 #include <filesystem>
 
 #include "../libraries/portable-file-dialogs.h"
-#include "../rmlui-backend/RmlUi_Backend.h"
+#include "../rmlui-backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
 
 #include "commands.hpp"
+#include "../Negative/ImageArea.hpp"
 
 
 // HELPERS
@@ -25,7 +26,7 @@ static sf::Texture createPreviewtexture(ImageData previewData) {
 }
 
 
-// CONSTRUCTOR
+// CONSTRUCTOR AND MAIN LOOP
 // ----------------------------------------------------------------------------------------------------------------
 
 Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
@@ -41,21 +42,35 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
 }
 
 
+void Controller::mainLoop() {
+    
+    // MAIN LOOP CHECKS IF WINDOW IS OPEN
+    while (this->window.isOpen()) {
+
+        // EVENTS
+        this->eventLoop();
+
+        // RENDERING
+        this->view.render();
+	};
+}
+
+
 // METHODS
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview() {
-    sf::Texture previewTexture = createPreviewtexture(this->model.getPreview());
+    sf::Texture previewTexture = createPreviewtexture(this->model.getCurrentNegative().getPreview());
     std::println("preview successfully recovered from model");
     this->view.setPreviewTexture(previewTexture);
 }
 
 void Controller::updateEditSettings() {
     this->disableCallbacks = true;
-        float exposure = this->model.getDensity();
-        float rBalance = this->model.getRBalance();
-        float gBalance = this->model.getGBalance();
-        float bBalance = this->model.getBBalance();
+        float exposure = this->model.getCurrentNegative().getDensity();
+        float rBalance = this->model.getCurrentNegative().getRBalance();
+        float gBalance = this->model.getCurrentNegative().getGBalance();
+        float bBalance = this->model.getCurrentNegative().getBBalance();
         this->view.setSliderValue("rBalanceSlider", rBalance);
         this->view.setSliderValue("gBalanceSlider", gBalance);
         this->view.setSliderValue("bBalanceSlider", bBalance);
@@ -66,7 +81,7 @@ void Controller::updateEditSettings() {
 void Controller::undo() {
     if (this->history.undo()) {
         this->updateEditSettings();
-        this->model.renderEdits();
+        this->model.getCurrentNegative().renderEdits();
         this->updatePreview();
     }
 }
@@ -74,7 +89,7 @@ void Controller::undo() {
 void Controller::redo() {
     if (this->history.redo()) {
         this->updateEditSettings();
-        this->model.renderEdits();
+        this->model.getCurrentNegative().renderEdits();
         this->updatePreview();
     }
 }
@@ -107,6 +122,7 @@ void Controller::ButtonPressAddNegative() {
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+    this->view.LoadThumbnails();
     this->updatePreview();
 }
 
@@ -142,7 +158,7 @@ void Controller::ButtonPressPreviousNegative() {
 void Controller::ButtonPressThumbnail(int id) {
     std::println("thumbnail {} pressed", id);
 
-    int previousId = this->model.getCurrentNegativeId();
+    int previousId = this->model.getCurrentNegative().getId();
 
     auto execute = [this, id]() {
         this->model.changeCurrentNegativeById(id);
@@ -164,26 +180,72 @@ void Controller::ButtonPressSetScanGamma(float value) {
 }
 
 void Controller::ButtonPressSetBorder() {
-    std::println("set border pressed");
+    std::println("Set Border pressed");
+    this->selectingBorder = !this->selectingBorder;
+    this->readyToSelect = !this->readyToSelect;
+}
+
+void Controller::SetBorder(int x, int y) {
+    std::println("Seting Border");
+
+    std::tuple<float, float, float> previousBorderData = this->model.getCurrentNegative().getBorder();
+
+    auto execute = [this, x, y]() {
+        this->model.getCurrentNegative().setBorderByCoords(x, y);
+    };
+
+    auto undo = [this, previousBorderData]() {
+        this->model.getCurrentNegative().setBorder(std::get<0>(previousBorderData), std::get<1>(previousBorderData), std::get<2>(previousBorderData));
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+
+    this->updatePreview();
 }
 
 void Controller::ButtonPressSetDensest() {
-    std::println("set densest pressed");
+    std::println("Set Densest pressed");
+    this->selectingDensest = !this->selectingDensest;
+    this->readyToSelect = !this->readyToSelect;
+}
+
+void Controller::SetDensest(int x, int y) {
+    std::println("Seting Densest");
+
+    std::tuple<float, float, float> previousDensestData = this->model.getCurrentNegative().getDensest();
+
+    auto execute = [this, x, y]() {
+        this->model.getCurrentNegative().setDensestByCoords(x, y);
+    };
+
+    auto undo = [this, previousDensestData]() {
+        this->model.getCurrentNegative().setDensest(std::get<0>(previousDensestData), std::get<1>(previousDensestData), std::get<2>(previousDensestData));
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+
+    this->updatePreview();
 }
 
 void Controller::ButtonPressSetScanArea() {
     std::println("set scan area pressed");
+    this->selectingScanArea = !this->selectingScanArea;
+    this->readyToSelect = !this->readyToSelect;
 }
 
 void Controller::ButtonPressConvert() {
     std::println("button pressed convert");
 
     auto execute = [this]() -> void {
-        this->model.renderWorking();
+        this->model.getCurrentNegative().renderWorking();
     };
 
     auto undo = [this] -> void {
-        this->model.resetConversion();
+        this->model.getCurrentNegative().resetConversion();
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -194,11 +256,11 @@ void Controller::ButtonPressResetConversion() {
     std::println("reset conversion pressed");
 
     auto execute = [this]() -> void {
-        this->model.resetConversion();
+        this->model.getCurrentNegative().resetConversion();
     };
 
     auto undo = [this]() -> void {
-        this->model.convert();
+        this->model.getCurrentNegative().convert();
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -209,15 +271,15 @@ void Controller::SliderChangeSetDensity(float value) {
     std::println("Slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setDensity(value);
+        return this->model.getCurrentNegative().setDensity(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getDensity();
+        return this->model.getCurrentNegative().getDensity();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -225,15 +287,15 @@ void Controller::SliderChangeSetContrast(float value) {
     std::println("Contrast slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setContrast(value);
+        return this->model.getCurrentNegative().setContrast(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getContrast();
+        return this->model.getCurrentNegative().getContrast();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -241,15 +303,15 @@ void Controller::SliderChangeSetWhites(float value) {
     std::println("Whites slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setWhites(value);
+        return this->model.getCurrentNegative().setWhites(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getWhites();
+        return this->model.getCurrentNegative().getWhites();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -257,15 +319,15 @@ void Controller::SliderChangeSetHighlights(float value) {
     std::println("Highlights slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setHighlights(value);
+        return this->model.getCurrentNegative().setHighlights(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getHighlights();
+        return this->model.getCurrentNegative().getHighlights();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -273,15 +335,15 @@ void Controller::SliderChangeSetShadows(float value) {
     std::println("Shadows slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setShadows(value);
+        return this->model.getCurrentNegative().setShadows(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getShadows();
+        return this->model.getCurrentNegative().getShadows();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -289,15 +351,15 @@ void Controller::SliderChangeSetBlacks(float value) {
     std::println("Blacks slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setBlacks(value);
+        return this->model.getCurrentNegative().setBlacks(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getBlacks();
+        return this->model.getCurrentNegative().getBlacks();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -305,21 +367,43 @@ void Controller::ButtonPressAutoWhiteBalance() {
 }
 
 void Controller::ButtonPressChooseNeutralBalance() {
+    std::println("Neutral balanbce button pressed");
+    this->selectingNeutral = !this->selectingNeutral;
+    this->readyToSelect = !this->readyToSelect;
+}
+
+void Controller::SetNeutralBalance(int x, int y) {
+    std::println("Setting Neutral balanbce");
+    std::tuple<float, float, float> previousNeutralData = this->model.getCurrentNegative().getNeutral();
+
+    auto execute = [this, x, y]() {
+        this->model.getCurrentNegative().setNeutralByCoords(x, y);
+    };
+
+    auto undo = [this, previousNeutralData]() {
+        this->model.getCurrentNegative().setNeutral(std::get<0>(previousNeutralData), std::get<1>(previousNeutralData), std::get<2>(previousNeutralData));
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+
+    this->updatePreview();
 }
 
 void Controller::SliderChangeSetRBalance(float value) {
     std::println("R balance slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setRBalance(value);
+        return this->model.getCurrentNegative().setRBalance(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getRBalance();
+        return this->model.getCurrentNegative().getRBalance();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -327,15 +411,15 @@ void Controller::SliderChangeSetGBalance(float value) {
     std::println("G balance slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setGBalance(value);
+        return this->model.getCurrentNegative().setGBalance(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getGBalance();
+        return this->model.getCurrentNegative().getGBalance();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -343,15 +427,15 @@ void Controller::SliderChangeSetBBalance(float value) {
     std::println("B balance slider value was changed to {}", value);
 
     auto setter = [this](float value) -> float {
-        return this->model.setBBalance(value);
+        return this->model.getCurrentNegative().setBBalance(value);
     };
 
     auto getter = [this]() -> float {
-        return this->model.getBBalance();
+        return this->model.getCurrentNegative().getBBalance();
     };
 
     this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.renderEdits();
+    this->model.getCurrentNegative().renderEdits();
     this->updatePreview();
 }
 
@@ -360,7 +444,7 @@ void Controller::ButtonPressSavePositive() {
     pfd::save_file fileSaver("Choose positive location", "/");
     std::filesystem::path path = fileSaver.result();
     std::println("save path is {}", path.string());
-    this->model.exportPositive(path);
+    this->model.getCurrentNegative().exportPositive(path);
 }
 
 
@@ -448,31 +532,141 @@ void Controller::ProcessEvent(Rml::Event& event) {
 }
 
 
-// MAIN LOOP
+// MAIN LOOP HELPERS
 // ----------------------------------------------------------------------------------------------------------------
 
-void Controller::mainLoop() {
+bool Controller::handleKeyboardEvents(std::optional<sf::Event> event) {
+    if (auto keyPressed = event->getIf<sf::Event::KeyPressed>()) {
 
-    while (this->window.isOpen() && RmlBackend::ProcessEvents(this->view.getRmlContext())) {
+        // Global shortcuts that take priority over the context go here.
 
-        while (const std::optional event = this->window.pollEvent()) {
+        // Otherwise, hand the event over to the context by calling the input handler as normal.
+        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
 
-            if (event->is<sf::Event::Closed>()) {
-                this->window.close();
+        // The key was not consumed by the context either, try keyboard shortcuts of lower priority.
 
-            } else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {   
-                if (keyPressed->scancode == sf::Keyboard::Scancode::Z) {
-                    std::println("z pressed");
-                    this->undo();
+        // Command pressed
+        if (keyPressed->system) {
+            // Cmd Z
+            if (keyPressed->code == sf::Keyboard::Key::Z) {
+                this->undo();
+            }
+            // Shift Cmd Z
+            else if (keyPressed->shift && keyPressed->code == sf::Keyboard::Key::Z) {
+                this->redo();
+            }
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
+
+    // MOUSE PRESSED
+    if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+        std::println("mouse pressed at ({},{})", mousePressed->position.x,  mousePressed->position.y);
+        if (this->readyToSelect) {
+            // Selecting only a sample point
+            if (this->selectingBorder || this->selectingDensest || this->selectingNeutral) {
+                if (this->selectingBorder) {
+                    this->SetBorder( mousePressed->position.x,  mousePressed->position.y);
                 }
-                if (keyPressed->scancode == sf::Keyboard::Scancode::X) {
-                    std::println("x pressed");
-                    this->redo();
+                else if (this->selectingDensest) {
+                    this->SetDensest( mousePressed->position.x,  mousePressed->position.y);
                 }
+                else if (this->selectingNeutral) {
+                    this->SetNeutralBalance( mousePressed->position.x,  mousePressed->position.y);
+                }
+                this->readyToSelect = false;
+                this->selectingBorder = false;
+                this->selectingDensest = false;
+                this->selectingNeutral = false;
+            }
+            else {
+                this->view.displaySelection = true;
+                std::println("starting dragging");
+                this->selecting = true;
+                this->readyToSelect = false;
+                this->selectionStart = { mousePressed->position.x, mousePressed->position.y };
             }
         }
 
-        // Render the view
-        this->view.render();
+        // Otherwise, hand the event over to the RmlUi context.
+        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        return true;
+    }
+
+    // MOUSE MOVED
+    else if (auto mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+        if (this->selecting) {
+        std::println("Dragging at ({},{})", mouseMoved->position.x, mouseMoved->position.y);
+            if (this->selectingScanArea) {
+                ImageArea scanArea = this->model.getCurrentNegative().getScanArea();
+                scanArea.left   = std::min(selectionStart.x, mouseMoved->position.x);
+                scanArea.top    = std::min(selectionStart.y, mouseMoved->position.y);
+                scanArea.right  = std::max(selectionStart.x, mouseMoved->position.x);
+                scanArea.bottom = std::max(selectionStart.y, mouseMoved->position.y);
+                this->model.getCurrentNegative().setScanArea(scanArea);
+                this->view.setSelection(scanArea);
+            }
+        }
+
+        // Hand the event over to the RmlUi context.
+        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        return true;
+    }
+
+    // MOUSE RELEASED
+    else if (auto mouseReleased = event->getIf<sf::Event::MouseButtonReleased>()) {
+
+        // Process mouse after RmlUi
+        std::println("mouse Released at ({},{})", mouseReleased->position.x,  mouseReleased->position.y);
+        if (this->selecting) {
+            std::println("Finished dragging");
+            this->selecting = false;
+            this->readyToSelect = false;
+            if (this->selectingScanArea) {
+                this->selectingScanArea = false;
+            }
+        }
+
+        // Hand the event over to the RmlUi context.
+        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        return true;
+    }
+
+    else {
+        return false;
+    }
+}
+
+void Controller::eventLoop()
+{
+
+    while (const std::optional event = this->window.pollEvent()) {
+
+        // RESIZED
+        if (event->is<sf::Event::Resized>()) {
+            RmlBackend::Resize(this->view.getRmlContext());
+        }
+
+        // KEY PRESSED
+        else if (this->handleKeyboardEvents(event)) {}
+
+        // MOUSE
+        else if (this->handleMouseEvents(event)) {}
+
+        // WINDOW CLOSED
+        else if (event->is<sf::Event::Closed>()) {
+            this->window.close();
+        }
+
+        // REST OF THE EVENTS
+        else {
+            RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        }
     }
 }

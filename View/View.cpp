@@ -3,14 +3,16 @@
 #include <print>
 #include <format>
 
-#include "../rmlui-backend/RmlUi_Backend.h"
+#include "../rmlui-backend/RmlUi_Backend.hpp"
 
 
 View::View(sf::RenderWindow& window) :
     window(window),
     previewTexture(),
     previewSprite(this->previewTexture),
-    rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y)))
+    rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
+    selection({0.0f, 0.0f}),
+    thumbnails()
 {
     bool success = Rml::LoadFontFace("assets/oceert_pixel.otf");
     Rml::ElementDocument* document = this->rmlContext->LoadDocument("assets/hello.rml");
@@ -21,26 +23,56 @@ View::View(sf::RenderWindow& window) :
 }
 
 void View::addThumbnail(sf::Texture thumbnailTexture, int id) {
-    // auto thumbnail = tgui::Picture::create(thumbnailTexture);
-    // //thumbnail->getRenderer()->setTexture("image2.png"); // To change image after construction
-    // //thumbnail->onClick(this->onButtonPress_Thumbnail);
-    // thumbnail->setSize(50,50);
-    // thumbnail->setPosition(100+60*this->lastThumbnailposition, 800);
-    // this->lastThumbnailposition += 1;
-    // std::string name = std::format("thumbnail_{}", id);
-    // thumbnail->setUserData(id);
-    // thumbnail->onMouseEnter([thumbnail]{
-    //     thumbnail->getRenderer()->setOpacity(0.7f);
-    // });
-    // thumbnail->onMouseLeave([thumbnail]{
-    //     thumbnail->getRenderer()->setOpacity(1.0f);
-    // });
-    // gui.add(thumbnail, name);
+    Rml::Element* filmRoll = this->rmlDocument->GetElementById("filmRoll");
+    Rml::ElementPtr thumbnailElement = this->rmlDocument->CreateElement("div");
+    std::string name = std::format("thumbnail_{}", id);
+    thumbnailElement->SetId(name);
+    thumbnailElement->SetClass("thumbnail", true);
+    filmRoll->AppendChild(std::move(thumbnailElement));
+    std::println("added thumbnailElement");
 
-    // thumbnail->onClick([this, thumbnail] {
-    //     int id = thumbnail->getUserData<int>();
-    //     this->onButtonPress_Thumbnail(id);
-    // });
+    this->rmlContext->Update();
+
+    Rml::Element* thumbnailElementPointer = this->rmlDocument->GetElementById(name);
+
+    Thumbnail thumbnail({id, thumbnailTexture});
+    std::println("created thumbnail struct");
+
+    // little help from chatgpt in getting the correct size since i was lazy and need to get this done
+    const Rml::Box& box = thumbnailElementPointer->GetBox();
+    Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Border);
+    Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+    std::println("got dimensions");
+
+    thumbnail.sprite.setPosition(sf::Vector2f(pos.x, pos.y));
+    thumbnail.sprite.setScale(sf::Vector2f(size.x / thumbnail.texture.getSize().x, size.y / thumbnail.texture.getSize().y));
+    std::println("set size and pos");
+
+    std::println("Texture size: {} x {}", thumbnail.texture.getSize().x, thumbnail.texture.getSize().y);
+    std::println("Sprite position: {}, {}", pos.x, pos.y);
+
+    this->thumbnails.push_back(thumbnail);
+    std::println("added to the vector");
+}
+
+void View::LoadThumbnails() {
+    for (Thumbnail& thumbnail : this->thumbnails) {
+        thumbnail.loadTexture();
+    }
+}
+
+void View::updateThumbnails() {
+    for (Thumbnail& thumbnail : this->thumbnails) {
+        std::string thumbnailName = std::format("thumbnail_{}", thumbnail.id);
+        Rml::Element* thumbnailElement = this->rmlDocument->GetElementById(thumbnailName);
+
+        const Rml::Box& box = thumbnailElement->GetBox();
+        Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Border);
+        Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+
+        thumbnail.sprite.setPosition(sf::Vector2f(pos.x, pos.y));
+        thumbnail.sprite.setScale(sf::Vector2f(size.x / thumbnail.texture.getSize().x, size.y / thumbnail.texture.getSize().y));
+    }
 }
 
 void View::setSliderValue(std::string name, float value) {
@@ -48,6 +80,13 @@ void View::setSliderValue(std::string name, float value) {
     // if (slider) {
     //     slider->setValue(value);
     // }
+}
+
+void View::setSelection(ImageArea area) {
+    this->selection.setPosition({static_cast<float>(area.left), static_cast<float>(area.top)});
+    float width = area.right - area.left;
+    float height = area.bottom - area.top;
+    this->selection.setSize({width, height});
 }
 
 void View::setPreviewTexture(sf::Texture texture) {
@@ -61,30 +100,24 @@ Rml::Context* View::getRmlContext() {
 
 // Draw the complete view
 void View::render() {
-    // std::println("drawing view");
 
-
-    std::array line =
-    {
-        sf::Vertex{sf::Vector2f(10.f, 10.f)},
-        sf::Vertex{sf::Vector2f(150.f, 150.f)}
-    };
-
-    // define a 120x50 rectangle
-    sf::RectangleShape rectangle({120.f, 50.f});
-
-    // change the size to 100x100
-    rectangle.setSize({100.f, 100.f});
-    rectangle.setFillColor(sf::Color::Transparent);
-    rectangle.setOutlineThickness(1.0f);
-    rectangle.setOutlineColor(sf::Color::White);
+    this->selection.setFillColor(sf::Color::Transparent);
+    this->selection.setOutlineThickness(1.0f);
+    this->selection.setOutlineColor(sf::Color::White);
+    this->updateThumbnails();
 
     this->window.clear();
     
     // Draw the non RmlUi stuff
     this->window.draw(previewSprite);
-    this->window.draw(line.data(), line.size(), sf::PrimitiveType::Lines);
-    this->window.draw(rectangle);
+    if (this->displaySelection) {
+        this->window.draw(this->selection);
+    }
+
+    // Thumbnails
+    for (Thumbnail& thumbnail : this->thumbnails) {
+        this->window.draw(thumbnail.sprite);
+    }
 
     // Update and render the RmlUi
     RmlBackend::BeginFrame();

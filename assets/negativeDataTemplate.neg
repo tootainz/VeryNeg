@@ -14,11 +14,13 @@
 
     "conversion": {
         "samplingBlur": 20,
+        "hasBorder": false,
         "border": {
             "r": 0.0,
             "g": 0.0,
             "b": 0.0
         },
+        "hasDensest": false,
         "densest": {
             "r": 0.0,
             "g": 0.0,

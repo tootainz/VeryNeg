@@ -3,29 +3,59 @@
 #include <SFML/Graphics.hpp>
 #include <RmlUi/Core.h>
 
+#include "../Negative/ImageArea.hpp"
+
+
+struct Thumbnail {
+    int id;
+    sf::Texture texture;
+    sf::Sprite sprite;
+
+    Thumbnail(int id, sf::Texture texture) :
+        id(id),
+        texture(texture),
+        sprite(this->texture)
+    {}
+
+    void loadTexture() {
+        this->sprite.setTexture(this->texture);
+    }
+};
 
 class View {
 
-    private:
+public:
 
-        sf::Texture previewTexture;
-        sf::Sprite previewSprite;
-        sf::RenderWindow& window;
-        int lastThumbnailposition = 0;
-        Rml::Context* rmlContext;
-        Rml::ElementDocument* rmlDocument;
+    bool displaySelection = false;
 
-    public:
+private:
 
-        View(sf::RenderWindow& window);
+    sf::Texture previewTexture;
+    sf::Sprite previewSprite;
+    sf::RenderWindow& window;
+    int lastThumbnailposition = 0;
+    Rml::Context* rmlContext;
+    Rml::ElementDocument* rmlDocument;
+    sf::RectangleShape selection;
+    std::vector<Thumbnail> thumbnails;
 
-        void addThumbnail(sf::Texture thumbnailTexture, int id);
+public:
 
-        void setSliderValue(std::string name, float value);
+    View(sf::RenderWindow& window);
 
-        void setPreviewTexture(sf::Texture texture);
+    void addThumbnail(sf::Texture thumbnailTexture, int id);
 
-        Rml::Context* getRmlContext();
+    void LoadThumbnails();
 
-        void render();
+    void updateThumbnails();
+
+    void setSliderValue(std::string name, float value);
+
+    void setSelection(ImageArea area);
+
+    void setPreviewTexture(sf::Texture texture);
+
+    Rml::Context* getRmlContext();
+
+    void render();
 };
