@@ -65,7 +65,7 @@ private:
 
     // UPDATE GUI
     void updatePreview();
-    void updateEditSettings();
+    void updateEditSettings(Negative* negative);
 
     // UNDO REDO
     void undo();
@@ -75,7 +75,7 @@ private:
 
     // NEGATIVE NAVIGATION
     void ButtonPressAddNegative();
-    void ButtonPressRemoveNegative();
+    void ButtonPressRemoveNegative(int id);
     void ButtonPressNextNegative();
     void ButtonPressPreviousNegative();
     void ButtonPressThumbnail(int id);

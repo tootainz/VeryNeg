@@ -61,6 +61,7 @@
                 <p>Export-Import</p>
                 <button id="import">Import</button>
                 <button id="export">Export</button>
+                <button id="remove">Remove</button>
             </div>
         </div>
 	</body>

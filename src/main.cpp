@@ -1,6 +1,3 @@
-#include <iostream>
-#include <filesystem>
-#include <vector>
 #include <print>
 
 #include <OpenImageIO/imageio.h>
@@ -18,7 +15,7 @@
 #include "Model/Model.hpp"
 
 
-/*
+/**
 
 VeryNeg v0.3.0
 By Joonatan Koponen

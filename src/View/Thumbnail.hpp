@@ -6,18 +6,18 @@
 struct Thumbnail {
 
     int id;
-    sf::Texture texture;
+    std::unique_ptr<sf::Texture> texture;
     sf::Sprite sprite;
 
-    Thumbnail(int id, sf::Texture texture) :
+    Thumbnail(int id, std::unique_ptr<sf::Texture> texture) :
         id(id),
-        texture(texture),
+        texture(std::move(texture)),
         // !! It seems that this might not load the texture
-        sprite(this->texture)
+        sprite(*this->texture)
     {}
 
     // Load the texture manually later
     void loadTexture() {
-        this->sprite.setTexture(this->texture);
+        this->sprite.setTexture(*this->texture);
     }
 };

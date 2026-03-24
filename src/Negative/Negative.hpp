@@ -95,12 +95,14 @@ public:
 
     // CONSTRUCTORS
     Negative(std::filesystem::path imagePath);
+    Negative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
 
     // GETTERS FOR THE UI
     ImageData getPreview();
     ImageData getThumbnail();
     ImageData getSharpnessPreview();
     int getId();
+    std::filesystem::path getPath();
 
     // EXPORTING
     bool exportPositive(std::filesystem::path imagePath);

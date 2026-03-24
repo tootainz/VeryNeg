@@ -29,7 +29,7 @@ private:
     // ------------------------------------------------------------------------------------------------------------------------------------
 
     // Preview
-    sf::Texture previewTexture;
+    std::unique_ptr<sf::Texture> previewTexture;
     sf::Sprite previewSprite;
 
     // Window
@@ -44,7 +44,7 @@ private:
 
     // Thumbnails
     int lastThumbnailposition = 0;
-    std::vector<Thumbnail> thumbnails;
+    std::vector<std::unique_ptr<Thumbnail>> thumbnails;
 
 public:
     // PUBLIC METHODS
@@ -54,14 +54,15 @@ public:
     View(sf::RenderWindow& window);
 
     // THUMBNAIL MANAGEMENT
-    void addThumbnail(sf::Texture thumbnailTexture, int id);
+    void addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
+    void removeThumbnail(int id);
     void LoadThumbnails();
     void updateThumbnails();
 
     // SETTERS
     void setSliderValue(std::string name, float value);
     void setSelection(ImageArea area);
-    void setPreviewTexture(sf::Texture texture);
+    void setPreviewTexture(std::unique_ptr<sf::Texture> texture);
 
     // GETTERS
     Rml::Context* getRmlContext();

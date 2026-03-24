@@ -46,8 +46,10 @@ public:
 
     // NEGATIVE IO
     Negative& addNegative(std::filesystem::path imagePath);
+    Negative& addNegative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
     void removeNegativeById(int id);
     
     // GETTERS
-    Negative& getCurrentNegative();
+    std::optional<Negative*> getCurrentNegative();
+    std::optional<Negative*> getNegativeById(int id);
 };

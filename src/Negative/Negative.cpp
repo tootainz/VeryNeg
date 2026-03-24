@@ -70,7 +70,9 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
-    std::string dataName = this->path.replace_extension(".neg").string();
+    std::string dataName = std::filesystem::path(this->path)
+        .replace_extension(".neg")
+        .string();
     std::ifstream file(dataName);
     if (!file) {
         std::println("failed to find negativeData file called {}", dataName);
@@ -81,7 +83,9 @@ void Negative::readNegativeData() {
 }
 
 void Negative::writeNegativeData() {
-    std::string dataName = this->path.replace_extension(".neg").string();
+    std::string dataName = std::filesystem::path(this->path)
+        .replace_extension(".neg")
+        .string();
     std::ofstream file(dataName);
     file << this->negativeData << std::endl;
 }
@@ -196,6 +200,12 @@ Negative::Negative(std::filesystem::path imagePath) {
     return;
 }
 
+Negative::Negative(std::filesystem::path imagePath, int id) {
+    this->id = id;
+    this->initializeNegative(imagePath);
+    return;
+}
+
 
 // GETTERS FOR THE UI
 // ----------------------------------------------------------------------------------------------------------------
@@ -259,6 +269,9 @@ int Negative::getId() {
     return this->id;
 }
 
+std::filesystem::path Negative::getPath() {
+    return this->path;
+}
 
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------

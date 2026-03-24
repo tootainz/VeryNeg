@@ -11,8 +11,8 @@
 
 View::View(sf::RenderWindow& window) :
     window(window),
-    previewTexture(),
-    previewSprite(this->previewTexture),
+    previewTexture(std::make_unique<sf::Texture>()),
+    previewSprite(*this->previewTexture),
     rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
     selection({0.0f, 0.0f}),
     thumbnails()
@@ -29,7 +29,7 @@ View::View(sf::RenderWindow& window) :
 // THUMBNAIL MANAGEMENT
 // ----------------------------------------------------------------------------------------------------------------
 
-void View::addThumbnail(sf::Texture thumbnailTexture, int id) {
+void View::addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
     Rml::Element* filmRoll = this->rmlDocument->GetElementById("filmRoll");
     Rml::ElementPtr thumbnailElement = this->rmlDocument->CreateElement("div");
     std::string name = std::format("thumbnail_{}", id);
@@ -42,7 +42,7 @@ void View::addThumbnail(sf::Texture thumbnailTexture, int id) {
 
     Rml::Element* thumbnailElementPointer = this->rmlDocument->GetElementById(name);
 
-    Thumbnail thumbnail({id, thumbnailTexture});
+    auto thumbnail = std::make_unique<Thumbnail>(id, std::move(thumbnailTexture));
     std::println("created thumbnail struct");
 
     // little help from chatgpt in getting the correct size since i was lazy and need to get this done
@@ -51,34 +51,57 @@ void View::addThumbnail(sf::Texture thumbnailTexture, int id) {
     Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
     std::println("got dimensions");
 
-    thumbnail.sprite.setPosition(sf::Vector2f(pos.x, pos.y));
-    thumbnail.sprite.setScale(sf::Vector2f(size.x / thumbnail.texture.getSize().x, size.y / thumbnail.texture.getSize().y));
+    thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
+    thumbnail->sprite.setScale(sf::Vector2f(size.x / thumbnail->texture->getSize().x, size.y / thumbnail->texture->getSize().y));
     std::println("set size and pos");
 
-    std::println("Texture size: {} x {}", thumbnail.texture.getSize().x, thumbnail.texture.getSize().y);
+    std::println("Texture size: {} x {}", thumbnail->texture->getSize().x, thumbnail->texture->getSize().y);
     std::println("Sprite position: {}, {}", pos.x, pos.y);
 
-    this->thumbnails.push_back(thumbnail);
+    this->thumbnails.push_back(std::move(thumbnail));
     std::println("added to the vector");
 }
 
+// Written by AI since I was lazy
+void View::removeThumbnail(int id) {
+    auto iterator = std::find_if(
+        this->thumbnails.begin(),
+        this->thumbnails.end(),
+        [&id](const std::unique_ptr<Thumbnail>& thumbnailPtr) {
+            return thumbnailPtr->id == id;
+        }
+    );
+
+    if (iterator != this->thumbnails.end()) {
+        this->thumbnails.erase(iterator);
+    }
+
+    // Also remove from the RML document
+    std::string name = std::format("thumbnail_{}", id);
+    Rml::Element* element = this->rmlDocument->GetElementById(name);
+
+    if (element && element->GetParentNode()) {
+        element->GetParentNode()->RemoveChild(element);
+    }
+}
+
 void View::LoadThumbnails() {
-    for (Thumbnail& thumbnail : this->thumbnails) {
-        thumbnail.loadTexture();
+    for (const auto& thumbnail : this->thumbnails) {
+        thumbnail->loadTexture();
     }
 }
 
 void View::updateThumbnails() {
-    for (Thumbnail& thumbnail : this->thumbnails) {
-        std::string thumbnailName = std::format("thumbnail_{}", thumbnail.id);
+    for (const auto& thumbnail : this->thumbnails) {
+        std::string thumbnailName = std::format("thumbnail_{}", thumbnail->id);
         Rml::Element* thumbnailElement = this->rmlDocument->GetElementById(thumbnailName);
 
         const Rml::Box& box = thumbnailElement->GetBox();
         Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Border);
         Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
 
-        thumbnail.sprite.setPosition(sf::Vector2f(pos.x, pos.y));
-        thumbnail.sprite.setScale(sf::Vector2f(size.x / thumbnail.texture.getSize().x, size.y / thumbnail.texture.getSize().y));
+        thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
+        thumbnail->sprite.setScale(sf::Vector2f(size.x / thumbnail->texture->getSize().x, size.y / thumbnail->texture->getSize().y));
     }
 }
 
@@ -100,9 +123,9 @@ void View::setSelection(ImageArea area) {
     this->selection.setSize({width, height});
 }
 
-void View::setPreviewTexture(sf::Texture texture) {
-    this->previewTexture = texture;
-    this->previewSprite = sf::Sprite(this->previewTexture);
+void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
+    this->previewTexture = std::move(texture);
+    this->previewSprite = sf::Sprite(*this->previewTexture);
 }
 
 
@@ -134,8 +157,8 @@ void View::render() {
     }
 
     // Thumbnails
-    for (Thumbnail& thumbnail : this->thumbnails) {
-        this->window.draw(thumbnail.sprite);
+    for (const auto& thumbnail : this->thumbnails) {
+        this->window.draw(thumbnail->sprite);
     }
 
     // Update and render the RmlUi

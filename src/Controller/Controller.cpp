@@ -17,11 +17,11 @@
 // ----------------------------------------------------------------------------------------------------------------
 
 // SFML specific helper function for transforming the preview ImageData from Negative to a texture for SFML
-static sf::Texture createPreviewtexture(ImageData previewData) {
-    std::cout << "creating texture" << std::endl;
+static std::unique_ptr<sf::Texture> createPreviewtexture(ImageData previewData) {
+    std::println("creating preview texture");
     sf::Vector2u size(previewData.width, previewData.height);
     sf::Image previewImage(size, previewData.data.data());
-    auto previewTexture = sf::Texture(previewImage, false);
+    auto previewTexture = std::make_unique<sf::Texture>(previewImage, false);
     return previewTexture;
 }
 
@@ -60,17 +60,27 @@ void Controller::mainLoop() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview() {
-    sf::Texture previewTexture = createPreviewtexture(this->model.getCurrentNegative().getPreview());
-    std::println("preview successfully recovered from model");
-    this->view.setPreviewTexture(previewTexture);
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        std::println("preview negative exists");
+        Negative* negative = isNegative.value();
+        std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getPreview()));
+        std::println("preview successfully recovered from model");
+        this->view.setPreviewTexture(std::move(previewTexture));
+    }
+    else {
+        std::println("preview negative doesnt exist");
+        // This is supposed to clear the preview but not workign at the moment
+        this->view.setPreviewTexture(std::make_unique<sf::Texture>());
+    }
 }
 
-void Controller::updateEditSettings() {
+void Controller::updateEditSettings(Negative* negative) {
     this->disableCallbacks = true;
-        float exposure = this->model.getCurrentNegative().getDensity();
-        float rBalance = this->model.getCurrentNegative().getRBalance();
-        float gBalance = this->model.getCurrentNegative().getGBalance();
-        float bBalance = this->model.getCurrentNegative().getBBalance();
+        float exposure = negative->getDensity();
+        float rBalance = negative->getRBalance();
+        float gBalance = negative->getGBalance();
+        float bBalance = negative->getBBalance();
         this->view.setSliderValue("rBalanceSlider", rBalance);
         this->view.setSliderValue("gBalanceSlider", gBalance);
         this->view.setSliderValue("bBalanceSlider", bBalance);
@@ -84,17 +94,25 @@ void Controller::updateEditSettings() {
 
 void Controller::undo() {
     if (this->history.undo()) {
-        this->updateEditSettings();
-        this->model.getCurrentNegative().renderEdits();
-        this->updatePreview();
+        std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+        if (isNegative) {
+            Negative* negative = isNegative.value();
+            this->updateEditSettings(negative);
+            negative->renderEdits();
+            this->updatePreview();
+        }
     }
 }
 
 void Controller::redo() {
     if (this->history.redo()) {
-        this->updateEditSettings();
-        this->model.getCurrentNegative().renderEdits();
-        this->updatePreview();
+        std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+        if (isNegative) {
+            Negative* negative = isNegative.value();
+            this->updateEditSettings(negative);
+            negative->renderEdits();
+            this->updatePreview();
+        }
     }
 }
 
@@ -106,27 +124,59 @@ void Controller::ButtonPressAddNegative() {
     std::println("button pressed choose negative");
 
     auto execute = [this]() -> void {
+
         pfd::open_file fileOpener("Choose negative", "/");
         std::vector<std::string> paths = fileOpener.result();
+
         if (paths.size() == 0) {
-            std::cout << "didn't choose a file" << std::endl;
+            std::println("didn't choose a file");
             return;
-        } else {
+        }
+        else {
             std::filesystem::path path = paths[0];
-            std::cout << "Trying to open negative at: " << std::endl << path << std::endl;
+            std::println("Trying to open negative at: {}", path.string());
+
             Negative& negative = model.addNegative(path);
             int id = negative.getId();
             ImageData thumbnail = negative.getThumbnail();
             this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+            this->updateEditSettings(&negative);
         }
-        this->updateEditSettings();
     };
 
     auto undo = [this]() -> void {
+
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->view.LoadThumbnails();
+    this->updatePreview();
+}
+
+void Controller::ButtonPressRemoveNegative(int id) {
+    std::println("button pressed remove negative");
+
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
+        std::filesystem::path path = negative->getPath();
+
+        auto execute = [this, id]() -> void {
+            this->model.removeNegativeById(id);
+            this->view.removeThumbnail(id);
+        };
+
+        auto undo = [this, path, id]() -> void {
+            std::println("Trying to open negative at: {}", path.string());
+            Negative& negative = model.addNegative(path, id);
+            ImageData thumbnail = negative.getThumbnail();
+            this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+            this->updateEditSettings(&negative);
+        };
+
+        this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->view.LoadThumbnails();
+    }
     this->updatePreview();
 }
 
@@ -162,21 +212,26 @@ void Controller::ButtonPressPreviousNegative() {
 void Controller::ButtonPressThumbnail(int id) {
     std::println("thumbnail {} pressed", id);
 
-    int previousId = this->model.getCurrentNegative().getId();
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto execute = [this, id]() {
-        this->model.changeCurrentNegativeById(id);
-    };
+        int previousId = negative->getId();
 
-    auto undo = [this, previousId]() {
-        this->model.changeCurrentNegativeById(previousId);
-    };
+        auto execute = [this, id]() {
+            this->model.changeCurrentNegativeById(id);
+        };
 
-    this->history.addCommand(
-        std::make_unique<Command_Lambda>(execute, undo)
-    );
+        auto undo = [this, previousId]() {
+            this->model.changeCurrentNegativeById(previousId);
+        };
 
-    this->updatePreview();
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview();
+    }
 }
 
 
@@ -196,22 +251,28 @@ void Controller::ButtonPressSetBorder() {
 void Controller::SetBorder(int x, int y) {
     std::println("Seting Border");
 
-    std::tuple<float, float, float> previousBorderData = this->model.getCurrentNegative().getBorder();
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto execute = [this, x, y]() {
-        this->model.getCurrentNegative().setBorderByCoords(x, y);
-    };
+        std::tuple<float, float, float> previousBorderData = negative->getBorder();
 
-    auto undo = [this, previousBorderData]() {
-        this->model.getCurrentNegative().setBorder(std::get<0>(previousBorderData), std::get<1>(previousBorderData), std::get<2>(previousBorderData));
-    };
+        auto execute = [&negative, x, y]() {
+            negative->setBorderByCoords(x, y);
+        };
 
-    this->history.addCommand(
-        std::make_unique<Command_Lambda>(execute, undo)
-    );
+        auto undo = [&negative, previousBorderData]() {
+            negative->setBorder(std::get<0>(previousBorderData), std::get<1>(previousBorderData), std::get<2>(previousBorderData));
+        };
 
-    this->updatePreview();
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview();
+    }
 }
+
 
 void Controller::ButtonPressSetDensest() {
     std::println("Set Densest pressed");
@@ -220,23 +281,26 @@ void Controller::ButtonPressSetDensest() {
 }
 
 void Controller::SetDensest(int x, int y) {
-    std::println("Seting Densest");
+    std::println("Setting Densest");
 
-    std::tuple<float, float, float> previousDensestData = this->model.getCurrentNegative().getDensest();
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
+        std::tuple<float, float, float> previousDensestData = negative->getDensest();
 
-    auto execute = [this, x, y]() {
-        this->model.getCurrentNegative().setDensestByCoords(x, y);
-    };
+        auto execute = [&negative, x, y]() {
+            negative->setDensestByCoords(x, y);
+        };
 
-    auto undo = [this, previousDensestData]() {
-        this->model.getCurrentNegative().setDensest(std::get<0>(previousDensestData), std::get<1>(previousDensestData), std::get<2>(previousDensestData));
-    };
+        auto undo = [&negative, previousDensestData]() {
+            negative->setDensest(std::get<0>(previousDensestData),
+                                std::get<1>(previousDensestData),
+                                std::get<2>(previousDensestData));
+        };
 
-    this->history.addCommand(
-        std::make_unique<Command_Lambda>(execute, undo)
-    );
-
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->updatePreview();
+    }
 }
 
 void Controller::ButtonPressSetScanArea() {
@@ -246,138 +310,163 @@ void Controller::ButtonPressSetScanArea() {
 }
 
 void Controller::ButtonPressConvert() {
-    std::println("button pressed convert");
+    std::println("Button pressed convert");
 
-    auto execute = [this]() -> void {
-        this->model.getCurrentNegative().renderWorking();
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto undo = [this] -> void {
-        this->model.getCurrentNegative().resetConversion();
-    };
+        auto execute = [&negative]() {
+            negative->renderWorking();
+        };
 
-    this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
-    this->updatePreview();
+        auto undo = [&negative]() {
+            negative->resetConversion();
+        };
+
+        this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->updatePreview();
+    }
 }
 
 void Controller::ButtonPressResetConversion() {
-    std::println("reset conversion pressed");
+    std::println("Reset conversion pressed");
 
-    auto execute = [this]() -> void {
-        this->model.getCurrentNegative().resetConversion();
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto undo = [this]() -> void {
-        this->model.getCurrentNegative().convert();
-    };
+        auto execute = [&negative]() {
+            negative->resetConversion();
+        };
 
-    this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
-    this->updatePreview();
+        auto undo = [&negative]() {
+            negative->convert();
+        };
+
+        this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->updatePreview();
+    }
 }
-
-
-// GUI EVENTS POST-CONVERT INTENSITY
-// ----------------------------------------------------------------------------------------------------------------
 
 void Controller::SliderChangeSetDensity(float value) {
     std::println("Slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setDensity(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getDensity();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setDensity(v); };
+        auto getter = [&negative]() -> float { return negative->getDensity(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetContrast(float value) {
     std::println("Contrast slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setContrast(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getContrast();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setContrast(v); };
+        auto getter = [&negative]() -> float { return negative->getContrast(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetWhites(float value) {
     std::println("Whites slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setWhites(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getWhites();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setWhites(v); };
+        auto getter = [&negative]() -> float { return negative->getWhites(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetHighlights(float value) {
     std::println("Highlights slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setHighlights(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getHighlights();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setHighlights(v); };
+        auto getter = [&negative]() -> float { return negative->getHighlights(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetShadows(float value) {
     std::println("Shadows slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setShadows(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getShadows();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setShadows(v); };
+        auto getter = [&negative]() -> float { return negative->getShadows(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetBlacks(float value) {
     std::println("Blacks slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setBlacks(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getBlacks();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setBlacks(v); };
+        auto getter = [&negative]() -> float { return negative->getBlacks(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
+void Controller::SetNeutralBalance(int x, int y) {
+    std::println("Setting Neutral balance");
 
-// GUI EVENTS POST-CONVERT WHITE BALANCE
-// ----------------------------------------------------------------------------------------------------------------
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
+        std::tuple<float, float, float> previousNeutralData = negative->getNeutral();
+
+        auto execute = [&negative, x, y]() {
+            negative->setNeutralByCoords(x, y);
+        };
+
+        auto undo = [&negative, previousNeutralData]() {
+            negative->setNeutral(std::get<0>(previousNeutralData),
+                                std::get<1>(previousNeutralData),
+                                std::get<2>(previousNeutralData));
+        };
+
+        this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->updatePreview();
+    }
+}
 
 void Controller::ButtonPressAutoWhiteBalance() {
 }
@@ -388,71 +477,52 @@ void Controller::ButtonPressChooseNeutralBalance() {
     this->readyToSelect = !this->readyToSelect;
 }
 
-void Controller::SetNeutralBalance(int x, int y) {
-    std::println("Setting Neutral balanbce");
-    std::tuple<float, float, float> previousNeutralData = this->model.getCurrentNegative().getNeutral();
-
-    auto execute = [this, x, y]() {
-        this->model.getCurrentNegative().setNeutralByCoords(x, y);
-    };
-
-    auto undo = [this, previousNeutralData]() {
-        this->model.getCurrentNegative().setNeutral(std::get<0>(previousNeutralData), std::get<1>(previousNeutralData), std::get<2>(previousNeutralData));
-    };
-
-    this->history.addCommand(
-        std::make_unique<Command_Lambda>(execute, undo)
-    );
-
-    this->updatePreview();
-}
-
 void Controller::SliderChangeSetRBalance(float value) {
     std::println("R balance slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setRBalance(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getRBalance();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setRBalance(v); };
+        auto getter = [&negative]() -> float { return negative->getRBalance(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetGBalance(float value) {
     std::println("G balance slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setGBalance(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getGBalance();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setGBalance(v); };
+        auto getter = [&negative]() -> float { return negative->getGBalance(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 void Controller::SliderChangeSetBBalance(float value) {
     std::println("B balance slider value was changed to {}", value);
 
-    auto setter = [this](float value) -> float {
-        return this->model.getCurrentNegative().setBBalance(value);
-    };
+    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+    if (isNegative) {
+        Negative* negative = isNegative.value();
 
-    auto getter = [this]() -> float {
-        return this->model.getCurrentNegative().getBBalance();
-    };
+        auto setter = [&negative](float v) -> float { return negative->setBBalance(v); };
+        auto getter = [&negative]() -> float { return negative->getBBalance(); };
 
-    this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-    this->model.getCurrentNegative().renderEdits();
-    this->updatePreview();
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderEdits();
+        this->updatePreview();
+    }
 }
 
 
@@ -460,11 +530,11 @@ void Controller::SliderChangeSetBBalance(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressSavePositive() {
-    std::println("button pressed save positive");
-    pfd::save_file fileSaver("Choose positive location", "/");
-    std::filesystem::path path = fileSaver.result();
-    std::println("save path is {}", path.string());
-    this->model.getCurrentNegative().exportPositive(path);
+    // std::println("button pressed save positive");
+    // pfd::save_file fileSaver("Choose positive location", "/");
+    // std::filesystem::path path = fileSaver.result();
+    // std::println("save path is {}", path.string());
+    // this->model.getCurrentNegative().exportPositive(path);
 }
 
 
@@ -491,6 +561,14 @@ void Controller::ProcessEvent(Rml::Event& event) {
         else if (id == "export") {
             ButtonPressSavePositive();
         }
+        else if (id == "remove") {
+            std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+            if (isNegative) {
+                Negative* negative = isNegative.value();
+                int id = negative->getId();
+                ButtonPressRemoveNegative(id);
+            }
+        }
         else if (id == "scanGamma") {
             // TODO
         }
@@ -513,7 +591,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
             int thumbnailId = 0;
             size_t pos = id.find('_'); // find underscore
             if (pos != std::string::npos) {
-                int thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
+                thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
             }
             ButtonPressThumbnail(thumbnailId);
             std::println("pressed thumbnail {}", thumbnailId);
@@ -634,13 +712,17 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         if (this->selecting) {
         std::println("Dragging at ({},{})", mouseMoved->position.x, mouseMoved->position.y);
             if (this->selectingScanArea) {
-                ImageArea scanArea = this->model.getCurrentNegative().getScanArea();
-                scanArea.left   = std::min(selectionStart.x, mouseMoved->position.x);
-                scanArea.top    = std::min(selectionStart.y, mouseMoved->position.y);
-                scanArea.right  = std::max(selectionStart.x, mouseMoved->position.x);
-                scanArea.bottom = std::max(selectionStart.y, mouseMoved->position.y);
-                this->model.getCurrentNegative().setScanArea(scanArea);
-                this->view.setSelection(scanArea);
+                std::optional<Negative*> isNegative = this->model.getCurrentNegative();
+                if (isNegative) {
+                    Negative* negative = isNegative.value();
+                    ImageArea scanArea = negative->getScanArea();
+                    scanArea.left   = std::min(selectionStart.x, mouseMoved->position.x);
+                    scanArea.top    = std::min(selectionStart.y, mouseMoved->position.y);
+                    scanArea.right  = std::max(selectionStart.x, mouseMoved->position.x);
+                    scanArea.bottom = std::max(selectionStart.y, mouseMoved->position.y);
+                    negative->setScanArea(scanArea);
+                    this->view.setSelection(scanArea);
+                }
             }
         }
 
