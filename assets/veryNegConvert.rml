@@ -1,7 +1,7 @@
 <rml>
 	<head>
 		<title>VeryNeg</title>
-		<link type="text/rcss" href="style.rcss"/>
+		<link type="text/rcss" href="veryNegConvert_styles.rcss"/>
 	</head>
 	<body>
         <div id="left">

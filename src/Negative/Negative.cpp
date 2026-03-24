@@ -11,7 +11,6 @@
 
 #include "../imageAlgorithms/getExtremePixels.hpp"
 #include "../imageAlgorithms/levels.hpp"
-#include "../imageAlgorithms/densityInvert.hpp"
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/myExposure.hpp"
 #include "../imageAlgorithms/grayWorld.hpp"

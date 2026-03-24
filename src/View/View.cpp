@@ -18,7 +18,7 @@ View::View(sf::RenderWindow& window) :
     thumbnails()
 {
     bool success = Rml::LoadFontFace("assets/oceert_pixel.otf");
-    Rml::ElementDocument* document = this->rmlContext->LoadDocument("assets/hello.rml");
+    Rml::ElementDocument* document = this->rmlContext->LoadDocument("assets/veryNegConvert.rml");
     this->rmlDocument = document;
     if (document) {
         document->Show();

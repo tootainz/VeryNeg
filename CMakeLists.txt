@@ -6,12 +6,12 @@ project("VeryNeg" VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 
 # add executable
-add_executable(VeryNeg main.cpp
-  Controller/Controller.cpp
-  Negative/Negative.cpp
-  Model/Model.cpp
-  View/View.cpp
-  rmlui-backend/RmlUi_Backend_SFML_GL2.cpp
+add_executable(VeryNeg src/main.cpp
+  src/Controller/Controller.cpp
+  src/Negative/Negative.cpp
+  src/Model/Model.cpp
+  src/View/View.cpp
+  src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
 )
 
 # ------------------------------------------------
