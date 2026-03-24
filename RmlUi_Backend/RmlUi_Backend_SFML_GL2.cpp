@@ -20,6 +20,8 @@
     Custom render interface example for the SFML/GL2 backend.
 
     Overloads the OpenGL2 render interface to load textures through SFML's built-in texture loading functionality.
+
+	Edited slightly to suit VeryNeg and to make it easier to integrate into the application
  */
 class RenderInterface_GL2_SFML : public RenderInterface_GL2 {
 public:

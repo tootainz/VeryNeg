@@ -21,18 +21,83 @@
 #include "../imageAlgorithms/crop.hpp"
 #include "../imageAlgorithms/eyedropper.hpp"
 
+
+// STATIC DATA MEMBERS
+// ----------------------------------------------------------------------------------------------------------------
+
 int Negative::nextId = 0;
 
 
-// CONSTRUCTORS AND INITIALIZERS
+// PREVIEW CACHING
 // ----------------------------------------------------------------------------------------------------------------
 
-Negative::Negative(std::filesystem::path imagePath) {
-    this->id = this->nextId;
-    this->nextId++;
-    this->initializeNegative(imagePath);
-    return;
+bool Negative::writeConversionCache() {
+    std::println("Saving cahched conversion");
+    std::string fileName = std::format("{}_chache.tif", this->name);
+
+    // Use OIIO::ImageBuf for ease of transformign the pixel data type
+    OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf convertedBuf(convertedSpec, this->convertedPixels.data());
+
+    // Save the converted pixels vector
+    if (!convertedBuf.write(fileName, OIIO::TypeDesc::FLOAT)) {
+        std::println("Failed to save image");
+        return false;
+    }
+    std::println("Saved positive successfully");
+    
+    return true;
 }
+
+bool Negative::readConversionCache() {
+
+    std::println("trying to open cache");
+    std::string fileName = std::format("{}_chache.tif", this->name);
+    auto input = OIIO::ImageInput::open(fileName);
+
+    if (!input) {
+        std::println("Failed to open/find cache");
+        return false;
+    }
+
+    input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
+    std::println("loaded cahce");
+    input->close();
+    return true;
+}
+
+
+// NEGATIVE DATA IO
+// ----------------------------------------------------------------------------------------------------------------
+
+void Negative::readNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ifstream file(dataName);
+    if (!file) {
+        std::println("failed to find negativeData file called {}", dataName);
+        std::println("generating default data");
+        file.open("assets/negativeDataTemplate.neg");
+    }
+    this->negativeData = nlohmann::json::parse(file);
+}
+
+void Negative::writeNegativeData() {
+    std::string dataName = this->path.replace_extension(".neg").string();
+    std::ofstream file(dataName);
+    file << this->negativeData << std::endl;
+}
+
+
+// HELPERS
+// ----------------------------------------------------------------------------------------------------------------
+
+std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
+    return eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->EYEDROPPER_SIZE);
+}
+
+
+// INITIALIZER
+// ----------------------------------------------------------------------------------------------------------------
 
 bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
@@ -122,29 +187,18 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 }
 
 
-// EXPORTING
+// CONSTRUCTORS
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::exportPositive(std::filesystem::path imagePath) {
-    std::println("Saving positive");
-    std::string filePath = std::format("{}.tif", imagePath.string());
-
-    // Use OIIO::ImageBuf for ease of transformign the pixel data type
-    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-    OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
-
-    // For now we want to save images as 16bit
-    if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
-        std::println("Failed to save image");
-        return false;
-    }
-    std::println("Saved positive successfully");
-    
-    return true;
+Negative::Negative(std::filesystem::path imagePath) {
+    this->id = this->nextId;
+    this->nextId++;
+    this->initializeNegative(imagePath);
+    return;
 }
 
 
-// GETTERS FOR IMAGE DATA
+// GETTERS FOR THE UI
 // ----------------------------------------------------------------------------------------------------------------
 
 // Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
@@ -206,19 +260,20 @@ int Negative::getId() {
     return this->id;
 }
 
-// CACHING
+
+// EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::writeConversionCache() {
-    std::println("Saving cahched conversion");
-    std::string fileName = std::format("{}_chache.tif", this->name);
+bool Negative::exportPositive(std::filesystem::path imagePath) {
+    std::println("Saving positive");
+    std::string filePath = std::format("{}.tif", imagePath.string());
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
-    OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-    OIIO::ImageBuf convertedBuf(convertedSpec, this->convertedPixels.data());
+    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
 
-    // Save the converted pixels vector
-    if (!convertedBuf.write(fileName, OIIO::TypeDesc::FLOAT)) {
+    // For now we want to save images as 16bit
+    if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
         std::println("Failed to save image");
         return false;
     }
@@ -227,49 +282,8 @@ bool Negative::writeConversionCache() {
     return true;
 }
 
-bool Negative::readConversionCache() {
 
-    std::println("trying to open cache");
-    std::string fileName = std::format("{}_chache.tif", this->name);
-    auto input = OIIO::ImageInput::open(fileName);
-
-    if (!input) {
-        std::println("Failed to open/find cache");
-        return false;
-    }
-
-    input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
-    std::println("loaded cahce");
-    input->close();
-    return true;
-}
-
-std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
-    return eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->SAMPLE_SIZE);
-}
-
-// READING AND WRITING EDIT DATA
-// ----------------------------------------------------------------------------------------------------------------
-
-void Negative::readNegativeData() {
-    std::string dataName = this->path.replace_extension(".neg").string();
-    std::ifstream file(dataName);
-    if (!file) {
-        std::println("failed to find negativeData file called {}", dataName);
-        std::println("generating default data");
-        file.open("assets/negativeDataTemplate.neg");
-    }
-    this->negativeData = nlohmann::json::parse(file);
-}
-
-void Negative::writeNegativeData() {
-    std::string dataName = this->path.replace_extension(".neg").string();
-    std::ofstream file(dataName);
-    file << this->negativeData << std::endl;
-}
-
-
-// SETTING EDIT SETTINGS
+// SETTING EDIT SETTINGS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
 float Negative::setScanGamma(float value) {
@@ -315,6 +329,10 @@ void Negative::convert() {
 void Negative::resetConversion() {
     this->convertedPixels = this->workingPixels;
 }
+
+
+// SETTING EDIT SETTINGS POST-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
 
 float Negative::setDensity(float value) {
     std::println("exposure was set to: {}", value);
@@ -375,7 +393,8 @@ float Negative::setBBalance(float value) {
     return this->getBBalance();
 }
 
-// GETTING EDIT SETTINGS
+
+// GETTING EDIT SETTINGS FROM NEGATIVEDATA PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
 float Negative::getScanGamma() {
@@ -404,6 +423,10 @@ std::tuple<float, float, float> Negative::getDensest() {
     float b = this->negativeData["conversion"]["densest"]["b"];
     return { r, g, b };
 }
+
+
+// GETTING EDIT SETTINGS FROM NEGATIVEDATA POST-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
 
 float Negative::getDensity() {
     return this->negativeData["edits"]["density"];
@@ -449,7 +472,7 @@ float Negative::getBBalance() {
 }
 
 
-// RENDERING
+// RENDERING METHODS
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::renderThumbnail() {
@@ -645,7 +668,4 @@ void Negative::renderWorking() {
     this->writeNegativeData();
 
     return;
-}
-
-void Negative::resetWorking() {
 }

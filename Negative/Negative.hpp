@@ -10,24 +10,34 @@
 #include "ImageArea.hpp"
 
 
-// The Negative class is where all of the important stuff happens
-// Represents one scanned negative image. It stores and manages the negative image data.
-// Performs image editing operations to the image to convert it to positive and to edit it after the conversion.
-// Performs opening and exporting operations of the image
-// Also generates stuff for the GUI
-// Handles caching and reading NegativeData edit settings.
+/**
+
+The Negative class
+
+This is where all of the important stuff happens
+Represents one scanned negative image. It stores and manages the negative image data.
+Performs image editing operations to the image to convert it to positive and to edit it after the conversion.
+Performs opening and exporting operations of the image
+Also generates stuff for the GUI
+Handles caching and reading NegativeData edit settings.
+
+*/
 
 class Negative {
 
 private:
+    // PRIVATE STATIC DATA MEMBERS
+    // ------------------------------------------------------------------------------------------------------------------------------------
 
-    // STATIC DATA MEMBERS
     static int nextId;
     static const int PREVIEW_SIZE = 800;
     static const int THUMBNAIL_SIZE = 500;
-    static const int SAMPLE_SIZE = 5;
+    static const int EYEDROPPER_SIZE = 5;
+    static const int SHARPNESS_PREVIEW_SIZE = 100;
+
 
     // PRIVATE DATA MEMBERS
+    // ------------------------------------------------------------------------------------------------------------------------------------
 
     // General data
     int id;
@@ -35,6 +45,8 @@ private:
     std::filesystem::path path;
 
     // Original specs and data of the image
+    // All pixel data is stored in a one dimensional array, where pixels are stored sequentially with their channels as well in the order of RGB.
+    // For example: [1R, 1G, 1B, 2R, 2G, 2B, 3R, 3G, 3B, ...]
     std::vector<float> originalPixels;
     int numberOfChannels;
     int width;
@@ -42,41 +54,59 @@ private:
     
     // Working image is a smaller version of the original in order to speed up the live editing process
     std::vector<float> workingPixels;
-    std::vector<float> convertedPixels;
-    std::vector<float> editedPixels;
-    int workingScale;
+    std::vector<float> convertedPixels;     // Pixels after the negative conversion
+    std::vector<float> editedPixels;        // Pixels after applying all the post-covnert edits
+    int workingScale;                       // How much the working image is scaled down from the original, calculated automatically to fit UI
     int workingWidth;
     int workingHeight;
 
-    // Thumbnail
+    // Thumbnail for UI
     std::vector<uint8_t> thumbnailPixels;
 
-    // Edit settings
+    // Sharpness Preview
+    std::vector<uint8_t> sharpnessPreviewPixels;
+
+    // Edit settings that are saved for future sessions
     nlohmann::json negativeData;
 
 
-public:
+private:
+    // PRIVATE METHODS
+    // ------------------------------------------------------------------------------------------------------------------------------------
 
-    // Constructors and initializers
-    Negative(std::filesystem::path imagePath);
-    bool initializeNegative(std::filesystem::path imagePath);
-    
-    // Getters for image data
-    ImageData getPreview();
-    ImageData getSharpnessPreview();
-    ImageData getThumbnail();
-    int getId();
+    // PREVIEW CACHING
+    bool writeConversionCache();
+    bool readConversionCache();
 
-    // Exporting
-    bool exportPositive(std::filesystem::path imagePath);
-
-    // Reading and writing the edit data
+    // NEGATIVE DATA IO
     void readNegativeData();
     void writeNegativeData();
 
+    // HELPERS
+    std::tuple<float,float,float> samplePixels(int workingX, int workingY);
+
+    // INITIALIZER
+    bool initializeNegative(std::filesystem::path imagePath);
+
+
+public:
+    // PUBLIC METHODS
+    // ------------------------------------------------------------------------------------------------------------------------------------
+
+    // CONSTRUCTORS
+    Negative(std::filesystem::path imagePath);
+
+    // GETTERS FOR THE UI
+    ImageData getPreview();
+    ImageData getThumbnail();
+    ImageData getSharpnessPreview();
+    int getId();
+
+    // EXPORTING
+    bool exportPositive(std::filesystem::path imagePath);
+
     // SETTING EDIT SETTINGS
 
-    
     // PRE-CONVERT
     float setScanGamma(float value);
     void setScanArea(ImageArea area);
@@ -103,12 +133,16 @@ public:
     float setGBalance(float value);
     float setBBalance(float value);
 
-    // GETTING EDIT SETTINGS
+    // GETTING EDIT SETTINGS FROM NEGATIVEDATA
+
+    // PRE-CONVERT
     float getScanGamma();
     std::tuple<float, float, float> getBorder();
     std::tuple<float, float, float> getDensest();
     ImageArea getScanArea();
 
+    // POST-CONVERT
+    // Intensity
     float getDensity();
     float getContrast();
     float getWhites();
@@ -116,22 +150,15 @@ public:
     float getShadows();
     float getBlacks();
 
+    // White balance
     std::tuple<float, float, float> getNeutral();
     float getRBalance();
     float getGBalance();
     float getBBalance();
 
-    // Caching methods
-    bool writeConversionCache();
-    bool readConversionCache();
-
-    // Helper for sampling an average from a specific area of the image
-    std::tuple<float,float,float> samplePixels(int workingX, int workingY);
-
     // Rendering methods
     void renderThumbnail();
     void renderEdits();
     void renderWorking();
-    void resetWorking();
     void renderFinal();
 };

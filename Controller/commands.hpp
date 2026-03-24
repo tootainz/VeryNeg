@@ -4,6 +4,16 @@
 #include "../Command/Command.hpp"
 
 
+/**
+
+Some concrete commands that derive from the abstract Command
+
+These are still quite generic utilizing lambdas so that we don't have to have a specific command for every button press
+
+*/
+
+
+// Allows to set any type of lambda function for both the execute and undo
 class Command_Lambda : public Command {
 
 private:
@@ -23,7 +33,7 @@ public:
 };
 
 
-// A class that takes getter and setter lambdas
+// A class that takes specific getter and setter lambdas, useful for setting values
 class Command_SetValue : public Command {
 
 private:

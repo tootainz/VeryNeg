@@ -15,6 +15,8 @@ using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifie
     This interface may be used directly for simple applications and testing. However, for anything more advanced we recommend to use the backend as a
     starting point and copy relevant parts into the main loop of your application. On the other hand, the underlying platform and renderer used by the
     backend are intended to be re-usable as is.
+
+    Edited slightly to suit VeryNeg and to make it easier to integrate into the application
  */
 namespace RmlBackend {
 

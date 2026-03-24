@@ -3,8 +3,11 @@
 #include <print>
 #include <format>
 
-#include "../rmlui-backend/RmlUi_Backend.hpp"
+#include "../RmlUi_Backend/RmlUi_Backend.hpp"
 
+
+// CONSTRUCTOR
+// ----------------------------------------------------------------------------------------------------------------
 
 View::View(sf::RenderWindow& window) :
     window(window),
@@ -21,6 +24,10 @@ View::View(sf::RenderWindow& window) :
         document->Show();
     }
 }
+
+
+// THUMBNAIL MANAGEMENT
+// ----------------------------------------------------------------------------------------------------------------
 
 void View::addThumbnail(sf::Texture thumbnailTexture, int id) {
     Rml::Element* filmRoll = this->rmlDocument->GetElementById("filmRoll");
@@ -75,6 +82,10 @@ void View::updateThumbnails() {
     }
 }
 
+
+// SETTERS
+// ----------------------------------------------------------------------------------------------------------------
+
 void View::setSliderValue(std::string name, float value) {
     // auto slider = gui.get<tgui::Slider>(name);
     // if (slider) {
@@ -94,9 +105,17 @@ void View::setPreviewTexture(sf::Texture texture) {
     this->previewSprite = sf::Sprite(this->previewTexture);
 }
 
+
+// GETTERS
+// ----------------------------------------------------------------------------------------------------------------
+
 Rml::Context* View::getRmlContext() {
     return this->rmlContext;
 }
+
+
+// RENDERING
+// ----------------------------------------------------------------------------------------------------------------
 
 // Draw the complete view
 void View::render() {

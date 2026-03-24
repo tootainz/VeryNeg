@@ -7,30 +7,47 @@
 #include "../Negative/ImageArea.hpp"
 
 
+/**
+
+The Model class
+
+The Model is a part of the classic Model, View, Controller or MVC architecture patter.
+Stores all the basic functional data and state of the application.
+All of the heavy lifting is done in individual Negative objects.
+The Models main purpose is to keep a list of all Negatives that are open in the application
+and manage the navigation between them and gettign the Negative currently being edited.
+
+*/
+
 class Model {
 
 private:
-
     // PRIVATE DATA MEMBERS
+    // ------------------------------------------------------------------------------------------------------------------------------------
 
-    /// A Vector that stores all the negatives loaded to the application
+    // Negatives loaded to the application
     std::vector<Negative> negatives;
     
-    /// Stores the index of the negative that is currently selected and should be displayed
+    // Index of the negative that is currently selected and should be displayed
     int currentNegativeIndex;
 
 
 public:
-
+    // PUBLIC METHODS
+    // ------------------------------------------------------------------------------------------------------------------------------------
+    
     // CONSTRUCTOR
     Model();
 
+    // NEGATIVE NAVIGATION
     void changeCurrentNegativeById(int id);
     void previousNegative();
     void nextNegative();
 
+    // NEGATIVE IO
     Negative& addNegative(std::filesystem::path imagePath);
     void removeNegativeById(int id);
     
+    // GETTERS
     Negative& getCurrentNegative();
 };

@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #include "../libraries/portable-file-dialogs.h"
-#include "../rmlui-backend/RmlUi_Backend.hpp"
+#include "../RmlUi_Backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
@@ -13,7 +13,7 @@
 #include "../Negative/ImageArea.hpp"
 
 
-// HELPERS
+// STATIC HELPERS
 // ----------------------------------------------------------------------------------------------------------------
 
 // SFML specific helper function for transforming the preview ImageData from Negative to a texture for SFML
@@ -56,7 +56,7 @@ void Controller::mainLoop() {
 }
 
 
-// METHODS
+// UPDATE GUI
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview() {
@@ -78,6 +78,10 @@ void Controller::updateEditSettings() {
     this->disableCallbacks = false;
 }
 
+
+// UNDO REDO
+// ----------------------------------------------------------------------------------------------------------------
+
 void Controller::undo() {
     if (this->history.undo()) {
         this->updateEditSettings();
@@ -95,7 +99,7 @@ void Controller::redo() {
 }
 
 
-// GUI EVENTS
+// GUI EVENTS NEGATIVE NAVIGATION
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressAddNegative() {
@@ -174,6 +178,10 @@ void Controller::ButtonPressThumbnail(int id) {
 
     this->updatePreview();
 }
+
+
+// GUI EVENTS PRE-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressSetScanGamma(float value) {
     std::println("scan gamma set to {}", value);
@@ -266,6 +274,10 @@ void Controller::ButtonPressResetConversion() {
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->updatePreview();
 }
+
+
+// GUI EVENTS POST-CONVERT INTENSITY
+// ----------------------------------------------------------------------------------------------------------------
 
 void Controller::SliderChangeSetDensity(float value) {
     std::println("Slider value was changed to {}", value);
@@ -363,6 +375,10 @@ void Controller::SliderChangeSetBlacks(float value) {
     this->updatePreview();
 }
 
+
+// GUI EVENTS POST-CONVERT WHITE BALANCE
+// ----------------------------------------------------------------------------------------------------------------
+
 void Controller::ButtonPressAutoWhiteBalance() {
 }
 
@@ -439,6 +455,10 @@ void Controller::SliderChangeSetBBalance(float value) {
     this->updatePreview();
 }
 
+
+// EXPORTING
+// ----------------------------------------------------------------------------------------------------------------
+
 void Controller::ButtonPressSavePositive() {
     std::println("button pressed save positive");
     pfd::save_file fileSaver("Choose positive location", "/");
@@ -454,6 +474,7 @@ void Controller::ButtonPressSavePositive() {
 void Controller::ProcessEvent(Rml::Event& event) {
     Rml::Element* element = event.GetTargetElement();
     const std::string id = element->GetId();
+    const std::string className = element->GetId();
 
     // BUTTONS (Click)
     if (event.GetId() == Rml::EventId::Click) {
@@ -487,6 +508,15 @@ void Controller::ProcessEvent(Rml::Event& event) {
         }
         else if (id == "selectNeutral") {
             ButtonPressChooseNeutralBalance();
+        }
+        else if (id.contains("thumbnail")) {
+            int thumbnailId = 0;
+            size_t pos = id.find('_'); // find underscore
+            if (pos != std::string::npos) {
+                int thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
+            }
+            ButtonPressThumbnail(thumbnailId);
+            std::println("pressed thumbnail {}", thumbnailId);
         }
     }
 
@@ -532,7 +562,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
 }
 
 
-// MAIN LOOP HELPERS
+// EVENT LOOP
 // ----------------------------------------------------------------------------------------------------------------
 
 bool Controller::handleKeyboardEvents(std::optional<sf::Event> event) {
@@ -643,8 +673,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
     }
 }
 
-void Controller::eventLoop()
-{
+void Controller::eventLoop() {
 
     while (const std::optional event = this->window.pollEvent()) {
 

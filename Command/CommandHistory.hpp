@@ -5,18 +5,42 @@
 
 #include "Command.hpp"
 
+
+/**
+
+The CommandHistory class
+
+Stores a queue of commands that are issued.
+Implements undo and redo and moves back and forth the history.
+If the current position is not at the front and new commands
+are added scraps the possible redo commands.
+
+*/
+
 class CommandHistory {
 
-    public:
+private:
 
-    int maxLength;
+    // Index of current command in the deque
     int currentCommand;
+
+
+public:
+
+    // DATA MEMBERS
+    int maxLength;
     std::deque<std::unique_ptr<Command>> commands;
 
+
+    // CONSTRUCTOR
     CommandHistory(int maxLength) :
         maxLength(maxLength),
         currentCommand(0)
-        {}
+    {}
+
+    
+    // METHODS
+    // ------------------------------------------------------------------------------------------------------------------------------------
 
     void addCommand(std::unique_ptr<Command> command) {
         if (this->currentCommand > 0) {

@@ -3,7 +3,14 @@
 #include <algorithm>
 
 
+// CONSTRUCTOR
+// ----------------------------------------------------------------------------------------------------------------
+
 Model::Model() {}
+
+
+// NEGATIVE NAVIGATION
+// ----------------------------------------------------------------------------------------------------------------
 
 void Model::changeCurrentNegativeById(int id) {
 
@@ -29,6 +36,10 @@ void Model::nextNegative() {
     std::println("current negative is: {}", this->currentNegativeIndex);
 }
 
+
+// NEGATIVE IO
+// ----------------------------------------------------------------------------------------------------------------
+
 Negative& Model::addNegative(std::filesystem::path imagePath) {
     this->negatives.push_back(Negative(imagePath));
     if (negatives.size() == 1) currentNegativeIndex = 0;
@@ -47,6 +58,10 @@ void Model::removeNegativeById(int id) {
         this->negatives.erase(iterator);
     }
 }
+
+
+// GETTERS
+// ----------------------------------------------------------------------------------------------------------------
 
 Negative& Model::getCurrentNegative() {
     return this->negatives[this->currentNegativeIndex];

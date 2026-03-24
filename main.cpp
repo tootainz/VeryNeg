@@ -7,7 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
-#include "rmlui-backend/RmlUi_Backend.hpp"
+#include "RmlUi_Backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
@@ -17,7 +17,9 @@
 #include "Controller/Controller.hpp"
 #include "Model/Model.hpp"
 
+
 /*
+
 VeryNeg v0.3.0
 By Joonatan Koponen
 
@@ -28,6 +30,7 @@ VeryNeg performs a fully automatic conversion but also allows manual setting of 
 You can also apply edits to the image after the conversion to edit color balance, density, sharpness etc.
 
 Currently the only supported files are 16bit tiff file scans from a flatbed scanner
+
 */ 
 
 int main() {
