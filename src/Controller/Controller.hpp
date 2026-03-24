@@ -65,7 +65,7 @@ private:
 
     // UPDATE GUI
     void updatePreview();
-    void updateEditSettings(Negative* negative);
+    void updateEditSettings(Negative& negative);
 
     // UNDO REDO
     void undo();

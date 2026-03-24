@@ -41,18 +41,44 @@ void Model::nextNegative() {
 // NEGATIVE IO
 // ----------------------------------------------------------------------------------------------------------------
 
-Negative& Model::addNegative(std::filesystem::path imagePath) {
+// Returns a raw pointer since std::Optional<T&> is apparently not allowed
+// The return value can either be nulptr or contain the negative.
+// NEVER call delete on these pointers, they do not own the negative
+Negative* Model::addNegative(std::filesystem::path imagePath) {
+    
     this->negatives.push_back(Negative(imagePath));
+
     if (negatives.size() == 1) currentNegativeIndex = 0;
     else currentNegativeIndex += 1;
-    return this->negatives[this->currentNegativeIndex];
+
+    if (this->getCurrentNegative()->wasCreated()) {
+        return this->getCurrentNegative();
+    }
+    else {
+        this->removeNegativeById(this->getCurrentNegative()->getId());
+        this->currentNegativeIndex = std::max(0, currentNegativeIndex - 1);
+        return nullptr;
+    }
 }
 
-Negative& Model::addNegative(std::filesystem::path imagePath, int id) {
+// Returns a raw pointer since std::Optional<T&> is apparently not allowed
+// The return value can either be nulptr or contain the negative.
+// NEVER call delete on these pointers, they do not own the negative
+Negative* Model::addNegative(std::filesystem::path imagePath, int id) {
+
     this->negatives.push_back(Negative(imagePath, id));
+
     if (negatives.size() == 1) currentNegativeIndex = 0;
     else currentNegativeIndex += 1;
-    return this->negatives[this->currentNegativeIndex];
+
+    if (this->getCurrentNegative()->wasCreated()) {
+        return this->getCurrentNegative();
+    }
+    else {
+        this->removeNegativeById(this->getCurrentNegative()->getId());
+        this->currentNegativeIndex = std::max(0, currentNegativeIndex - 1);
+        return nullptr;
+    }
 }
 
 void Model::removeNegativeById(int id) {

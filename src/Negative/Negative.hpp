@@ -34,6 +34,7 @@ private:
     static const int THUMBNAIL_SIZE = 500;
     static const int EYEDROPPER_SIZE = 5;
     static const int SHARPNESS_PREVIEW_SIZE = 100;
+    static const std::string NEGATIVEDATA_VERSION;
 
 
     // PRIVATE DATA MEMBERS
@@ -43,6 +44,7 @@ private:
     int id;
     std::string name;
     std::filesystem::path path;
+    bool successfullyCreated;
 
     // Original specs and data of the image
     // All pixel data is stored in a one dimensional array, where pixels are stored sequentially with their channels as well in the order of RGB.
@@ -96,6 +98,7 @@ public:
     // CONSTRUCTORS
     Negative(std::filesystem::path imagePath);
     Negative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
+    bool wasCreated(); // Tells whether intialization was succesful
 
     // GETTERS FOR THE UI
     ImageData getPreview();

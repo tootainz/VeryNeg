@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------------------------------------------
 
 int Negative::nextId = 0;
+const std::string Negative::NEGATIVEDATA_VERSION = "0.2.0";
 
 
 // PREVIEW CACHING
@@ -74,12 +75,37 @@ void Negative::readNegativeData() {
         .replace_extension(".neg")
         .string();
     std::ifstream file(dataName);
+    // No .neg file with this name exists
     if (!file) {
         std::println("failed to find negativeData file called {}", dataName);
         std::println("generating default data");
         file.open("assets/negativeDataTemplate.neg");
     }
-    this->negativeData = nlohmann::json::parse(file);
+    // Try to parse the .neg file
+    try {
+        this->negativeData = nlohmann::json::parse(file);
+        std::println("read NegativeData succesfully");
+        file.close();
+    }
+    // Error parsing the .neg file to json
+    catch (const std::exception& e) {
+        std::println("failed to parse negativeData file called {}", dataName);
+        std::println("Error message: {}", e.what());
+        std::println("generating default data");
+        file.close();
+        file.clear();
+        file.open("assets/negativeDataTemplate.neg");
+        this->negativeData = nlohmann::json::parse(file);
+        file.close();
+    }
+    // Parsed succesfully but wrong version
+    if (this->negativeData["version"] != this->NEGATIVEDATA_VERSION) {
+        std::println("Incompatible NegativeData version");
+        std::println("generating default data");
+        file.open("assets/negativeDataTemplate.neg");
+        this->negativeData = nlohmann::json::parse(file);
+        file.close();
+    }
 }
 
 void Negative::writeNegativeData() {
@@ -107,7 +133,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->path = imagePath;
     
     // 1. Read the full original image
-    auto input = OIIO::ImageInput::open(imagePath.string());
+    std::unique_ptr<OIIO::ImageInput> input = OIIO::ImageInput::open(imagePath.string());
 
     if (!input) {
         std::println("Failed to open file");
@@ -120,6 +146,13 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->width = spec.width;
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
+
+    // not RGB or Grayscale
+    if (this->numberOfChannels != 3 && this->numberOfChannels != 1) {
+        std::println("The image contains wrong amount of channels");
+        return false;
+    }
+
     this->originalPixels.resize(this->width * this->height * this->numberOfChannels);
     input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->originalPixels[0]);
     std::println("Opened negative successfully");
@@ -168,7 +201,6 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     this->convertedPixels = this->workingPixels;
 
-    
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
 
@@ -196,16 +228,19 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 Negative::Negative(std::filesystem::path imagePath) {
     this->id = this->nextId;
     this->nextId++;
-    this->initializeNegative(imagePath);
+    this->successfullyCreated = this->initializeNegative(imagePath);
     return;
 }
 
 Negative::Negative(std::filesystem::path imagePath, int id) {
     this->id = id;
-    this->initializeNegative(imagePath);
+    this->successfullyCreated = this->initializeNegative(imagePath);
     return;
 }
 
+bool Negative::wasCreated() {
+    return this->successfullyCreated;
+}
 
 // GETTERS FOR THE UI
 // ----------------------------------------------------------------------------------------------------------------
@@ -675,7 +710,7 @@ void Negative::renderWorking() {
 
     this->editedPixels = this->convertedPixels;
 
-    this->negativeData["conversion"]["isConverted"] = true;
+    this->negativeData["general"]["isConverted"] = true;
 
     this->writeNegativeData();
 

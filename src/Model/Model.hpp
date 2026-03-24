@@ -45,8 +45,8 @@ public:
     void nextNegative();
 
     // NEGATIVE IO
-    Negative& addNegative(std::filesystem::path imagePath);
-    Negative& addNegative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
+    Negative* addNegative(std::filesystem::path imagePath);
+    Negative* addNegative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
     void removeNegativeById(int id);
     
     // GETTERS

@@ -69,17 +69,17 @@ void Controller::updatePreview() {
     }
     else {
         std::println("preview negative doesnt exist");
-        // This is supposed to clear the preview but not workign at the moment
+        // Clear the preview
         this->view.setPreviewTexture(std::make_unique<sf::Texture>());
     }
 }
 
-void Controller::updateEditSettings(Negative* negative) {
+void Controller::updateEditSettings(Negative& negative) {
     this->disableCallbacks = true;
-        float exposure = negative->getDensity();
-        float rBalance = negative->getRBalance();
-        float gBalance = negative->getGBalance();
-        float bBalance = negative->getBBalance();
+        float exposure = negative.getDensity();
+        float rBalance = negative.getRBalance();
+        float gBalance = negative.getGBalance();
+        float bBalance = negative.getBBalance();
         this->view.setSliderValue("rBalanceSlider", rBalance);
         this->view.setSliderValue("gBalanceSlider", gBalance);
         this->view.setSliderValue("bBalanceSlider", bBalance);
@@ -95,10 +95,10 @@ void Controller::undo() {
     if (this->history.undo()) {
         Negative* negative = this->model.getCurrentNegative();
         if (negative) {
-            this->updateEditSettings(negative);
+            this->updateEditSettings(*negative);
             negative->renderEdits();
-            this->updatePreview();
         }
+        this->updatePreview();
     }
 }
 
@@ -106,10 +106,10 @@ void Controller::redo() {
     if (this->history.redo()) {
         Negative* negative = this->model.getCurrentNegative();
         if (negative) {
-            this->updateEditSettings(negative);
+            this->updateEditSettings(*negative);
             negative->renderEdits();
-            this->updatePreview();
         }
+        this->updatePreview();
     }
 }
 
@@ -122,7 +122,7 @@ void Controller::ButtonPressAddNegative() {
 
     auto execute = [this]() -> void {
 
-        pfd::open_file fileOpener("Choose negative", "/");
+        pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"});
         std::vector<std::string> paths = fileOpener.result();
 
         if (paths.size() == 0) {
@@ -133,11 +133,14 @@ void Controller::ButtonPressAddNegative() {
             std::filesystem::path path = paths[0];
             std::println("Trying to open negative at: {}", path.string());
 
-            Negative& negative = model.addNegative(path);
-            int id = negative.getId();
-            ImageData thumbnail = negative.getThumbnail();
-            this->view.addThumbnail(createPreviewtexture(thumbnail), id);
-            this->updateEditSettings(&negative);
+            Negative* negative = model.addNegative(path);
+            if (negative) {
+                int id = negative->getId();
+                ImageData thumbnail = negative->getThumbnail();
+                this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+                this->updateEditSettings(*negative);
+                return;
+            }
         }
     };
 
@@ -164,10 +167,12 @@ void Controller::ButtonPressRemoveNegative(int id) {
 
         auto undo = [this, path, id]() -> void {
             std::println("Trying to open negative at: {}", path.string());
-            Negative& negative = model.addNegative(path, id);
-            ImageData thumbnail = negative.getThumbnail();
-            this->view.addThumbnail(createPreviewtexture(thumbnail), id);
-            this->updateEditSettings(&negative);
+            Negative* negative = model.addNegative(path, id);
+            if (negative) {
+                ImageData thumbnail = negative->getThumbnail();
+                this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+                this->updateEditSettings(*negative);
+            }
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -633,15 +638,13 @@ bool Controller::handleKeyboardEvents(std::optional<sf::Event> event) {
 
         // The key was not consumed by the context either, try keyboard shortcuts of lower priority.
 
-        // Command pressed
-        if (keyPressed->system) {
-            // Cmd Z
-            if (keyPressed->code == sf::Keyboard::Key::Z) {
-                this->undo();
+        // Command Z
+        if (keyPressed->system && keyPressed->code == sf::Keyboard::Key::Z) {
+            if (keyPressed->shift) {
+                this->redo();   // Shift + Cmd + Z
             }
-            // Shift Cmd Z
-            else if (keyPressed->shift && keyPressed->code == sf::Keyboard::Key::Z) {
-                this->redo();
+            else {
+                this->undo();   // Cmd + Z
             }
         }
         return true;

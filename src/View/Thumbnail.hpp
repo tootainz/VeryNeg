@@ -20,4 +20,10 @@ struct Thumbnail {
     void loadTexture() {
         this->sprite.setTexture(*this->texture);
     }
+
+    // Update the thumbnail texture with a new one
+    void updateTexture(std::unique_ptr<sf::Texture> newTexture) {
+        this->texture = std::move(newTexture);
+        this->loadTexture();
+    }
 };
