@@ -50,6 +50,6 @@ public:
     void removeNegativeById(int id);
     
     // GETTERS
-    std::optional<Negative*> getCurrentNegative();
-    std::optional<Negative*> getNegativeById(int id);
+    Negative* getCurrentNegative();
+    Negative* getNegativeById(int id);
 };

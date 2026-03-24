@@ -60,10 +60,9 @@ void Controller::mainLoop() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview() {
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
         std::println("preview negative exists");
-        Negative* negative = isNegative.value();
         std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getPreview()));
         std::println("preview successfully recovered from model");
         this->view.setPreviewTexture(std::move(previewTexture));
@@ -94,9 +93,8 @@ void Controller::updateEditSettings(Negative* negative) {
 
 void Controller::undo() {
     if (this->history.undo()) {
-        std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-        if (isNegative) {
-            Negative* negative = isNegative.value();
+        Negative* negative = this->model.getCurrentNegative();
+        if (negative) {
             this->updateEditSettings(negative);
             negative->renderEdits();
             this->updatePreview();
@@ -106,9 +104,8 @@ void Controller::undo() {
 
 void Controller::redo() {
     if (this->history.redo()) {
-        std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-        if (isNegative) {
-            Negative* negative = isNegative.value();
+        Negative* negative = this->model.getCurrentNegative();
+        if (negative) {
             this->updateEditSettings(negative);
             negative->renderEdits();
             this->updatePreview();
@@ -156,9 +153,8 @@ void Controller::ButtonPressAddNegative() {
 void Controller::ButtonPressRemoveNegative(int id) {
     std::println("button pressed remove negative");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
         std::filesystem::path path = negative->getPath();
 
         auto execute = [this, id]() -> void {
@@ -212,9 +208,8 @@ void Controller::ButtonPressPreviousNegative() {
 void Controller::ButtonPressThumbnail(int id) {
     std::println("thumbnail {} pressed", id);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
         int previousId = negative->getId();
 
@@ -251,17 +246,16 @@ void Controller::ButtonPressSetBorder() {
 void Controller::SetBorder(int x, int y) {
     std::println("Seting Border");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
         std::tuple<float, float, float> previousBorderData = negative->getBorder();
 
-        auto execute = [&negative, x, y]() {
+        auto execute = [negative, x, y]() {
             negative->setBorderByCoords(x, y);
         };
 
-        auto undo = [&negative, previousBorderData]() {
+        auto undo = [negative, previousBorderData]() {
             negative->setBorder(std::get<0>(previousBorderData), std::get<1>(previousBorderData), std::get<2>(previousBorderData));
         };
 
@@ -283,16 +277,15 @@ void Controller::ButtonPressSetDensest() {
 void Controller::SetDensest(int x, int y) {
     std::println("Setting Densest");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
         std::tuple<float, float, float> previousDensestData = negative->getDensest();
 
-        auto execute = [&negative, x, y]() {
+        auto execute = [negative, x, y]() {
             negative->setDensestByCoords(x, y);
         };
 
-        auto undo = [&negative, previousDensestData]() {
+        auto undo = [negative, previousDensestData]() {
             negative->setDensest(std::get<0>(previousDensestData),
                                 std::get<1>(previousDensestData),
                                 std::get<2>(previousDensestData));
@@ -312,15 +305,14 @@ void Controller::ButtonPressSetScanArea() {
 void Controller::ButtonPressConvert() {
     std::println("Button pressed convert");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto execute = [&negative]() {
+        auto execute = [negative]() {
             negative->renderWorking();
         };
 
-        auto undo = [&negative]() {
+        auto undo = [negative]() {
             negative->resetConversion();
         };
 
@@ -332,15 +324,14 @@ void Controller::ButtonPressConvert() {
 void Controller::ButtonPressResetConversion() {
     std::println("Reset conversion pressed");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto execute = [&negative]() {
+        auto execute = [negative]() {
             negative->resetConversion();
         };
 
-        auto undo = [&negative]() {
+        auto undo = [negative]() {
             negative->convert();
         };
 
@@ -352,12 +343,11 @@ void Controller::ButtonPressResetConversion() {
 void Controller::SliderChangeSetDensity(float value) {
     std::println("Slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setDensity(v); };
-        auto getter = [&negative]() -> float { return negative->getDensity(); };
+        auto setter = [negative](float v) -> float { return negative->setDensity(v); };
+        auto getter = [negative]() -> float { return negative->getDensity(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -368,12 +358,11 @@ void Controller::SliderChangeSetDensity(float value) {
 void Controller::SliderChangeSetContrast(float value) {
     std::println("Contrast slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setContrast(v); };
-        auto getter = [&negative]() -> float { return negative->getContrast(); };
+        auto setter = [negative](float v) -> float { return negative->setContrast(v); };
+        auto getter = [negative]() -> float { return negative->getContrast(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -384,12 +373,11 @@ void Controller::SliderChangeSetContrast(float value) {
 void Controller::SliderChangeSetWhites(float value) {
     std::println("Whites slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setWhites(v); };
-        auto getter = [&negative]() -> float { return negative->getWhites(); };
+        auto setter = [negative](float v) -> float { return negative->setWhites(v); };
+        auto getter = [negative]() -> float { return negative->getWhites(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -400,12 +388,11 @@ void Controller::SliderChangeSetWhites(float value) {
 void Controller::SliderChangeSetHighlights(float value) {
     std::println("Highlights slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setHighlights(v); };
-        auto getter = [&negative]() -> float { return negative->getHighlights(); };
+        auto setter = [negative](float v) -> float { return negative->setHighlights(v); };
+        auto getter = [negative]() -> float { return negative->getHighlights(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -416,12 +403,11 @@ void Controller::SliderChangeSetHighlights(float value) {
 void Controller::SliderChangeSetShadows(float value) {
     std::println("Shadows slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setShadows(v); };
-        auto getter = [&negative]() -> float { return negative->getShadows(); };
+        auto setter = [negative](float v) -> float { return negative->setShadows(v); };
+        auto getter = [negative]() -> float { return negative->getShadows(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -432,12 +418,11 @@ void Controller::SliderChangeSetShadows(float value) {
 void Controller::SliderChangeSetBlacks(float value) {
     std::println("Blacks slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setBlacks(v); };
-        auto getter = [&negative]() -> float { return negative->getBlacks(); };
+        auto setter = [negative](float v) -> float { return negative->setBlacks(v); };
+        auto getter = [negative]() -> float { return negative->getBlacks(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -448,16 +433,15 @@ void Controller::SliderChangeSetBlacks(float value) {
 void Controller::SetNeutralBalance(int x, int y) {
     std::println("Setting Neutral balance");
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
         std::tuple<float, float, float> previousNeutralData = negative->getNeutral();
 
-        auto execute = [&negative, x, y]() {
+        auto execute = [negative, x, y]() {
             negative->setNeutralByCoords(x, y);
         };
 
-        auto undo = [&negative, previousNeutralData]() {
+        auto undo = [negative, previousNeutralData]() {
             negative->setNeutral(std::get<0>(previousNeutralData),
                                 std::get<1>(previousNeutralData),
                                 std::get<2>(previousNeutralData));
@@ -480,12 +464,11 @@ void Controller::ButtonPressChooseNeutralBalance() {
 void Controller::SliderChangeSetRBalance(float value) {
     std::println("R balance slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setRBalance(v); };
-        auto getter = [&negative]() -> float { return negative->getRBalance(); };
+        auto setter = [negative](float v) -> float { return negative->setRBalance(v); };
+        auto getter = [negative]() -> float { return negative->getRBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -496,12 +479,11 @@ void Controller::SliderChangeSetRBalance(float value) {
 void Controller::SliderChangeSetGBalance(float value) {
     std::println("G balance slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setGBalance(v); };
-        auto getter = [&negative]() -> float { return negative->getGBalance(); };
+        auto setter = [negative](float v) -> float { return negative->setGBalance(v); };
+        auto getter = [negative]() -> float { return negative->getGBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -512,12 +494,11 @@ void Controller::SliderChangeSetGBalance(float value) {
 void Controller::SliderChangeSetBBalance(float value) {
     std::println("B balance slider value was changed to {}", value);
 
-    std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-    if (isNegative) {
-        Negative* negative = isNegative.value();
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
 
-        auto setter = [&negative](float v) -> float { return negative->setBBalance(v); };
-        auto getter = [&negative]() -> float { return negative->getBBalance(); };
+        auto setter = [negative](float v) -> float { return negative->setBBalance(v); };
+        auto getter = [negative]() -> float { return negative->getBBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
         negative->renderEdits();
@@ -562,9 +543,8 @@ void Controller::ProcessEvent(Rml::Event& event) {
             ButtonPressSavePositive();
         }
         else if (id == "remove") {
-            std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-            if (isNegative) {
-                Negative* negative = isNegative.value();
+            Negative* negative = this->model.getCurrentNegative();
+            if (negative) {
                 int id = negative->getId();
                 ButtonPressRemoveNegative(id);
             }
@@ -712,9 +692,9 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         if (this->selecting) {
         std::println("Dragging at ({},{})", mouseMoved->position.x, mouseMoved->position.y);
             if (this->selectingScanArea) {
-                std::optional<Negative*> isNegative = this->model.getCurrentNegative();
-                if (isNegative) {
-                    Negative* negative = isNegative.value();
+                Negative* negative = this->model.getCurrentNegative();
+                if (negative) {
+        
                     ImageArea scanArea = negative->getScanArea();
                     scanArea.left   = std::min(selectionStart.x, mouseMoved->position.x);
                     scanArea.top    = std::min(selectionStart.y, mouseMoved->position.y);

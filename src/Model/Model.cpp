@@ -74,16 +74,22 @@ void Model::removeNegativeById(int id) {
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
-std::optional<Negative*> Model::getCurrentNegative() {
+// Returns a raw pointer since std::Optional<T&> is apparently not allowed
+// The return value can either be nulptr or contain the negative.
+// NEVER call delete on these pointers, they do not own the negative
+Negative* Model::getCurrentNegative() {
     if (this->negatives.size() <= 0) {
-        return std::nullopt;
+        return nullptr;
     }
     else {
         return &this->negatives[this->currentNegativeIndex];
     }
 }
 
-std::optional<Negative*> Model::getNegativeById(int id) {
+// Returns a raw pointer since std::Optional<T&> is apparently not allowed
+// The return value can either be nulptr or contain the negative.
+// NEVER call delete on these pointers, they do not own the negative
+Negative* Model::getNegativeById(int id) {
     auto iterator = std::find_if(this->negatives.begin(), this->negatives.end(), [&id](Negative& negative) {
         return negative.getId() == id;
     });
@@ -93,6 +99,6 @@ std::optional<Negative*> Model::getNegativeById(int id) {
         return &*iterator;
     }
     else {
-        return std::nullopt;
+        return nullptr;
     }
 }
