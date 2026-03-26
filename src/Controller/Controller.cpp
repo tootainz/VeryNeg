@@ -313,12 +313,20 @@ void Controller::ButtonPressConvert() {
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
-        auto execute = [negative]() {
-            negative->renderWorking();
+        auto execute = [this, negative]() {
+            negative->convert();
+            int id = negative->getId();
+            negative->renderThumbnail();
+            ImageData thumbnail = negative->getThumbnail();
+            this->view.updateThumbnail(std::move(createPreviewtexture(thumbnail)), id);
         };
 
-        auto undo = [negative]() {
+        auto undo = [this, negative]() {
             negative->resetConversion();
+            int id = negative->getId();
+            negative->renderThumbnail();
+            ImageData thumbnail = negative->getThumbnail();
+            this->view.updateThumbnail(std::move(createPreviewtexture(thumbnail)), id);
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -332,12 +340,20 @@ void Controller::ButtonPressResetConversion() {
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
-        auto execute = [negative]() {
+        auto execute = [this, negative]() {
             negative->resetConversion();
+            int id = negative->getId();
+            negative->renderThumbnail();
+            ImageData thumbnail = negative->getThumbnail();
+            this->view.updateThumbnail(std::move(createPreviewtexture(thumbnail)), id);
         };
 
-        auto undo = [negative]() {
+        auto undo = [this, negative]() {
             negative->convert();
+            int id = negative->getId();
+            negative->renderThumbnail();
+            ImageData thumbnail = negative->getThumbnail();
+            this->view.updateThumbnail(std::move(createPreviewtexture(thumbnail)), id);
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));

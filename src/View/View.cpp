@@ -105,6 +105,20 @@ void View::updateThumbnails() {
     }
 }
 
+void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
+    auto iterator = std::find_if(
+        this->thumbnails.begin(),
+        this->thumbnails.end(),
+        [&id](const std::unique_ptr<Thumbnail>& thumbnailPtr) {
+            return thumbnailPtr->id == id;
+        }
+    );
+
+    if (iterator != this->thumbnails.end()) {
+        std::println("Updating thumbnail id: {}", (*iterator)->id);
+        (*iterator)->updateTexture(std::move(thumbnailTexture));
+    }
+}
 
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------

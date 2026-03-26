@@ -27,31 +27,31 @@
                 <p>Post-Convert</p>
 
                 <label for="density">Density</label>
-                <input type="range" id="density" name="density" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.05"/>
 
                 <label for="contrast">Contrast</label>
-                <input type="range" id="contrast" name="contrast" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="contrast" name="contrast" min="-3.0" max="3.0" value="0" step="0.02"/>
 
                 <label for="whites">Whites</label>
-                <input type="range" id="whites" name="whites" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.02"/>
 
                 <label for="highlights">Highlights</label>
-                <input type="range" id="highlights" name="highlights" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.02"/>
 
                 <label for="shadows">Shadows</label>
-                <input type="range" id="shadows" name="shadows" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.02"/>
 
                 <label for="blacks">Blacks</label>
-                <input type="range" id="blacks" name="blacks" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.02"/>
 
                 <label for="c-r">Cyan-Red</label>
-                <input type="range" id="c-r" name="c-r" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="c-r" name="c-r" min="-3.0" max="3.0" value="0" step="0.02"/>
 
                 <label for="m-g">Magenta-Green</label>
-                <input type="range" id="m-g" name="m-g" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="m-g" name="m-g" min="-3.0" max="3.0" value="0" step="0.02"/>
 
                 <label for="y-b">Yellow-Blue</label>
-                <input type="range" id="y-b" name="y-b" min="-3.0" max="3.0" value="0"/>
+                <input type="range" id="y-b" name="y-b" min="-3.0" max="3.0" value="0" step="0.02"/>
 
                 <button id="autoWB">Auto White Balance</button>
                 <button id="selectNeutral">Select neutral point</button>

@@ -58,6 +58,7 @@ public:
     void removeThumbnail(int id);
     void LoadThumbnails();
     void updateThumbnails();
+    void updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
 
     // SETTERS
     void setSliderValue(std::string name, float value);
