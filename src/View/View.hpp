@@ -31,6 +31,10 @@ private:
     // Preview
     std::unique_ptr<sf::Texture> previewTexture;
     sf::Sprite previewSprite;
+    float previewScale;
+    int previewSize = 800;
+    float previewX = 0;
+    float previewY = 0;
 
     // Window
     sf::RenderWindow& window;
@@ -59,6 +63,11 @@ public:
     void LoadThumbnails();
     void updateThumbnails();
     void updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
+
+    // PREVIEW MANAGEMENT
+    void updatePreviewSize();
+    void updatePreviewScale();
+    void updatePreviewPos();
 
     // SETTERS
     void setSliderValue(std::string name, float value);

@@ -751,6 +751,10 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             Negative* negative = this->model.getCurrentNegative();
             if (negative) {
                 negative->renderEdits(false);
+                int id = negative->getId();
+                negative->renderThumbnail();
+                ImageData thumbnail = negative->getThumbnail();
+                this->view.updateThumbnail(createPreviewtexture(thumbnail), id);
             }
             this->updatePreview(false);
         }
@@ -772,6 +776,10 @@ void Controller::eventLoop() {
         // RESIZED
         if (event->is<sf::Event::Resized>()) {
             RmlBackend::Resize(this->view.getRmlContext());
+            this->view.getRmlContext()->Update();
+            this->view.updatePreviewPos();
+            this->view.updatePreviewSize();
+            this->updatePreview(false);
         }
 
         // KEY PRESSED

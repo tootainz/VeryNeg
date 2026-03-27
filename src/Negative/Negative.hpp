@@ -30,7 +30,7 @@ private:
     // ------------------------------------------------------------------------------------------------------------------------------------
 
     static int nextId;
-    static const int PREVIEW_SIZE = 800;
+    static const int PREVIEW_SIZE = 1000;
     static const int THUMBNAIL_SIZE = 500;
     static const int EYEDROPPER_SIZE = 5;
     static const int SHARPNESS_PREVIEW_SIZE = 100;
@@ -61,7 +61,7 @@ private:
     std::vector<float> convertedDraggingPixels; // Pixels after the covnersion, but used when dragging a slider to improve preview performance
     std::vector<float> editedPixels;            // Pixels after applying all the post-covnert edits
     std::vector<float> editedDraggingPixels;    // Pixels after the edits, but used when dragging a slider to improve preview performance
-    int workingScale;                           // How much the working image is scaled down from the original, calculated automatically to fit UI
+    float workingScale;                           // How much the working image is scaled down from the original, calculated automatically to fit UI
     int workingWidth;
     int workingHeight;
 

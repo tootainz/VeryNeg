@@ -75,6 +75,7 @@ bool Negative::readConversionCache() {
     input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
     std::println("loaded cahce");
     input->close();
+    this->renderDragging();
     return true;
 }
 
@@ -146,15 +147,14 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     
     // 1. Read the full original image
     std::unique_ptr<OIIO::ImageInput> input = OIIO::ImageInput::open(imagePath.string());
-
     if (!input) {
         std::println("Failed to open file");
         return false;
     }
 
-    this->name = imagePath.stem();
-    
     const OIIO::ImageSpec& spec = input->spec();
+
+    this->name = imagePath.stem();
     this->width = spec.width;
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
@@ -179,14 +179,10 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     // 2. Generate the working image
 
-    // First determine the working scale, meaning the amount that it has to be divided by to fit into the preview box as listed in PREVIEW_SIZE
-    auto ceilDiv = [](int a, int b) {
-        return a / b + (a % b != 0);
-    };
-
-    const int widthScale = ceilDiv(this->width, this->PREVIEW_SIZE);
-    const int heightScale = ceilDiv(this->height, this->PREVIEW_SIZE);
-    this->workingScale = std::max(widthScale, heightScale);
+    // First determine the working scale, meaning the amount that it has to be scaled by to fit into the preview box as listed in PREVIEW_SIZE
+    const float widthScale = this->PREVIEW_SIZE / (1.0f * this->width);
+    const float heightScale = this->PREVIEW_SIZE / (1.0f * this->height);
+    this->workingScale = std::min(widthScale, heightScale);
 
     std::println("the working scale for this image is {}", this->workingScale);
     std::println("Generating working pixels");
@@ -196,9 +192,11 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     OIIO::ImageBuf originalBuf(originalSpec, this->originalPixels.data());
 
+
+
     // Calculate new dimensions for the working image
-    this->workingWidth = this->width*(1.0f/this->workingScale);
-    this->workingHeight = this->height*(1.0f/this->workingScale);
+    this->workingWidth = std::ceil(this->width*this->workingScale);
+    this->workingHeight = std::ceil(this->height*this->workingScale);
     std::println("trying to resize resolution to width: {} height: {}", this->workingWidth, this->workingHeight);
 
     // Resize the working image

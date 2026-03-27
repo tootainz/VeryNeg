@@ -23,6 +23,8 @@ View::View(sf::RenderWindow& window) :
     if (document) {
         document->Show();
     }
+    this->updatePreviewSize();
+    this->updatePreviewPos();
 }
 
 
@@ -120,6 +122,37 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
     }
 }
 
+
+// PREVIEW MANAGEMENT
+// ----------------------------------------------------------------------------------------------------------------
+
+void View::updatePreviewSize() {
+    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
+    int previewWidth = previewElement->GetOffsetWidth();
+    int previewHeight = previewElement->GetOffsetHeight();
+    this->previewSize = std::min(previewWidth, previewHeight);
+}
+
+void View::updatePreviewScale() {
+    sf::Vector2u textureSize = this->previewTexture->getSize();
+
+    // Calculate scale factors to fit the target size
+    float scaleX = this->previewSize / (1.0f * textureSize.x);
+    float scaleY = this->previewSize / (1.0f * textureSize.y);
+    this->previewScale = std::min(scaleX, scaleY);
+
+    std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
+
+    // Apply the scale to the sprite
+    this->previewSprite.setScale({this->previewScale, this->previewScale});
+}
+
+void View::updatePreviewPos() {
+    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
+    this->previewX = previewElement->GetAbsoluteLeft();
+    this->previewY = previewElement->GetAbsoluteTop();
+}
+
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -138,22 +171,10 @@ void View::setSelection(ImageArea area) {
 }
 
 void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
-    int PREVIEW_WIDTH = 500;
-    int PREVIEW_HEIGHT = 800;
-
     this->previewTexture = std::move(texture);
     this->previewSprite = sf::Sprite(*this->previewTexture);
-
-    sf::Vector2u textureSize = this->previewTexture->getSize();
-
-    // Calculate scale factors to fit the target size
-    float scaleX = PREVIEW_WIDTH / (1.0f * textureSize.x);
-    float scaleY = PREVIEW_HEIGHT / (1.0f * textureSize.y);
-
-    std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
-
-    // Apply the scale to the sprite
-    this->previewSprite.setScale({scaleX, scaleY});
+    this->previewSprite.setPosition({this->previewX, this->previewY});
+    this->updatePreviewScale();
 }
 
 
@@ -177,7 +198,13 @@ void View::render() {
     this->updateThumbnails();
 
     this->window.clear();
-    
+
+    // Update and render the RmlUi
+    RmlBackend::BeginFrame();
+    this->rmlContext->Update();
+    this->rmlContext->Render();
+    RmlBackend::PresentFrame();
+
     // Draw the non RmlUi stuff
     this->window.draw(previewSprite);
     if (this->displaySelection) {
@@ -188,11 +215,5 @@ void View::render() {
     for (const auto& thumbnail : this->thumbnails) {
         this->window.draw(thumbnail->sprite);
     }
-
-    // Update and render the RmlUi
-    RmlBackend::BeginFrame();
-    this->rmlContext->Update();
-    this->rmlContext->Render();
-    RmlBackend::PresentFrame();
     this->window.display();
 }
