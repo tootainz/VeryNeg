@@ -32,9 +32,12 @@ private:
     std::unique_ptr<sf::Texture> previewTexture;
     sf::Sprite previewSprite;
     float previewScale;
-    int previewSize = 800;
+    int previewWidth = 800;
+    int previewHeight = 800;
     float previewX = 0;
     float previewY = 0;
+    float previewCenterOffsetX = 0;
+    float previewCenterOffsetY = 0;
 
     // Window
     sf::RenderWindow& window;
@@ -61,7 +64,7 @@ public:
     void addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
     void removeThumbnail(int id);
     void LoadThumbnails();
-    void updateThumbnails();
+    void updateThumbnailsPos();
     void updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
 
     // PREVIEW MANAGEMENT

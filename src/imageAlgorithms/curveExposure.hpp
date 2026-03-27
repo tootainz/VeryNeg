@@ -12,7 +12,7 @@ inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.2f;
 inline float curveExposureFunction(float input, float value) {
 
     if (value >= 1.0f) {
-        return (1-(-value))*input + (-value)*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT);
+        return std::clamp((1-(-value))*input + (-value)*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT), 0.0f, 1.0f);
     }
     else {
         float firstMin = std::min(1.0f/std::pow(value, 10.0f), 0.5f + 1.0f/std::pow(value, 8.0f));

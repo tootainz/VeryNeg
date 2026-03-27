@@ -123,7 +123,7 @@ void Controller::ButtonPressAddNegative() {
 
     auto execute = [this]() -> void {
 
-        pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"});
+        pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"}, pfd::opt::multiselect);
         std::vector<std::string> paths = fileOpener.result();
 
         if (paths.size() == 0) {
@@ -131,17 +131,19 @@ void Controller::ButtonPressAddNegative() {
             return;
         }
         else {
-            std::filesystem::path path = paths[0];
-            std::println("Trying to open negative at: {}", path.string());
+            std::println("opened {} paths", paths.size());
+            for (std::filesystem::path path : paths) {
+                std::println("Trying to open negative at: {}", path.string());
 
-            Negative* negative = model.addNegative(path);
-            if (negative) {
-                int id = negative->getId();
-                ImageData thumbnail = negative->getThumbnail();
-                this->view.addThumbnail(createPreviewtexture(thumbnail), id);
-                this->updateEditSettings(*negative);
-                return;
+                Negative* negative = model.addNegative(path);
+                if (negative) {
+                    int id = negative->getId();
+                    ImageData thumbnail = negative->getThumbnail();
+                    this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+                    this->updateEditSettings(*negative);
+                }
             }
+            return;
         }
     };
 
@@ -151,6 +153,10 @@ void Controller::ButtonPressAddNegative() {
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->view.LoadThumbnails();
+    this->updatePreview(this->uiState.isDragging);
+    this->view.updatePreviewSize();
+    this->view.updatePreviewScale();
+    this->view.updatePreviewPos();
     this->updatePreview(this->uiState.isDragging);
 }
 
@@ -180,6 +186,7 @@ void Controller::ButtonPressRemoveNegative(int id) {
         this->view.LoadThumbnails();
     }
     this->updatePreview(this->uiState.isDragging);
+    this->view.updatePreviewPos();
 }
 
 void Controller::ButtonPressNextNegative() {
@@ -194,6 +201,7 @@ void Controller::ButtonPressNextNegative() {
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->updatePreview(this->uiState.isDragging);
+    this->view.updatePreviewPos();
 }
 
 void Controller::ButtonPressPreviousNegative() {
@@ -209,6 +217,7 @@ void Controller::ButtonPressPreviousNegative() {
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->updatePreview(this->uiState.isDragging);
+    this->view.updatePreviewPos();
 }
 
 void Controller::ButtonPressThumbnail(int id) {
@@ -232,6 +241,7 @@ void Controller::ButtonPressThumbnail(int id) {
         );
 
         this->updatePreview(this->uiState.isDragging);
+        this->view.updatePreviewPos();
     }
 }
 
@@ -777,8 +787,9 @@ void Controller::eventLoop() {
         if (event->is<sf::Event::Resized>()) {
             RmlBackend::Resize(this->view.getRmlContext());
             this->view.getRmlContext()->Update();
-            this->view.updatePreviewPos();
             this->view.updatePreviewSize();
+            this->view.updatePreviewScale();
+            this->view.updatePreviewPos();
             this->updatePreview(false);
         }
 

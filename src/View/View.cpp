@@ -17,14 +17,19 @@ View::View(sf::RenderWindow& window) :
     selection({0.0f, 0.0f}),
     thumbnails()
 {
-    bool success = Rml::LoadFontFace("assets/oceert_pixel.otf");
+    Rml::LoadFontFace("assets/oceert_pixel.otf");
     Rml::ElementDocument* document = this->rmlContext->LoadDocument("assets/veryNegConvert.rml");
     this->rmlDocument = document;
     if (document) {
         document->Show();
     }
     this->updatePreviewSize();
+    this->updatePreviewScale();
     this->updatePreviewPos();
+
+    this->selection.setFillColor(sf::Color::Transparent);
+    this->selection.setOutlineThickness(1.0f);
+    this->selection.setOutlineColor(sf::Color::White);
 }
 
 
@@ -93,7 +98,7 @@ void View::LoadThumbnails() {
     }
 }
 
-void View::updateThumbnails() {
+void View::updateThumbnailsPos() {
     for (const auto& thumbnail : this->thumbnails) {
         std::string thumbnailName = std::format("thumbnail_{}", thumbnail->id);
         Rml::Element* thumbnailElement = this->rmlDocument->GetElementById(thumbnailName);
@@ -128,17 +133,17 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
 
 void View::updatePreviewSize() {
     Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
-    int previewWidth = previewElement->GetOffsetWidth();
-    int previewHeight = previewElement->GetOffsetHeight();
-    this->previewSize = std::min(previewWidth, previewHeight);
+    this->previewWidth = previewElement->GetOffsetWidth();
+    this->previewHeight = previewElement->GetOffsetHeight();
+    std::println("preveiw size is {} * {}", this->previewWidth, this->previewHeight);
 }
 
 void View::updatePreviewScale() {
     sf::Vector2u textureSize = this->previewTexture->getSize();
 
     // Calculate scale factors to fit the target size
-    float scaleX = this->previewSize / (1.0f * textureSize.x);
-    float scaleY = this->previewSize / (1.0f * textureSize.y);
+    float scaleX = this->previewWidth / (1.0f * textureSize.x);
+    float scaleY = this->previewHeight / (1.0f * textureSize.y);
     this->previewScale = std::min(scaleX, scaleY);
 
     std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
@@ -149,8 +154,28 @@ void View::updatePreviewScale() {
 
 void View::updatePreviewPos() {
     Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
-    this->previewX = previewElement->GetAbsoluteLeft();
-    this->previewY = previewElement->GetAbsoluteTop();
+
+    float spriteWidth = this->previewSprite.getGlobalBounds().size.x;
+    float spriteHeight = this->previewSprite.getGlobalBounds().size.y;
+    
+    std::println("spritewidth: {}, previewWidth: {}", spriteWidth, this->previewWidth);
+
+    // if sprite width < preview width then center horizontal
+    if (spriteWidth < this->previewWidth) {
+        std::println("center preview horizontal");
+        this->previewCenterOffsetX = (this->previewWidth-spriteWidth)/2.0f;
+        this->previewCenterOffsetY = 0.0f;
+    }
+    // center vertical
+    else {
+        std::println("center preview vertical");
+        this->previewCenterOffsetX = 0.0f;
+        this->previewCenterOffsetY = (this->previewHeight-spriteHeight)/2.0f;
+    }
+
+    this->previewX = previewElement->GetAbsoluteLeft()+this->previewCenterOffsetX;
+    this->previewY = previewElement->GetAbsoluteTop()+this->previewCenterOffsetY;
+    std::println("the preview will be drawn on {},{}", this->previewX, this->previewY);
 }
 
 // SETTERS
@@ -191,13 +216,14 @@ Rml::Context* View::getRmlContext() {
 
 // Draw the complete view
 void View::render() {
+    // -------------------------------------------------------
+    // UPDATING
 
-    this->selection.setFillColor(sf::Color::Transparent);
-    this->selection.setOutlineThickness(1.0f);
-    this->selection.setOutlineColor(sf::Color::White);
-    this->updateThumbnails();
+    this->updateThumbnailsPos();
 
+    // -------------------------------------------------------
     this->window.clear();
+    // RENDERING
 
     // Update and render the RmlUi
     RmlBackend::BeginFrame();
@@ -206,7 +232,11 @@ void View::render() {
     RmlBackend::PresentFrame();
 
     // Draw the non RmlUi stuff
+    
+    // Preview
     this->window.draw(previewSprite);
+
+    // Selection
     if (this->displaySelection) {
         this->window.draw(this->selection);
     }
@@ -215,5 +245,7 @@ void View::render() {
     for (const auto& thumbnail : this->thumbnails) {
         this->window.draw(thumbnail->sprite);
     }
+
     this->window.display();
+    // -------------------------------------------------------
 }

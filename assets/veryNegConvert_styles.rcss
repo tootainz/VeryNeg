@@ -7,6 +7,10 @@ body {
     justify-content: space-between;
 }
 
+p {
+    display: block;
+}
+
 input.range
 {
     height: 20px;
@@ -56,6 +60,17 @@ button:active {
     background-color: #0e0e0e;
     height: 100%;
     margin: 20px;
+}
+
+#releaseVersion {
+    font-size: 20px;
+    color: #232222;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
 }
 
 #filmRoll {

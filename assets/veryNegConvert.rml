@@ -5,7 +5,13 @@
 	</head>
 	<body>
         <div id="left">
-            <div id="preview"></div>
+            <div id="preview">
+                <div id="releaseVersion">
+                    <p>VeryNeg v0.4.0</p>
+                    <p>by Joonatan Koponen</p>
+                    <p>2026</p>
+                </div>
+            </div>
             <div id="filmRoll">
                 <img src="" alt="thumbnail"/>
             </div>
