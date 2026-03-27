@@ -18,7 +18,7 @@ inline float lightsFunction(float input, float value, int sharpness) {
 
     // Make sure sharpness is odd
     int correctedSharpness = sharpness;
-    if (sharpness % 1 != 0) {
+    if (sharpness % 2 == 0) {
         correctedSharpness += 1;
     }
 

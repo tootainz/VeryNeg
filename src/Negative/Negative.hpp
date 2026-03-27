@@ -35,6 +35,7 @@ private:
     static const int EYEDROPPER_SIZE = 5;
     static const int SHARPNESS_PREVIEW_SIZE = 100;
     static const std::string NEGATIVEDATA_VERSION;
+    static const float DRAGGING_SCALE;
 
 
     // PRIVATE DATA MEMBERS
@@ -56,9 +57,11 @@ private:
     
     // Working image is a smaller version of the original in order to speed up the live editing process
     std::vector<float> workingPixels;
-    std::vector<float> convertedPixels;     // Pixels after the negative conversion
-    std::vector<float> editedPixels;        // Pixels after applying all the post-covnert edits
-    int workingScale;                       // How much the working image is scaled down from the original, calculated automatically to fit UI
+    std::vector<float> convertedPixels;         // Pixels after the negative conversion
+    std::vector<float> convertedDraggingPixels; // Pixels after the covnersion, but used when dragging a slider to improve preview performance
+    std::vector<float> editedPixels;            // Pixels after applying all the post-covnert edits
+    std::vector<float> editedDraggingPixels;    // Pixels after the edits, but used when dragging a slider to improve preview performance
+    int workingScale;                           // How much the working image is scaled down from the original, calculated automatically to fit UI
     int workingWidth;
     int workingHeight;
 
@@ -101,7 +104,7 @@ public:
     bool wasCreated(); // Tells whether intialization was succesful
 
     // GETTERS FOR THE UI
-    ImageData getPreview();
+    ImageData getPreview(bool dragging);
     ImageData getThumbnail();
     ImageData getSharpnessPreview();
     int getId();
@@ -163,7 +166,8 @@ public:
 
     // Rendering methods
     void renderThumbnail();
-    void renderEdits();
+    void renderEdits(bool dragging);
+    void renderDragging();
     void renderWorking();
     void renderFinal();
 };

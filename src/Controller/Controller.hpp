@@ -6,6 +6,7 @@
 #include "../View/View.hpp"
 #include "../Command/Command.hpp"
 #include "../Command/CommandHistory.hpp"
+#include "UiState.hpp"
 
 
 /**
@@ -37,16 +38,7 @@ private:
     CommandHistory history; // Controlelr owns the history
 
     // UI state
-    sf::Vector2i selectionStart;  
-    bool selecting = false;
-    bool readyToSelect = false;
-    bool selectingCrop = false;
-    bool selectingScanArea = false;
-    bool selectingBorder = false;
-    bool selectingDensest = false;
-    bool selectingNeutral = false;
-    bool disableCallbacks = false;
-    
+    UiState uiState;
 
 public:
     // PUBLIC METHODS
@@ -64,7 +56,7 @@ private:
     // ------------------------------------------------------------------------------------------------------------------------------------
 
     // UPDATE GUI
-    void updatePreview();
+    void updatePreview(bool dragging);
     void updateEditSettings(Negative& negative);
 
     // UNDO REDO

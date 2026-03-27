@@ -138,8 +138,22 @@ void View::setSelection(ImageArea area) {
 }
 
 void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
+    int PREVIEW_WIDTH = 500;
+    int PREVIEW_HEIGHT = 800;
+
     this->previewTexture = std::move(texture);
     this->previewSprite = sf::Sprite(*this->previewTexture);
+
+    sf::Vector2u textureSize = this->previewTexture->getSize();
+
+    // Calculate scale factors to fit the target size
+    float scaleX = PREVIEW_WIDTH / (1.0f * textureSize.x);
+    float scaleY = PREVIEW_HEIGHT / (1.0f * textureSize.y);
+
+    std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
+
+    // Apply the scale to the sprite
+    this->previewSprite.setScale({scaleX, scaleY});
 }
 
 

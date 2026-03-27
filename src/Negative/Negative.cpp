@@ -37,6 +37,7 @@ static float exponentDampenerFixer(float value) {
 
 int Negative::nextId = 0;
 const std::string Negative::NEGATIVEDATA_VERSION = "0.2.0";
+const float Negative::DRAGGING_SCALE = 0.3f;
 
 
 // PREVIEW CACHING
@@ -224,7 +225,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     }
 
     // 5. apply edits from the saved data
-    this->renderEdits();
+    this->renderEdits(false);
 
     // 6. Create a thumbnail
     this->renderThumbnail();
@@ -256,45 +257,34 @@ bool Negative::wasCreated() {
 // GETTERS FOR THE UI
 // ----------------------------------------------------------------------------------------------------------------
 
-// Returns a preview to show in the GUI in the form of ImageData. This will be shown with SFML, The colors are assumed to be sRGB in the preview
-ImageData Negative::getPreview() {
+// An optimized version by ChatGPT mixed with my additions of the original getpreview by me that used OIIO::ImageBufs and many copies.
+// I couldn't easily do that much betetr so i think its better to let AI optimize for me
+ImageData Negative::getPreview(bool dragging) {
     std::println("generating preview");
 
-    // Use OIIO::ImageBuf for ease of scaling resizing etc
-    OIIO::ImageSpec workingSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-    OIIO::ImageBuf workingBuf(workingSpec, this->editedPixels.data());
+    int srcChannels = this->numberOfChannels;
+    int previewWidth = dragging ? this->workingWidth*this->DRAGGING_SCALE : this->workingWidth;
+    int previewHeight = dragging ? this->workingHeight*this->DRAGGING_SCALE : this->workingHeight;
 
-    // Make sure the data is in RGBA format since the preview will have to be in RGBA format for SFML
-    if (this->numberOfChannels < 4) {
-        std::println("changed channels to 4");
-        // This is straight from OIIO, it adds an aplha channel to the image
-        workingBuf = OIIO::ImageBufAlgo::channels(workingBuf, 4, { 0, 1, 2, -1 },
-                                    { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/,
-                                        1.0 },
-                                    { "", "", "", "A" });
+    const std::vector<float>& previewPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
+
+    std::vector<uint8_t> previewData(previewWidth * previewHeight * 4); // always RGBA
+
+    for (int i = 0; i < previewWidth * previewHeight; ++i) {
+        float r = (srcChannels > 0 ? previewPixels[i*srcChannels + 0] : 0.0f);
+        float g = (srcChannels > 1 ? previewPixels[i*srcChannels + 1] : 0.0f);
+        float b = (srcChannels > 2 ? previewPixels[i*srcChannels + 2] : 0.0f);
+        float a = 1.0f; // fully opaque
+
+        // Clamp and scale to 0–255
+        previewData[i*4 + 0] = static_cast<uint8_t>(std::clamp(r, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 1] = static_cast<uint8_t>(std::clamp(g, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 2] = static_cast<uint8_t>(std::clamp(b, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 3] = static_cast<uint8_t>(std::clamp(a, 0.0f, 1.0f) * 255.0f);
     }
-
-    // Calculate new dimensions for the preview
-    int previewWidth = this->workingWidth;
-    int previewHeight = this->workingHeight;
-
-    // Change the underlying bit depth of the image to 8bit
-    OIIO::ImageBuf uint8Buf = OIIO::ImageBufAlgo::copy(workingBuf, OIIO::TypeDesc::UINT8);
-    std::println("changed to uint8");
-
-    // Resize the image for the preview
-    OIIO::ROI roi(0, previewWidth, 0, previewHeight, 0, 1, /*chans:*/ 0, uint8Buf.nchannels());
-    OIIO::ImageBuf previewBuf = OIIO::ImageBufAlgo::resample(uint8Buf, true, roi);
-    std::println("resized resolution to width: {} height: {}", previewWidth, previewHeight);
-    
-    // Extact the preview data from the ImageBuf
-    std::vector<uint8_t> previewData;
-    previewData.resize(previewWidth*previewHeight*4);
-    previewBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::UINT8, previewData.data());
 
     std::println("generated preview data");
 
-    // Return an ImageData struct
     return {
         previewData,
         previewWidth,
@@ -563,42 +553,121 @@ void Negative::renderThumbnail() {
     std::println("generated thumbnail data");
 }
 
-void Negative::renderEdits() {
-
-    // IMPORTANT TODO, all of this can be combined into a single lambda that will be iterated once for the whole image, not separately for multiple times!!
-
-    this->editedPixels = this->convertedPixels;
+void Negative::renderEdits(bool dragging) {
+    
+    // Determine if this is used to render a smaller dragging preview or a final preview after dragging stops
+    if (dragging) {
+        this->editedDraggingPixels = this->convertedDraggingPixels;
+    }
+    else {
+        this->editedPixels = this->convertedPixels;
+    }
+    std::vector<float>& targetPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
 
     std::println("Editing the image");
 
-    float MAX_SLIDER_VALUE = 20;
-
-    colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["rBalance"]), EditChannel::R);
-    colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["gBalance"]), EditChannel::G);
-    colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["bBalance"]), EditChannel::B);
-
-    // // Blacks
-    // levelsRGB(this->editedPixels, 0.0f, 1.1f, exponentDampenerFixer(this->negativeData["edits"]["blacks"]), 1.0f);
-    // // Whites
-    // levelsRGB(this->editedPixels, 0.0f, 1.1f, 0.0f, exponentDampenerFixer(this->negativeData["edits"]["whites"]));
-
-    // Exposure
-    curveExposure(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["density"]), EditChannel::RGB);
-
-    // Contrast
-    contrast(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["contrast"]), EditChannel::RGB);
-
-    shadows(this->editedPixels, this->negativeData["edits"]["shadows"]);
-    blacks(this->editedPixels, this->negativeData["edits"]["blacks"]);
+    // Combined one loop
+    float rBalance = exponentDampenerFixer(this->negativeData["edits"]["rBalance"]);
+    float gBalance = exponentDampenerFixer(this->negativeData["edits"]["gBalance"]);
+    float bBalance = exponentDampenerFixer(this->negativeData["edits"]["bBalance"]);
     
-    highlights(this->editedPixels, this->negativeData["edits"]["highlights"]);
-    whites(this->editedPixels, this->negativeData["edits"]["whites"]);
+    float density = exponentDampenerFixer(this->negativeData["edits"]["density"]);
 
-    // Apply display gamma
-    std::println("applying general display gamma correction");
-    gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+    float printDensity = this->negativeData["edits"]["density"];
+    std::println("density is {}", printDensity);
+    
+    float contrast = exponentDampenerFixer(this->negativeData["edits"]["contrast"]);
+    
+    float shadows = this->negativeData["edits"]["shadows"];
+    float blacks = this->negativeData["edits"]["blacks"];
+    float highlights = this->negativeData["edits"]["highlights"];
+    float whites = this->negativeData["edits"]["whites"];
+
+    auto applyEdits = [&](float& r, float& g, float& b) {
+        // Color balance
+        r = rationalCurveFunction(r, rBalance);
+        g = rationalCurveFunction(g, gBalance);
+        b = rationalCurveFunction(b, bBalance);
+
+        // Exposure
+        r = curveExposureFunction(r, density);
+        g = curveExposureFunction(g, density);
+        b = curveExposureFunction(b, density);
+
+        // Contrast
+        r = contrastFunction(r, contrast);
+        g = contrastFunction(g, contrast);
+        b = contrastFunction(b, contrast);
+
+        // Shadows and blacks
+        r = shadowsFunction(r, shadows);
+        g = shadowsFunction(g, shadows);
+        b = shadowsFunction(b, shadows);
+
+        r = blacksFunction(r, blacks);
+        g = blacksFunction(g, blacks);
+        b = blacksFunction(b, blacks);
+
+        // Highlights and whites
+        r = highlightsFunction(r, highlights);
+        g = highlightsFunction(g, highlights);
+        b = highlightsFunction(b, highlights);
+
+        r = whitesFunction(r, whites);
+        g = whitesFunction(g, whites);
+        b = whitesFunction(b, whites);
+
+        // Display gamma
+        r = gammaFunction(r, 1.0f/2.2f);
+        g = gammaFunction(g, 1.0f/2.2f);
+        b = gammaFunction(b, 1.0f/2.2f);
+    };
+
+    iterateImageMutableMultiThread(targetPixels, applyEdits);
+
+    // // Separate loops
+    // // Color Balance
+    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["rBalance"]), EditChannel::R);
+    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["gBalance"]), EditChannel::G);
+    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["bBalance"]), EditChannel::B);
+
+    // // Exposure
+    // curveExposure(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["density"]), EditChannel::RGB);
+
+    // // Contrast
+    // contrast(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["contrast"]), EditChannel::RGB);
+
+    // shadows(this->editedPixels, this->negativeData["edits"]["shadows"]);
+    // blacks(this->editedPixels, this->negativeData["edits"]["blacks"]);
+    
+    // highlights(this->editedPixels, this->negativeData["edits"]["highlights"]);
+    // whites(this->editedPixels, this->negativeData["edits"]["whites"]);
+
+    // // Apply display gamma
+    // std::println("applying general display gamma correction");
+    // gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
 
     this->writeNegativeData();
+}
+
+void Negative::renderDragging() {
+    // Use OIIO::ImageBuf for ease of scaling resizing etc
+    OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf convertedBuf(convertedSpec, this->convertedPixels.data());
+
+    int draggingWidth = this->workingWidth*this->DRAGGING_SCALE;
+    int draggingHeight = this->workingHeight*this->DRAGGING_SCALE;
+
+    // Resize the dragging image
+    OIIO::ROI roi(0, draggingWidth, 0, draggingHeight, 0, 1, /*chans:*/ 0, 3);
+    OIIO::ImageBuf draggingBuf = OIIO::ImageBufAlgo::resample(convertedBuf, true, roi);
+    
+    // Extract the dragging data from the ImageBuf
+    this->convertedDraggingPixels.resize(draggingWidth * draggingHeight * 3);
+    draggingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->convertedDraggingPixels.data());
+    std::println("Dragging pixels generated");
+
+    this->editedDraggingPixels = this->convertedDraggingPixels;
 }
 
 void Negative::renderWorking() {
@@ -766,6 +835,12 @@ void Negative::renderWorking() {
 
     // Copy the converted pixels to edited pixels vector
     this->editedPixels = this->convertedPixels;
+
+    // Also generate the dragging pixels for slider changing
+    this->renderDragging();
+
+    // Render Edits
+    this->renderEdits(false);
 
     // Tell negativedata that this image is supposed to be converted
     this->negativeData["general"]["isConverted"] = true;
