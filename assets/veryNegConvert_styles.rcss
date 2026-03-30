@@ -16,6 +16,11 @@ h2 {
     font-size: 14px;
 }
 
+#convert {
+    height: 40px;
+    font-size: 20px;
+    width: 100%;
+}
 
 input.range {
     height: 20px;

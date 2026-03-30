@@ -13,8 +13,17 @@ struct UiState {
 
     // Selection
     sf::Vector2i selectionStart;  
-    bool selecting = false;
+    ImageArea selectionArea = {0,0,0,0};
     bool readyToSelect = false;
+
+    bool selecting = false;
+    bool selectingLeft = false;
+    bool selectingTop = false;
+    bool selectingRight = false;
+    bool selectingBottom = false;
+    bool selectingWhole = false;
+
+    // Specific Selection
     bool selectingCrop = false;
     bool selectingScanArea = false;
     bool selectingBorder = false;
@@ -28,4 +37,24 @@ struct UiState {
 
     // General
     bool disableCallbacks = false;
+
+    void resetGeneralSelectionState () {
+        this->selecting = false;
+        this->selectingLeft = false;
+        this->selectingTop = false;
+        this->selectingRight = false;
+        this->selectingBottom = false;
+        this->selectingCrop = false;
+        this->selectingWhole = false;
+    }
+
+    void resetAllSelectionState () {
+        this->readyToSelect = false;
+        this->selectingCrop = false;
+        this->selectingScanArea = false;
+        this->selectingBorder = false;
+        this->selectingDensest = false;
+        this->selectingNeutral = false;
+        this->resetGeneralSelectionState();
+    }
 };

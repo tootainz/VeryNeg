@@ -77,17 +77,37 @@ void Controller::updatePreview(bool dragging) {
 
 void Controller::updateEditSettings(Negative& negative) {
     this->uiState.disableCallbacks = true;
-        float exposure = negative.getDensity();
-        float rBalance = negative.getRBalance();
-        float gBalance = negative.getGBalance();
-        float bBalance = negative.getBBalance();
-        this->view.setSliderValue("rBalanceSlider", rBalance);
-        this->view.setSliderValue("gBalanceSlider", gBalance);
-        this->view.setSliderValue("bBalanceSlider", bBalance);
-        this->view.setSliderValue("exposureSlider", exposure);
+
+    float scanGamma = negative.getScanGamma();
+    ImageArea scanArea = negative.getScanArea();
+
+    float density = negative.getDensity();
+    float contrast = negative.getContrast();
+    float whites = negative.getWhites();
+    float highlights = negative.getHighlights();
+    float shadows = negative.getShadows();
+    float blacks = negative.getBlacks();
+
+    float rBalance = negative.getRBalance();
+    float gBalance = negative.getGBalance();
+    float bBalance = negative.getBBalance();
+
+    this->view.setSliderValue("scanGamma", scanGamma);
+    this->view.setSelection(scanArea);
+
+    this->view.setSliderValue("density", density);
+    this->view.setSliderValue("contrast", contrast);
+    this->view.setSliderValue("whites", whites);
+    this->view.setSliderValue("highlights", highlights);
+    this->view.setSliderValue("shadows", shadows);
+    this->view.setSliderValue("blacks", blacks);
+
+    this->view.setSliderValue("c-r", rBalance);
+    this->view.setSliderValue("m-g", gBalance);
+    this->view.setSliderValue("y-b", bBalance);
+
     this->uiState.disableCallbacks = false;
 }
-
 
 // UNDO REDO
 // ----------------------------------------------------------------------------------------------------------------
@@ -200,6 +220,10 @@ void Controller::ButtonPressNextNegative() {
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        this->updateEditSettings(*negative);
+    }
     this->updatePreview(this->uiState.isDragging);
     this->view.updatePreviewPos();
 }
@@ -216,6 +240,10 @@ void Controller::ButtonPressPreviousNegative() {
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        this->updateEditSettings(*negative);
+    }
     this->updatePreview(this->uiState.isDragging);
     this->view.updatePreviewPos();
 }
@@ -240,6 +268,10 @@ void Controller::ButtonPressThumbnail(int id) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
 
+        Negative* negative = this->model.getCurrentNegative();
+        if (negative) {
+            this->updateEditSettings(*negative);
+        }
         this->updatePreview(this->uiState.isDragging);
         this->view.updatePreviewPos();
     }
@@ -251,16 +283,57 @@ void Controller::ButtonPressThumbnail(int id) {
 
 void Controller::ButtonPressSetScanGamma(float value) {
     std::println("scan gamma set to {}", value);
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        float previousScanGamma = negative->getScanGamma();
+
+        auto execute = [negative, value]() {
+            negative->setScanGamma(value);
+        };
+
+        auto undo = [negative, previousScanGamma]() {
+            negative->setScanGamma(previousScanGamma);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+        this->updatePreview(this->uiState.isDragging);
+    };
+}
+
+void Controller::ButtonPressBorder(bool checked) {
+    std::println("Border pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasNeutral = negative->getHasBorder();
+
+        auto execute = [negative, checked]() {
+            negative->setHasBorder(checked);
+        };
+
+        auto undo = [negative, previousHasNeutral]() {
+            negative->setHasBorder(previousHasNeutral);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview(this->uiState.isDragging);
+    };
 }
 
 void Controller::ButtonPressSetBorder() {
     std::println("Set Border pressed");
+    std::println("Setting Border");
     this->uiState.selectingBorder = !this->uiState.selectingBorder;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
 }
 
 void Controller::SetBorder(int x, int y) {
-    std::println("Seting Border");
+    std::println("Setting Border");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -283,6 +356,28 @@ void Controller::SetBorder(int x, int y) {
     }
 }
 
+void Controller::ButtonPressDensest(bool checked) {
+    std::println("Densest pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasNeutral = negative->getHasDensest();
+
+        auto execute = [negative, checked]() {
+            negative->setHasDensest(checked);
+        };
+
+        auto undo = [negative, previousHasNeutral]() {
+            negative->setHasDensest(previousHasNeutral);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview(this->uiState.isDragging);
+    };
+}
 
 void Controller::ButtonPressSetDensest() {
     std::println("Set Densest pressed");
@@ -312,10 +407,37 @@ void Controller::SetDensest(int x, int y) {
     }
 }
 
+void Controller::ButtonPressScanArea(bool checked) {
+    std::println("scan area pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasScanArea = negative->getHasScanArea();
+
+        auto execute = [negative, checked]() {
+            negative->setHasScanArea(checked); 
+        };
+
+        auto undo = [negative, previousHasScanArea]() {
+            negative->setHasScanArea(previousHasScanArea);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview(this->uiState.isDragging);
+    };
+}
+
 void Controller::ButtonPressSetScanArea() {
     std::println("set scan area pressed");
     this->uiState.selectingScanArea = !this->uiState.selectingScanArea;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
+    this->view.displaySelection = !this->view.displaySelection;
+}
+
+void Controller::ButtonPressSetScanAreaNumber() {
 }
 
 void Controller::ButtonPressConvert() {
@@ -370,6 +492,12 @@ void Controller::ButtonPressResetConversion() {
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
         this->updatePreview(this->uiState.isDragging);
     }
+}
+
+// GUI EVENTS POST-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
+
+void Controller::ButtonPressResetEdits() {
 }
 
 void Controller::SliderChangeSetDensity(float value) {
@@ -484,7 +612,50 @@ void Controller::SetNeutralBalance(int x, int y) {
     }
 }
 
-void Controller::ButtonPressAutoWhiteBalance() {
+void Controller::ButtonPressAutoWhiteBalance(bool checked) {
+    std::println("AutoWB pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasNeutral = negative->getAutoWB();
+
+        auto execute = [negative, checked]() {
+            negative->setAutoWB(checked);
+        };
+
+        auto undo = [negative, previousHasNeutral]() {
+            negative->setAutoWB(previousHasNeutral);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview(this->uiState.isDragging);
+    }
+}
+
+void Controller::ButtonPressNeutralBalance(bool checked) {
+    std::println("Neutral Balance pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasNeutral = negative->getHasNeutral();
+
+        auto execute = [negative, checked]() {
+            negative->setHasNeutral(checked);
+        };
+
+        auto undo = [negative, previousHasNeutral]() {
+            negative->setHasNeutral(previousHasNeutral);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+
+        this->updatePreview(this->uiState.isDragging);
+    }
 }
 
 void Controller::ButtonPressChooseNeutralBalance() {
@@ -555,99 +726,113 @@ void Controller::ButtonPressSavePositive() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ProcessEvent(Rml::Event& event) {
-    Rml::Element* element = event.GetTargetElement();
-    const std::string id = element->GetId();
-    const std::string className = element->GetId();
+    if (!this->uiState.disableCallbacks) {
+        Rml::Element* element = event.GetTargetElement();
+        const std::string id = element->GetId();
+        const std::string className = element->GetId();
 
-    // BUTTONS (Click)
-    if (event.GetId() == Rml::EventId::Click) {
+        // BUTTONS (Click)
+        if (event.GetId() == Rml::EventId::Click) {
 
-        if (id == "convert") {
-            ButtonPressConvert();
-        }
-        else if (id == "reset") {
-            ButtonPressResetConversion();
-        }
-        else if (id == "import") {
-            ButtonPressAddNegative();
-        }
-        else if (id == "export") {
-            ButtonPressSavePositive();
-        }
-        else if (id == "remove") {
-            Negative* negative = this->model.getCurrentNegative();
-            if (negative) {
-                int id = negative->getId();
-                ButtonPressRemoveNegative(id);
+            if (id == "convert") {
+                this->ButtonPressConvert();
+            }
+            else if (id == "reset") {
+                this->ButtonPressResetConversion();
+            }
+            else if (id == "import") {
+                this->ButtonPressAddNegative();
+            }
+            else if (id == "export") {
+                this->ButtonPressSavePositive();
+            }
+            else if (id == "remove") {
+                Negative* negative = this->model.getCurrentNegative();
+                if (negative) {
+                    int id = negative->getId();
+                    this->ButtonPressRemoveNegative(id);
+                }
+            }
+            else if (id == "scanGamma") {
+                // TODO
+            }
+            else if (id == "border") {
+                bool has = element->HasAttribute("checked");
+                this->ButtonPressBorder(has);
+            }
+            else if (id == "sampleBorder") {
+                this->ButtonPressSetBorder();
+            }
+            else if (id == "densest") {
+                bool has = element->HasAttribute("checked");
+                this->ButtonPressDensest(has);
+            }
+            else if (id == "sampleDensest") {
+                this->ButtonPressSetDensest();
+            }
+            else if (id == "scanArea") {
+                this->uiState.usingScanArea = !this->uiState.usingScanArea;
+                this->ButtonPressScanArea(this->uiState.usingScanArea);
+            }
+            else if (id == "setScanArea") {
+                this->ButtonPressSetScanArea();
+            }
+            else if (id == "autoWB") {
+                this->ButtonPressAutoWhiteBalance(true);
+            }
+            else if (id == "selectNeutral") {
+                this->ButtonPressChooseNeutralBalance();
+            }
+            else if (id.contains("thumbnail")) {
+                int thumbnailId = 0;
+                size_t pos = id.find('_'); // find underscore
+                if (pos != std::string::npos) {
+                    thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
+                }
+                this->ButtonPressThumbnail(thumbnailId);
+                std::println("pressed thumbnail {}", thumbnailId);
             }
         }
-        else if (id == "scanGamma") {
-            // TODO
-        }
-        else if (id == "sampleBorder") {
-            ButtonPressSetBorder();
-        }
-        else if (id == "sampleDensest") {
-            ButtonPressSetDensest();
-        }
-        else if (id == "scanArea") {
-            ButtonPressSetScanArea();
-        }
-        else if (id == "autoWB") {
-            ButtonPressAutoWhiteBalance();
-        }
-        else if (id == "selectNeutral") {
-            ButtonPressChooseNeutralBalance();
-        }
-        else if (id.contains("thumbnail")) {
-            int thumbnailId = 0;
-            size_t pos = id.find('_'); // find underscore
-            if (pos != std::string::npos) {
-                thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
-            }
-            ButtonPressThumbnail(thumbnailId);
-            std::println("pressed thumbnail {}", thumbnailId);
-        }
-    }
 
-    // SLIDERS (Change)
-    else if (event.GetId() == Rml::EventId::Change) {
+        // SLIDERS (Change)
+        else if (event.GetId() == Rml::EventId::Change) {
 
-        if (element->GetTagName() == "input") {
+            if (element->GetTagName() == "input") {
 
-            this->uiState.isDragging = true;
+                this->uiState.isDragging = true;
 
-            Rml::Variant* valueVar = element->GetAttribute("value");
-            if (!valueVar) return;
+                Rml::Variant* valueVar = element->GetAttribute("value");
+                if (!valueVar) return;
 
-            float value = valueVar->Get<float>();
+                float value = valueVar->Get<float>();
 
-            if (id == "density") {
-                SliderChangeSetDensity(value);
-            }
-            else if (id == "contrast") {
-                SliderChangeSetContrast(value);
-            }
-            else if (id == "whites") {
-                SliderChangeSetWhites(value);
-            }
-            else if (id == "highlights") {
-                SliderChangeSetHighlights(value);
-            }
-            else if (id == "shadows") {
-                SliderChangeSetShadows(value);
-            }
-            else if (id == "blacks") {
-                SliderChangeSetBlacks(value);
-            }
-            else if (id == "c-r") {
-                SliderChangeSetRBalance(value);
-            }
-            else if (id == "m-g") {
-                SliderChangeSetGBalance(value);
-            }
-            else if (id == "y-b") {
-                SliderChangeSetBBalance(value);
+                if (id == "density") {
+                    this->SliderChangeSetDensity(value);
+                }
+                else if (id == "contrast") {
+                    this->SliderChangeSetContrast(value);
+                }
+                else if (id == "whites") {
+                    this->SliderChangeSetWhites(value);
+                }
+                else if (id == "highlights") {
+                    this->SliderChangeSetHighlights(value);
+                }
+                else if (id == "shadows") {
+                    this->SliderChangeSetShadows(value);
+                }
+                else if (id == "blacks") {
+                    this->SliderChangeSetBlacks(value);
+                }
+                else if (id == "c-r") {
+                    this->SliderChangeSetRBalance(value);
+                }
+                else if (id == "m-g") {
+                    this->SliderChangeSetGBalance(value);
+                }
+                else if (id == "y-b") {
+                    this->SliderChangeSetBBalance(value);
+                }
             }
         }
     }
@@ -689,28 +874,66 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
     if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
         std::println("mouse pressed at ({},{})", mousePressed->position.x,  mousePressed->position.y);
         if (this->uiState.readyToSelect) {
+
+            // Get the mouse position in the actual image coordinates
+            std::tuple<int, int> correctedMousePos = this->view.previewCoordsToTextureCoords(mousePressed->position.x, mousePressed->position.y);
+            int correctedMouseX = std::get<0>(correctedMousePos);
+            int correctedMouseY = std::get<1>(correctedMousePos);
+            
             // Selecting only a sample point
             if (this->uiState.selectingBorder || this->uiState.selectingDensest || this->uiState.selectingNeutral) {
                 if (this->uiState.selectingBorder) {
-                    this->SetBorder( mousePressed->position.x,  mousePressed->position.y);
+                    this->SetBorder( correctedMouseX, correctedMouseY);
                 }
                 else if (this->uiState.selectingDensest) {
-                    this->SetDensest( mousePressed->position.x,  mousePressed->position.y);
+                    this->SetDensest( correctedMouseX, correctedMouseY);
                 }
                 else if (this->uiState.selectingNeutral) {
-                    this->SetNeutralBalance( mousePressed->position.x,  mousePressed->position.y);
+                    this->SetNeutralBalance( correctedMouseX, correctedMouseY);
                 }
-                this->uiState.readyToSelect = false;
-                this->uiState.selectingBorder = false;
-                this->uiState.selectingDensest = false;
-                this->uiState.selectingNeutral = false;
             }
+            // Selecting a selection
             else {
-                this->view.displaySelection = true;
+                ImageArea& selectionArea = this->uiState.selectionArea;
+                int selectionHandleBuffer = 10;
+                // We are clicking on the top of the selection
+                if (correctedMouseY > selectionArea.top - selectionHandleBuffer &&
+                    correctedMouseY < selectionArea.top + selectionHandleBuffer &&
+                    correctedMouseX > selectionArea.left &&
+                    correctedMouseX < selectionArea.right) {
+                    std::println("clicking top");
+                    this->uiState.selectingTop = true;
+                }
+                // We are clicking on the bottom of the selection
+                else if (correctedMouseY > selectionArea.bottom - selectionHandleBuffer &&
+                    correctedMouseY < selectionArea.bottom + selectionHandleBuffer &&
+                    correctedMouseX > selectionArea.left &&
+                    correctedMouseX < selectionArea.right) {
+                    std::println("clicking bottom");
+                    this->uiState.selectingBottom = true;
+                }
+                // We are clicking on the left side of the selection
+                else if (correctedMouseY > selectionArea.top &&
+                    correctedMouseY < selectionArea.bottom &&
+                    correctedMouseX > selectionArea.left - selectionHandleBuffer &&
+                    correctedMouseX < selectionArea.left + selectionHandleBuffer) {
+                    std::println("clicking right");
+                    this->uiState.selectingLeft = true;
+                }
+                // We are clicking on the right side of the selection
+                else if (correctedMouseY > selectionArea.top &&
+                    correctedMouseY < selectionArea.bottom &&
+                    correctedMouseX > selectionArea.right - selectionHandleBuffer &&
+                    correctedMouseX < selectionArea.right + selectionHandleBuffer) {
+                    std::println("clicking right");
+                    this->uiState.selectingRight = true;
+                }
+                else {
+                    this->uiState.selectingWhole = true;
+                }
                 std::println("starting dragging");
                 this->uiState.selecting = true;
-                this->uiState.readyToSelect = false;
-                this->uiState.selectionStart = { mousePressed->position.x, mousePressed->position.y };
+                this->uiState.selectionStart = { correctedMouseX, correctedMouseY };
             }
         }
 
@@ -721,19 +944,39 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
 
     // MOUSE MOVED
     else if (auto mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+
         if (this->uiState.selecting) {
+
         std::println("Dragging at ({},{})", mouseMoved->position.x, mouseMoved->position.y);
+        std::tuple<int, int> correctedMousePos = this->view.previewCoordsToTextureCoords(mouseMoved->position.x, mouseMoved->position.y);
+        int correctedMouseX = std::get<0>(correctedMousePos);
+        int correctedMouseY = std::get<1>(correctedMousePos);
+
             if (this->uiState.selectingScanArea) {
+                ImageArea& scanArea = this->uiState.selectionArea;
+
+                if (this->uiState.selectingTop) {
+                    scanArea.top = correctedMouseY;
+                }
+                else if (this->uiState.selectingBottom) {
+                    scanArea.bottom = correctedMouseY;
+                }
+                else if (this->uiState.selectingLeft) {
+                    scanArea.left = correctedMouseX;
+                }
+                else if (this->uiState.selectingRight) {
+                    scanArea.right = correctedMouseX;
+                }
+                else if (this->uiState.selectingWhole) {
+                    scanArea.left   = std::min(this->uiState.selectionStart.x, correctedMouseX);
+                    scanArea.top    = std::min(this->uiState.selectionStart.y, correctedMouseY);
+                    scanArea.right  = std::max(this->uiState.selectionStart.x, correctedMouseX);
+                    scanArea.bottom = std::max(this->uiState.selectionStart.y, correctedMouseY);
+                }
+                this->view.setSelection(scanArea);
                 Negative* negative = this->model.getCurrentNegative();
                 if (negative) {
-        
-                    ImageArea scanArea = negative->getScanArea();
-                    scanArea.left   = std::min(this->uiState.selectionStart.x, mouseMoved->position.x);
-                    scanArea.top    = std::min(this->uiState.selectionStart.y, mouseMoved->position.y);
-                    scanArea.right  = std::max(this->uiState.selectionStart.x, mouseMoved->position.x);
-                    scanArea.bottom = std::max(this->uiState.selectionStart.y, mouseMoved->position.y);
                     negative->setScanArea(scanArea);
-                    this->view.setSelection(scanArea);
                 }
             }
         }
@@ -750,11 +993,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         std::println("mouse Released at ({},{})", mouseReleased->position.x,  mouseReleased->position.y);
         if (this->uiState.selecting) {
             std::println("Finished dragging");
-            this->uiState.selecting = false;
-            this->uiState.readyToSelect = false;
-            if (this->uiState.selectingScanArea) {
-                this->uiState.selectingScanArea = false;
-            }
+            this->uiState.resetGeneralSelectionState();
         }
         if (this->uiState.isDragging) {
             this->uiState.isDragging = false;

@@ -337,6 +337,10 @@ float Negative::setScanGamma(float value) {
     return this->getScanGamma();
 }
 
+void Negative::setHasScanArea(bool has) {
+    this->negativeData["conversion"]["hasScanArea"] = has;
+}
+
 void Negative::setScanArea(ImageArea area) {
     this->negativeData["conversion"]["scanArea"]["left"] = area.left;
     this->negativeData["conversion"]["scanArea"]["top"] = area.top;
@@ -344,11 +348,14 @@ void Negative::setScanArea(ImageArea area) {
     this->negativeData["conversion"]["scanArea"]["bottom"] = area.bottom;
 }
 
+void Negative::setHasBorder(bool has) {
+    this->negativeData["conversion"]["hasBorder"] = has;
+}
+
 void Negative::setBorder(float r, float g, float b) {
     this->negativeData["conversion"]["border"]["r"] = r;
     this->negativeData["conversion"]["border"]["g"] = g;
     this->negativeData["conversion"]["border"]["b"] = b;
-    this->negativeData["conversion"]["hasBorder"] = true;
 }
 
 void Negative::setBorderByCoords(int x, int y) {
@@ -356,11 +363,14 @@ void Negative::setBorderByCoords(int x, int y) {
     this->setBorder(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
+void Negative::setHasDensest(bool has) {
+    this->negativeData["conversion"]["hasDensest"] = has;
+}
+
 void Negative::setDensest(float r, float g, float b) {
     this->negativeData["conversion"]["densest"]["r"] = r;
     this->negativeData["conversion"]["densest"]["g"] = g;
     this->negativeData["conversion"]["densest"]["b"] = b;
-    this->negativeData["conversion"]["hasDensest"] = true;
 }
 
 void Negative::setDensestByCoords(int x, int y) {
@@ -411,11 +421,19 @@ float Negative::setBlacks(float value) {
     return this->getBlacks();
 }
 
+void Negative::setAutoWB(bool has) {
+    this->negativeData["edits"]["autoWB"] = has;
+}
+
+void Negative::setHasNeutral(bool has)
+{
+    this->negativeData["edits"]["hasNeutralPoint"] = has;
+}
+
 void Negative::setNeutral(float r, float g, float b) {
     this->negativeData["edits"]["neutralPoint"]["r"] = r;
     this->negativeData["edits"]["neutralPoint"]["g"] = g;
     this->negativeData["edits"]["neutralPoint"]["b"] = b;
-        this->negativeData["conversion"]["hasNeutral"] = true;
 }
 
 void Negative::setNeutralByCoords(int x, int y) {
@@ -423,8 +441,7 @@ void Negative::setNeutralByCoords(int x, int y) {
     this->setNeutral(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
-float Negative::setRBalance(float value)
-{
+float Negative::setRBalance(float value) {
     this->negativeData["edits"]["rBalance"] = value;
     return this->getRBalance();
 }
@@ -439,12 +456,25 @@ float Negative::setBBalance(float value) {
     return this->getBBalance();
 }
 
+float Negative::setSaturation(float value) {
+    this->negativeData["edits"]["saturation"] = value;
+    return this->getSaturation();
+}
+
+float Negative::setSharpening(float value) {
+    this->negativeData["edits"]["sharpening"] = value;
+    return this->getSharpening();
+}
 
 // GETTING EDIT SETTINGS FROM NEGATIVEDATA PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
 float Negative::getScanGamma() {
     return this->negativeData["conversion"]["scanGamma"];
+}
+
+bool Negative::getHasBorder() {
+    return this->negativeData["conversion"]["hasBorder"];
 }
 
 ImageArea Negative::getScanArea() {
@@ -463,6 +493,10 @@ std::tuple<float, float, float> Negative::getBorder() {
     return { r, g, b };
 }
 
+bool Negative::getHasDensest() {
+    return this->negativeData["conversion"]["hasDensest"];
+}
+
 std::tuple<float, float, float> Negative::getDensest() {
     float r = this->negativeData["conversion"]["densest"]["r"];
     float g = this->negativeData["conversion"]["densest"]["g"];
@@ -470,6 +504,9 @@ std::tuple<float, float, float> Negative::getDensest() {
     return { r, g, b };
 }
 
+bool Negative::getHasScanArea() {
+    return this->negativeData["conversion"]["hasScanArea"];
+}
 
 // GETTING EDIT SETTINGS FROM NEGATIVEDATA POST-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
@@ -498,7 +535,16 @@ float Negative::getBlacks() {
     return this->negativeData["edits"]["blacks"];
 }
 
-std::tuple<float, float, float> Negative::getNeutral() {
+bool Negative::getAutoWB() {
+    return this->negativeData["conversion"]["autoWB"];
+}
+
+bool Negative::getHasNeutral() {
+    return this->negativeData["conversion"]["hasNeutralPoint"];
+}
+
+std::tuple<float, float, float> Negative::getNeutral()
+{
     float r = this->negativeData["edits"]["neutralPoint"]["r"];
     float g = this->negativeData["edits"]["neutralPoint"]["g"];
     float b = this->negativeData["edits"]["neutralPoint"]["b"];
@@ -517,6 +563,13 @@ float Negative::getBBalance() {
     return this->negativeData["edits"]["bBalance"];
 }
 
+float Negative::getSaturation() {
+    return this->negativeData["edits"]["saturation"];
+}
+
+float Negative::getSharpening() {
+    return this->negativeData["edits"]["sharpening"];
+}
 
 // RENDERING METHODS
 // ----------------------------------------------------------------------------------------------------------------
@@ -675,7 +728,7 @@ void Negative::renderWorking() {
 
     // 1. CONVERT TO LINEAR
     // If the scan has a baked in gamma, remove that and convert into linear
-    float correctionGamma = 1.8;
+    float correctionGamma = this->negativeData["conversion"]["scanGamma"];
     gamma(this->convertedPixels, correctionGamma, EditChannel::RGB);
     std::println("Transformed image into linear by correcting a gamma of {}", correctionGamma);
 
@@ -696,10 +749,19 @@ void Negative::renderWorking() {
 
         // Sample the border and densest automatically
         // First blur the image slightly to remove noise and extremities
-        // Only sample the area indicated by this->scanArea
+        // Only sample the area indicated by this->scanArea if we are usign scanArea, otherwise sample the whole image
 
+        ImageArea scanArea;
+
+        // Check if we are using scan area
+        if (this->getHasScanArea()) {
+            scanArea = this->getScanArea();
+        }
+        else {
+            scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};
+        }
         // the blur will be stored in a separate vector, crop the blur vector to this->scanArea
-        std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, this->getScanArea());
+        std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, scanArea);
 
         // Get the size of the cropped blur vector
         std::vector<float> blurredPixels = std::get<0>(blurredCropResult);

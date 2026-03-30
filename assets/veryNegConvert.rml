@@ -38,6 +38,7 @@
                     
                     <div class="settingHeader">
                         <h2>Pre-Convert</h2>
+                        <button id="reset">Reset</button>
                         <input type="checkbox">Hold</input>
                     </div>
 
@@ -51,25 +52,21 @@
                     </div>
                     
                     <div class="selectButtons">
-                        <button class="targetButton" id="sampleBorderTarget">*</button>
+                        <button class="targetButton" id="sampleBorder">*</button>
                         <input type="checkbox" id="border">Border</input>
                     </div>
                     <div class="selectButtons">
-                        <button class="targetButton" id="sampleBordert">*</button>    
+                        <button class="targetButton" id="sampleDensest">*</button>    
                         <input type="checkbox" id="densest">Densest</input>
                     </div>
                     <div class="selectButtons">
                         <button class="targetButton" id="setScanArea">*</button>   
-                        <input type="checkbox" id="scanArea">Scan Area</input>
-                    </div>
-                    <div class="selectButtons">
                         <input type="text" value="0" id="setScanBorder"></input>
-                        <input type="checkbox" id="scanBorder">Scan Border</input>
+                        <input type="checkbox" id="scanArea">Scan Area</input>
                     </div>
 
                     <div class="selectButtons" id="convertContainer">
                         <button id="convert">Convert</button>
-                        <button id="reset">Reset</button>
                     </div>
                 </div>
 
@@ -77,6 +74,7 @@
 
                     <div class="settingHeader">
                         <h2>Post-Convert</h2>
+                        <button id="reset">Reset</button>
                         <input type="checkbox">Hold</input>
                     </div>
 

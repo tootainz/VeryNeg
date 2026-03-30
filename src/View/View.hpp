@@ -71,9 +71,14 @@ public:
     void updatePreviewSize();
     void updatePreviewScale();
     void updatePreviewPos();
-
+    std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
+    std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);
+    
     // SETTERS
     void setSliderValue(std::string name, float value);
+    void setCheckboxValue(std::string name, float value);
+    void setNumbericValue(std::string name, float value);
+    void setPreset(std::string name, float value);
     void setSelection(ImageArea area);
     void setPreviewTexture(std::unique_ptr<sf::Texture> texture);
 

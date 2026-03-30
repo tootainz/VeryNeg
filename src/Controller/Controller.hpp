@@ -74,15 +74,20 @@ private:
     
     // PRE-CONVERT
     void ButtonPressSetScanGamma(float value);
+    void ButtonPressBorder(bool checked);
     void ButtonPressSetBorder();
     void SetBorder(int x, int y);
+    void ButtonPressDensest(bool checked);
     void ButtonPressSetDensest();
     void SetDensest(int x, int y);
+    void ButtonPressScanArea(bool checked);
     void ButtonPressSetScanArea();
+    void ButtonPressSetScanAreaNumber();
     void ButtonPressConvert();
     void ButtonPressResetConversion();
 
     // POST-CONVERT
+    void ButtonPressResetEdits();
 
     // Intensity
     void SliderChangeSetDensity(float value);
@@ -93,7 +98,8 @@ private:
     void SliderChangeSetBlacks(float value);
 
     // White balance
-    void ButtonPressAutoWhiteBalance();
+    void ButtonPressAutoWhiteBalance(bool checked);
+    void ButtonPressNeutralBalance(bool checked);
     void ButtonPressChooseNeutralBalance();
     void SetNeutralBalance(int x, int y);
     void SliderChangeSetRBalance(float value);

@@ -178,20 +178,44 @@ void View::updatePreviewPos() {
     std::println("the preview will be drawn on {},{}", this->previewX, this->previewY);
 }
 
+std::tuple<int, int> View::previewCoordsToTextureCoords(int x, int y) {
+    // First remove the preview offset, then remove the preview scale
+    // This should give us the original coords
+    float textureX = (x-this->previewX)*(1.0f/this->previewScale);
+    float textureY = (y-this->previewY)*(1.0f/this->previewScale);
+    std::println("the original coords are {},{}", textureX, textureY);
+    return std::tuple<int, int>(textureX, textureY);
+}
+
+std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
+    // First scale by preview scale, then add the preview offset
+    // This should give us the preview coords
+    float previewX = x*this->previewScale+this->previewX;
+    float previewY = y*this->previewScale+this->previewY;
+    std::println("the preview coords are {},{}", previewX, previewY);
+    return std::tuple<int, int>(previewX, previewY);
+}
+
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::setSliderValue(std::string name, float value) {
-    // auto slider = gui.get<tgui::Slider>(name);
-    // if (slider) {
-    //     slider->setValue(value);
-    // }
+    Rml::Element* slider = this->rmlDocument->GetElementById(name);
+    if (slider) {
+        slider->SetAttribute("value", value);
+    }
 }
 
 void View::setSelection(ImageArea area) {
-    this->selection.setPosition({static_cast<float>(area.left), static_cast<float>(area.top)});
-    float width = area.right - area.left;
-    float height = area.bottom - area.top;
+    auto correctedTopLeft = this->textureCoordsToPreviewCoords(area.left, area.top);
+    auto correctedBottomRight = this->textureCoordsToPreviewCoords(area.right, area.bottom);
+    int left = std::get<0>(correctedTopLeft);
+    int top = std::get<1>(correctedTopLeft);
+    int right = std::get<0>(correctedBottomRight);
+    int bottom = std::get<1>(correctedBottomRight);
+    this->selection.setPosition({static_cast<float>(left), static_cast<float>(top)});
+    float width = right - left;
+    float height = bottom - top;
     this->selection.setSize({width, height});
 }
 

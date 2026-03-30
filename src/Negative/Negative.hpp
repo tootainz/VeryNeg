@@ -117,9 +117,12 @@ public:
 
     // PRE-CONVERT
     float setScanGamma(float value);
+    void setHasScanArea(bool has);
     void setScanArea(ImageArea area);
+    void setHasBorder(bool has);
     void setBorder(float r, float g, float b);
     void setBorderByCoords(int x, int y);
+    void setHasDensest(bool has);
     void setDensest(float r, float g, float b);
     void setDensestByCoords(int x, int y);
     void convert();
@@ -135,18 +138,27 @@ public:
     float setBlacks(float value);
 
     // White balance
+    void setAutoWB(bool has);
+    void setHasNeutral(bool has);
     void setNeutral(float r, float g, float b);
     void setNeutralByCoords(int x, int y);
     float setRBalance(float value);
     float setGBalance(float value);
     float setBBalance(float value);
+    float setSaturation(float value);
+
+    // Sharpening
+    float setSharpening(float value);
 
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
     // PRE-CONVERT
     float getScanGamma();
+    bool getHasBorder();
     std::tuple<float, float, float> getBorder();
+    bool getHasDensest();
     std::tuple<float, float, float> getDensest();
+    bool getHasScanArea();
     ImageArea getScanArea();
 
     // POST-CONVERT
@@ -159,10 +171,16 @@ public:
     float getBlacks();
 
     // White balance
+    bool getAutoWB();
+    bool getHasNeutral();
     std::tuple<float, float, float> getNeutral();
     float getRBalance();
     float getGBalance();
     float getBBalance();
+    float getSaturation();
+
+    // Sharpening
+    float getSharpening();
 
     // Rendering methods
     void renderThumbnail();
