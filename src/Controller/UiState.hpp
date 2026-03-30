@@ -6,11 +6,10 @@
 struct UiState {
 
     // Pre convert
-    bool autoWB = true;
-    bool autocConvert = true;
-    bool usingScanArea = false;
-    bool usingDensest = false;
     bool usingBorder = false;
+    bool usingDensest = false;
+    bool usingScanArea = false;
+    bool usingScanBorder = false;
 
     // Selection
     sf::Vector2i selectionStart;  
@@ -24,6 +23,8 @@ struct UiState {
 
     // Post-convert
     bool isDragging = false;
+    bool autoWB = true;
+    bool neutralSample = false;
 
     // General
     bool disableCallbacks = false;

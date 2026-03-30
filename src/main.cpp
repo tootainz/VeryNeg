@@ -37,7 +37,7 @@ int main() {
 
     // SFML window
     sf::ContextSettings settings;
-    settings.antiAliasingLevel = 12; // 0 = no anti-aliasing, higher values = more smoothing
+    settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, higher values = more smoothing
     sf::RenderWindow window(sf::VideoMode({1600, 1000}), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi

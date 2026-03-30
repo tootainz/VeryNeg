@@ -35,7 +35,7 @@ private:
     View& view;
     Model& model;
     sf::RenderWindow& window;
-    CommandHistory history; // Controlelr owns the history
+    CommandHistory history; // Controller owns the history
 
     // UI state
     UiState uiState;

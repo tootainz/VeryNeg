@@ -4,6 +4,19 @@
 		<link type="text/rcss" href="veryNegConvert_styles.rcss"/>
 	</head>
 	<body>
+        <div id="welcome">
+            <p>VeryNeg v0.4.0</p>
+            <p>by Joonatan Koponen</p>
+            <p>2026</p>
+
+            <p>Welcome!</p>
+
+            <p>This is VeryNeg, an application designed to automatically convert film negative scans to positives</p>
+            <p>Currently the application only supports 16bit tiff files created with a flatbed scanner</p>
+
+            <p>Press anywhere to close the welcome message</p>
+        </div>
+
         <div id="left">
             <div id="preview">
                 <div id="releaseVersion">
@@ -12,59 +25,119 @@
                     <p>2026</p>
                 </div>
             </div>
-            <div id="filmRoll">
-                <img src="" alt="thumbnail"/>
+            <div id="bottom">
+                <button id="previous">&lt;</button>
+                <div id="filmRoll"></div>
+                <button id="next">&gt;</button>
             </div>
         </div>
         
-        <div id="settings">
-            <div id="preConvertSettings">
-                <p>Pre-Convert</p>
-                <button id="scanGamma">Scan Gamma</button>
-                <button id="sampleBorder">Sample Border</button>
-                <button id="sampleDensest">Sample Densest</button>
-                <button id="scanArea">Scan Area</button>
+        <div id="right">
+            <div id="settings">
+                <div id="preConvertSettings" class="settingsTab">
+                    
+                    <div class="settingHeader">
+                        <h2>Pre-Convert</h2>
+                        <input type="checkbox">Hold</input>
+                    </div>
 
-                <button id="convert">Convert</button>
-                <button id="reset">Reset</button>
+                    <div class="selectButtons">
+                        <label for="scanGamma">Scan Gamma</label>
+                        <select name="scanGamma" id="scanGamma">
+                            <option value="2.2">2.2</option>
+                            <option value="1.8">1.8</option>
+                            <option value="1.0">1.0</option>
+                        </select>
+                    </div>
+                    
+                    <div class="selectButtons">
+                        <button class="targetButton" id="sampleBorderTarget">*</button>
+                        <input type="checkbox" id="border">Border</input>
+                    </div>
+                    <div class="selectButtons">
+                        <button class="targetButton" id="sampleBordert">*</button>    
+                        <input type="checkbox" id="densest">Densest</input>
+                    </div>
+                    <div class="selectButtons">
+                        <button class="targetButton" id="setScanArea">*</button>   
+                        <input type="checkbox" id="scanArea">Scan Area</input>
+                    </div>
+                    <div class="selectButtons">
+                        <input type="text" value="0" id="setScanBorder"></input>
+                        <input type="checkbox" id="scanBorder">Scan Border</input>
+                    </div>
+
+                    <div class="selectButtons" id="convertContainer">
+                        <button id="convert">Convert</button>
+                        <button id="reset">Reset</button>
+                    </div>
+                </div>
+
+                <div id="postConvertSettings" class="settingsTab">
+
+                    <div class="settingHeader">
+                        <h2>Post-Convert</h2>
+                        <input type="checkbox">Hold</input>
+                    </div>
+
+                    <div class="selectButtons">
+                        <label for="preset">Preset</label>
+                        <select name="preset" id="scanGamma">
+                            <option value="flat">flat</option>
+                            <option value="print">Print</option>
+                        </select>
+                    </div>
+
+                    <h2>Intensity</h2>
+
+                    <label for="density">Density</label>
+                    <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.05"/>
+
+                    <label for="contrast">Contrast</label>
+                    <input type="range" id="contrast" name="contrast" min="-3.0" max="3.0" value="0" step="0.02"/>
+
+                    <label for="whites">Whites</label>
+                    <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.02"/>
+
+                    <label for="highlights">Highlights</label>
+                    <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.02"/>
+
+                    <label for="shadows">Shadows</label>
+                    <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.02"/>
+
+                    <label for="blacks">Blacks</label>
+                    <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.02"/>
+
+                    <h2>Color</h2>
+
+                    <input type="checkbox" id="autoWb">Auto white balance</input>
+                    <div class="selectButtons">
+                        <button class="targetButton" id="sampleNeutral">*</button>
+                        <input type="checkbox" id="neutral">Neutral point</input>
+                    </div>
+
+                    <label for="c-r">Cyan-Red</label>
+                    <input type="range" id="c-r" name="c-r" min="-3.0" max="3.0" value="0" step="0.02"/>
+
+                    <label for="m-g">Magenta-Green</label>
+                    <input type="range" id="m-g" name="m-g" min="-3.0" max="3.0" value="0" step="0.02"/>
+
+                    <label for="y-b">Yellow-Blue</label>
+                    <input type="range" id="y-b" name="y-b" min="-3.0" max="3.0" value="0" step="0.02"/>
+
+                    <label for="saturation">Saturation</label>
+                    <input type="range" id="saturation" name="saturation" min="-5" max="5" value="0" step="0.02"/>
+
+                    <h2>Sharpness</h2>
+
+                    <div id="sharpenPreview"></div>
+
+                    <label for="sharpening">Unsharp masking</label>
+                    <input type="range" id="sharpening" name="sharpening" min="-5" max="5" value="0" step="0.02"/>
+
+                </div>
             </div>
-
-            <div id="postConvertSettings">
-                <p>Post-Convert</p>
-
-                <label for="density">Density</label>
-                <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.05"/>
-
-                <label for="contrast">Contrast</label>
-                <input type="range" id="contrast" name="contrast" min="-3.0" max="3.0" value="0" step="0.02"/>
-
-                <label for="whites">Whites</label>
-                <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.02"/>
-
-                <label for="highlights">Highlights</label>
-                <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.02"/>
-
-                <label for="shadows">Shadows</label>
-                <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.02"/>
-
-                <label for="blacks">Blacks</label>
-                <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.02"/>
-
-                <label for="c-r">Cyan-Red</label>
-                <input type="range" id="c-r" name="c-r" min="-3.0" max="3.0" value="0" step="0.02"/>
-
-                <label for="m-g">Magenta-Green</label>
-                <input type="range" id="m-g" name="m-g" min="-3.0" max="3.0" value="0" step="0.02"/>
-
-                <label for="y-b">Yellow-Blue</label>
-                <input type="range" id="y-b" name="y-b" min="-3.0" max="3.0" value="0" step="0.02"/>
-
-                <button id="autoWB">Auto White Balance</button>
-                <button id="selectNeutral">Select neutral point</button>
-            </div>
-
             <div id="exportSettings">
-                <p>Export-Import</p>
                 <button id="import">Import</button>
                 <button id="export">Export</button>
                 <button id="remove">Remove</button>
