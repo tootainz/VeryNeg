@@ -8,7 +8,8 @@
 
 
 inline float gammaFunction(float inputValue, float gamma) {
-    return std::pow(inputValue, gamma);
+    float result = std::pow(inputValue, gamma);
+    return std::clamp(result, 0.0f, 1.0f);
 }
 
 inline void gamma(std::vector<float>& image, float gamma, EditChannel channel) {

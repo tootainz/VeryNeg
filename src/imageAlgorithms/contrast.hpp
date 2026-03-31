@@ -7,7 +7,8 @@
 
 
 inline float contrastFunction(float input, float value) {;
-    return std::pow(input, value)/(std::pow(input, value) + std::pow(1-input, value));
+    float result = std::pow(input, value)/(std::pow(input, value) + std::pow(1-input, value));
+    return std::clamp(result, 0.0f, 1.0f);
 }
 
 inline void contrast(std::vector<float>& image, float multiplier, EditChannel channel) {

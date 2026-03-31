@@ -8,7 +8,8 @@
 
 
 inline float rationalCurveFunction(float input, float gamma) {
-    return input/(input+gamma*(1-input));
+    float result = input/(input+gamma*(1-input));
+    return std::clamp(result, 0.0f, 1.0f);
 }
 
 inline void colorBalance(std::vector<float>& image, float gamma, EditChannel channel) {

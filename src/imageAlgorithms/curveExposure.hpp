@@ -8,18 +8,22 @@
 #include "iterateImage.hpp"
 
 inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.2f;
+inline const float SHADOW_DAMPENER_FIXER = 1.2f;
 
 inline float curveExposureFunction(float input, float value) {
 
-    if (value >= 1.0f) {
-        return (1-(-value))*input + (-value)*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT);
+    if (value >= 0.0f) {
+        float result = (1.0f-(-value))*input + (-value)*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT);
+        return std::clamp(result, 0.0f, 1.0f);
     }
     else {
-        float firstMin = std::min(1.0f/std::pow(value, 10.0f), 0.5f + 1.0f/std::pow(value, 8.0f));
-        float secondMin = std::min(2.0f + 1.0f/ std::pow(value, 4.0f), 7.0f);
+        float correctedValue = std::pow(SHADOW_DAMPENER_FIXER, value);
+        float firstMin = std::min(1.0f/(correctedValue*correctedValue*correctedValue), 0.5f + 1.0f/(correctedValue*correctedValue));
+        float secondMin = std::min(2.0f + 1.0f/correctedValue, 7.0f);
         float gamma = std::min(firstMin, secondMin);
 
-        return 0.5*value*input + 0.5*value*std::pow(input, gamma);
+        float result = 0.5f*correctedValue*input + 0.5f*(1.0f - ((1.0f-correctedValue)*(1.0f-correctedValue)*(1.0f-correctedValue)))*std::pow(input, gamma);
+        return std::clamp(result, 0.0f, 1.0f);
     }
 }
 

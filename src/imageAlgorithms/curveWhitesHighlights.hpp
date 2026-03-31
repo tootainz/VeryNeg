@@ -10,8 +10,8 @@
 
 int const WHITES_SHARPNESS = 5;
 int const HIGHLIGHTS_SHARPNESS = 1;
-float const W_INCREASE_DAMPENING = 0.1f;
-float const W_SHARPNESS_MULTIPLIER = 10.0f;
+float const W_INCREASE_DAMPENING = 0.3f;
+float const W_SHARPNESS_MULTIPLIER = 11.0f;
 float const W_DECREASE_SLOPE_DAMPENING = 0.1f;
 
 inline float lightsFunction(float input, float value, int sharpness) {
@@ -22,15 +22,16 @@ inline float lightsFunction(float input, float value, int sharpness) {
         correctedSharpness += 1;
     }
 
-    if (value <= 0.0f) {
+    if (value < 0.0f) {
         // (1-d)x + dx^sharpness
         // sharpness needs multiplying as well
         // d = adjustment amount * dampening
 
         float amount = -value*W_INCREASE_DAMPENING;
-        float multipliedSharpness = correctedSharpness * W_SHARPNESS_MULTIPLIER; 
+        float multipliedSharpness = correctedSharpness * W_SHARPNESS_MULTIPLIER;
 
-        return (1-amount)*input + amount*std::pow(input, correctedSharpness);
+        float result = (1.0f-amount)*input + amount*std::pow(input, multipliedSharpness);
+        return std::clamp(result, 0.0f, 1.0f);
     }
     else {
         // 1 + c(x-1) + (1-c)(b(x-1))/((b-1)+|(x-1)|^d)
@@ -40,10 +41,11 @@ inline float lightsFunction(float input, float value, int sharpness) {
 
         float amount = value;
         float multipliedSharpness = correctedSharpness * W_SHARPNESS_MULTIPLIER; 
-        float slope = 1/sharpness*W_DECREASE_SLOPE_DAMPENING;
+        float slope = 1.0f/sharpness*W_DECREASE_SLOPE_DAMPENING;
         float absoluteInput = std::abs(input-1);
 
-        return 1 + slope*(input-1) + (1-slope)*(multipliedSharpness*(input-1)) / ((multipliedSharpness-1) + std::pow(absoluteInput, -amount));
+        float result = 1.0f + slope*(input-1.0f) + (1.0f-slope)*(multipliedSharpness*(input-1.0f)) / ((multipliedSharpness-1.0f) + std::pow(absoluteInput, -amount));
+        return std::clamp(result, 0.0f, 1.0f);
     }
 }
 

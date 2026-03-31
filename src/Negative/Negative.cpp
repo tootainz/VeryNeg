@@ -711,7 +711,7 @@ void Negative::renderEdits(bool dragging) {
     float gBalance = exponentDampenerFixer(this->negativeData["edits"]["gBalance"]);
     float bBalance = exponentDampenerFixer(this->negativeData["edits"]["bBalance"]);
     
-    float density = exponentDampenerFixer(this->negativeData["edits"]["density"]);
+    float density = this->negativeData["edits"]["density"];
 
     float printDensity = this->negativeData["edits"]["density"];
     std::println("density is {}", printDensity);
@@ -739,23 +739,23 @@ void Negative::renderEdits(bool dragging) {
         g = contrastFunction(g, contrast);
         b = contrastFunction(b, contrast);
 
-        // Shadows and blacks
-        r = shadowsFunction(r, shadows);
-        g = shadowsFunction(g, shadows);
-        b = shadowsFunction(b, shadows);
-
+        // blacks and whites
         r = blacksFunction(r, blacks);
         g = blacksFunction(g, blacks);
         b = blacksFunction(b, blacks);
 
-        // Highlights and whites
-        r = highlightsFunction(r, highlights);
-        g = highlightsFunction(g, highlights);
-        b = highlightsFunction(b, highlights);
-
         r = whitesFunction(r, whites);
         g = whitesFunction(g, whites);
         b = whitesFunction(b, whites);
+
+        // Shadows and highlights
+        r = shadowsFunction(r, shadows);
+        g = shadowsFunction(g, shadows);
+        b = shadowsFunction(b, shadows);
+        
+        r = highlightsFunction(r, highlights);
+        g = highlightsFunction(g, highlights);
+        b = highlightsFunction(b, highlights);
 
         // Display gamma
         r = gammaFunction(r, 1.0f/2.2f);
@@ -786,6 +786,25 @@ void Negative::renderEdits(bool dragging) {
     // // Apply display gamma
     // std::println("applying general display gamma correction");
     // gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
+
+    if (!dragging) {
+        std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->editedPixels, EditChannel::R);
+        std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->editedPixels, EditChannel::R);
+
+        std::tuple<float, float, float> brightestAfterG = getBrightestPixel(this->editedPixels, EditChannel::G);
+        std::tuple<float, float, float> darkestAfterG = getDarkestPixel(this->editedPixels, EditChannel::G);
+
+        std::tuple<float, float, float> brightestAfterB = getBrightestPixel(this->editedPixels, EditChannel::B);
+        std::tuple<float, float, float> darkestAfterB = getDarkestPixel(this->editedPixels, EditChannel::B);
+
+        std::println("brightestRMeasurement after edits: {}", std::get<0>(brightestAfterR));
+        std::println("brightestGMeasurement after edits: {}", std::get<1>(brightestAfterG));
+        std::println("brightestBMeasurement after edits: {}", std::get<2>(brightestAfterB));
+
+        std::println("darkestRMeasurement after edits: {}", std::get<0>(darkestAfterR));
+        std::println("darkestGMeasurement after edits: {}", std::get<1>(darkestAfterG));
+        std::println("darkestBMeasurement after edits: {}", std::get<2>(darkestAfterB));
+    }
 
     this->writeNegativeData();
 }

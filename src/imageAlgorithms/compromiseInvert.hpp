@@ -49,9 +49,9 @@ inline void compromiseInvert(std::vector<float>& image, float minDensity, float 
         float convertedBlue = logToExposure(charCurve(scanToDensity(blue), 1.0f, 0.0f, 1.0f));
 
         // Normalize to 0-1
-        float normalizedRed = normalize(convertedRed, minExposure, maxExposure, 0.0f, 1.0f);
-        float normalizedGreen = normalize(convertedGreen, minExposure, maxExposure, 0.0f, 1.0f);
-        float normalizedBlue = normalize(convertedBlue, minExposure, maxExposure, 0.0f, 1.0f);
+        float normalizedRed = normalize(convertedRed, minExposure, maxExposure, 0.001f, 0.999f);
+        float normalizedGreen = normalize(convertedGreen, minExposure, maxExposure, 0.001f, 0.999f);
+        float normalizedBlue = normalize(convertedBlue, minExposure, maxExposure, 0.001f, 0.999f);
 
         red = normalizedRed;
         green = normalizedGreen;

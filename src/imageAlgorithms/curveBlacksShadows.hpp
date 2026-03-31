@@ -10,8 +10,8 @@
 
 int const BLACKS_SHARPNESS = 5;
 int const SHADOWS_SHARPNESS = 1;
-float const INCREASE_DAMPENING = 0.1f;
-float const SHARPNESS_MULTIPLIER = 10.0f;
+float const INCREASE_DAMPENING = 0.01f;
+float const SHARPNESS_MULTIPLIER = 11.0f;
 float const DECREASE_SLOPE_DAMPENING = 0.1f;
 
 inline float darksFunction(float input, float value, int sharpness) {
@@ -30,7 +30,8 @@ inline float darksFunction(float input, float value, int sharpness) {
         float amount = value*INCREASE_DAMPENING;
         float multipliedSharpness = correctedSharpness * SHARPNESS_MULTIPLIER; 
 
-        return 1 + (1-amount)*(input-1) + amount*std::pow(input - 1, correctedSharpness);
+        float result = 1.0f + (1.0f-amount)*(input-1.0f) + amount*std::pow(input - 1.0f, multipliedSharpness);
+        return std::clamp(result, 0.0f, 1.0f);
     }
     else {
         // cx + (1-c)(bx)/((b-1)+|x|^d)
@@ -40,10 +41,11 @@ inline float darksFunction(float input, float value, int sharpness) {
 
         float amount = value;
         float multipliedSharpness = correctedSharpness * SHARPNESS_MULTIPLIER; 
-        float slope = 1/sharpness*DECREASE_SLOPE_DAMPENING;
+        float slope = 1.0f/sharpness*DECREASE_SLOPE_DAMPENING;
         float absoluteInput = std::abs(input);
 
-        return slope*input + (1-slope)*(multipliedSharpness*input) / ((multipliedSharpness-1) + std::pow(absoluteInput, amount));
+        float result = slope*input + (1.0f-slope)*(multipliedSharpness*input) / ((multipliedSharpness-1.0f) + std::pow(absoluteInput, amount));
+        return std::clamp(result, 0.0f, 1.0f);
     }
 }
 
