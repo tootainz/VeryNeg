@@ -37,6 +37,7 @@ static float exponentDampenerFixer(float value) {
 
 int Negative::nextId = 0;
 const std::string Negative::NEGATIVEDATA_VERSION = "0.2.0";
+const std::string Negative::PRESETDATA_VERSION = "0.1.0";
 const float Negative::DRAGGING_SCALE = 0.3f;
 
 
@@ -130,11 +131,50 @@ void Negative::writeNegativeData() {
 }
 
 
+// PRESET DATA
+// ----------------------------------------------------------------------------------------------------------------
+
+std::unique_ptr<nlohmann::json> Negative::readPresetdata(std::filesystem::path path) {
+    std::ifstream file(path.string());
+    std::unique_ptr<nlohmann::json> presetData;
+    // No preset file with this path exists
+    if (!file) {
+        std::println("failed to open file at path {}", path.string());
+        return nullptr;
+    }
+    // Try to parse the preset file
+    try {
+        presetData = std::make_unique<nlohmann::json>(nlohmann::json::parse(file));
+        std::println("read preset succesfully");
+        file.close();
+    }
+    // Error parsing the preset file to json
+    catch (const std::exception& e) {
+        std::println("failed to read preset");
+        std::println("Error message: {}", e.what());
+        file.close();
+        return nullptr;
+    }
+    // Parsed succesfully but wrong version
+    if ((*presetData)["version"] != this->PRESETDATA_VERSION) {
+        std::println("Incompatible PresetData version");
+        return nullptr;
+    }
+    return presetData;
+}
+
+
 // HELPERS
 // ----------------------------------------------------------------------------------------------------------------
 
 std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
-    return eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->EYEDROPPER_SIZE);
+    auto [r, g, b] = eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->EYEDROPPER_SIZE);
+    // Have to remove gamma from these pixels since the conversion expects gamma to be removed
+    return {
+        gammaFunction(r, this->getScanGamma()),
+        gammaFunction(g, this->getScanGamma()),
+        gammaFunction(b, this->getScanGamma())
+    };
 }
 
 
@@ -192,8 +232,6 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     OIIO::ImageBuf originalBuf(originalSpec, this->originalPixels.data());
 
-
-
     // Calculate new dimensions for the working image
     this->workingWidth = std::ceil(this->width*this->workingScale);
     this->workingHeight = std::ceil(this->height*this->workingScale);
@@ -209,7 +247,10 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     workingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->workingPixels.data());
     std::println("Working pixels generated");
 
+    // Generate convertedPixels array
     this->convertedPixels = this->workingPixels;
+    // Generate dragging array
+    this->renderDragging();
 
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
@@ -218,11 +259,13 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
         this->renderWorking();
     }
     
+    // set the scanArea
     if(!this->negativeData["conversion"]["hasScanArea"]) {
         this->setScanArea({0, 0, this->workingWidth, this->workingHeight});
     }
 
     // 5. apply edits from the saved data
+    this->renderEdits(true);
     this->renderEdits(false);
 
     // 6. Create a thumbnail
@@ -303,6 +346,14 @@ int Negative::getId() {
     return this->id;
 }
 
+int Negative::getWorkingWidth() {
+    return this->workingWidth;
+}
+
+int Negative::getWorkingHeight() {
+    return this->workingHeight;
+}
+
 std::filesystem::path Negative::getPath() {
     return this->path;
 }
@@ -342,6 +393,7 @@ void Negative::setHasScanArea(bool has) {
 }
 
 void Negative::setScanArea(ImageArea area) {
+    std::println("incoming scanArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
     this->negativeData["conversion"]["scanArea"]["left"] = area.left;
     this->negativeData["conversion"]["scanArea"]["top"] = area.top;
     this->negativeData["conversion"]["scanArea"]["right"] = area.right;
@@ -389,6 +441,42 @@ void Negative::resetConversion() {
 
 // SETTING EDIT SETTINGS POST-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
+
+void Negative::applyPreset(std::filesystem::path presetPath) {
+    std::println("applying preset");
+    std::unique_ptr<nlohmann::json> presetDataPointer = std::move(this->readPresetdata(presetPath));
+
+    if (presetDataPointer) {
+        std::println("preset exists");
+        nlohmann::json presetData = *presetDataPointer;
+
+        float density = presetData["density"];
+        float contrast = presetData["contrast"];
+        float whites = presetData["whites"];
+        float highlights = presetData["highlights"];
+        float shadows = presetData["shadows"];
+        float blacks = presetData["blacks"];
+        bool autoWB = presetData["autoWB"];
+        float rBalance = presetData["rBalance"];
+        float gBalance = presetData["gBalance"];
+        float bBalance = presetData["bBalance"];
+        float saturation = presetData["saturation"];
+        float sharpening = presetData["sharpening"];
+
+        this->setDensity(density);
+        this->setContrast(contrast);
+        this->setWhites(whites);
+        this->setHighlights(highlights);
+        this->setShadows(shadows);
+        this->setBlacks(blacks);
+        this->setAutoWB(autoWB);
+        this->setRBalance(rBalance);
+        this->setGBalance(gBalance);
+        this->setBBalance(bBalance);
+        this->setSaturation(saturation);
+        this->setSharpening(sharpening);
+    }
+}
 
 float Negative::setDensity(float value) {
     std::println("exposure was set to: {}", value);
@@ -483,6 +571,7 @@ ImageArea Negative::getScanArea() {
     scanArea.top = this->negativeData["conversion"]["scanArea"]["top"];
     scanArea.right = this->negativeData["conversion"]["scanArea"]["right"];
     scanArea.bottom = this->negativeData["conversion"]["scanArea"]["bottom"];
+    std::println("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
     return scanArea;
 }
 
@@ -536,11 +625,11 @@ float Negative::getBlacks() {
 }
 
 bool Negative::getAutoWB() {
-    return this->negativeData["conversion"]["autoWB"];
+    return this->negativeData["edits"]["autoWB"];
 }
 
 bool Negative::getHasNeutral() {
-    return this->negativeData["conversion"]["hasNeutralPoint"];
+    return this->negativeData["edits"]["hasNeutralPoint"];
 }
 
 std::tuple<float, float, float> Negative::getNeutral()
@@ -756,6 +845,8 @@ void Negative::renderWorking() {
         // Check if we are using scan area
         if (this->getHasScanArea()) {
             scanArea = this->getScanArea();
+            std::println("has scan area: {}", this->getHasScanArea());
+            std::println("scanAreaTop: {}, scanareaBottom: {}, scanarea left: {}, scanarearigth: {}", scanArea.top, scanArea.bottom, scanArea.left, scanArea.right);
         }
         else {
             scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};

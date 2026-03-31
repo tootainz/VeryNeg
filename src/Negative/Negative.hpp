@@ -35,6 +35,7 @@ private:
     static const int EYEDROPPER_SIZE = 5;
     static const int SHARPNESS_PREVIEW_SIZE = 100;
     static const std::string NEGATIVEDATA_VERSION;
+    static const std::string PRESETDATA_VERSION;
     static const float DRAGGING_SCALE;
 
 
@@ -87,6 +88,9 @@ private:
     void readNegativeData();
     void writeNegativeData();
 
+    // PRESET DATA
+    std::unique_ptr<nlohmann::json> readPresetdata(std::filesystem::path path);
+
     // HELPERS
     std::tuple<float,float,float> samplePixels(int workingX, int workingY);
 
@@ -108,6 +112,8 @@ public:
     ImageData getThumbnail();
     ImageData getSharpnessPreview();
     int getId();
+    int getWorkingWidth();
+    int getWorkingHeight();
     std::filesystem::path getPath();
 
     // EXPORTING
@@ -129,6 +135,8 @@ public:
     void resetConversion();
 
     // POST-CONVERT
+    void applyPreset(std::filesystem::path presetPath);
+
     // Intensity
     float setDensity(float value);
     float setContrast(float value);

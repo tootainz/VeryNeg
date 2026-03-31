@@ -206,6 +206,19 @@ void View::setSliderValue(std::string name, float value) {
     }
 }
 
+void View::setCheckboxValue(std::string name, bool value) {
+    std::println("settign checkbox value with name {} to value {}", name, value);
+    Rml::Element* checkbox = this->rmlDocument->GetElementById(name);
+    if (checkbox) {
+        if (!value) {
+            checkbox->RemoveAttribute("checked");
+        }
+        else {
+            checkbox->SetAttribute("checked", true);
+        }
+    }
+}
+
 void View::setSelection(ImageArea area) {
     auto correctedTopLeft = this->textureCoordsToPreviewCoords(area.left, area.top);
     auto correctedBottomRight = this->textureCoordsToPreviewCoords(area.right, area.bottom);
@@ -234,6 +247,17 @@ Rml::Context* View::getRmlContext() {
     return this->rmlContext;
 }
 
+ImageArea View::getPreviewArea() {
+    Rml::Element* preview = this->rmlDocument->GetElementById("preview");
+    if (preview) {
+        int left = preview->GetAbsoluteLeft();
+        int top = preview->GetAbsoluteTop();
+        int right = left+preview->GetOffsetWidth();
+        int bottom = left+preview->GetOffsetHeight();
+        return {left, top, right, bottom};
+    }
+    return ImageArea{0,0,0,0};
+}
 
 // RENDERING
 // ----------------------------------------------------------------------------------------------------------------

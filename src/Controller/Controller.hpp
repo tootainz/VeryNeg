@@ -88,6 +88,7 @@ private:
 
     // POST-CONVERT
     void ButtonPressResetEdits();
+    void ButtonPressSetPreset(std::string name);
 
     // Intensity
     void SliderChangeSetDensity(float value);
@@ -99,9 +100,9 @@ private:
 
     // White balance
     void ButtonPressAutoWhiteBalance(bool checked);
-    void ButtonPressNeutralBalance(bool checked);
-    void ButtonPressChooseNeutralBalance();
-    void SetNeutralBalance(int x, int y);
+    void ButtonPressNeutralSample(bool checked);
+    void ButtonPressSetNeutralSample();
+    void SetNeutralSample(int x, int y);
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);

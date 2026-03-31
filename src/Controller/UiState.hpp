@@ -6,15 +6,19 @@
 struct UiState {
 
     // Pre convert
-    bool usingBorder = false;
-    bool usingDensest = false;
-    bool usingScanArea = false;
-    bool usingScanBorder = false;
+    bool hasBorder = false;
+    bool hasDensest = false;
+    bool hasScanArea = false;
+    bool hasScanBorder = false;
 
     // Selection
     sf::Vector2i selectionStart;  
     ImageArea selectionArea = {0,0,0,0};
     bool readyToSelect = false;
+
+    void resetSelectionArea() {
+        this->selectionArea = ImageArea{0,0,0,0};
+    }
 
     bool selecting = false;
     bool selectingLeft = false;
@@ -33,7 +37,7 @@ struct UiState {
     // Post-convert
     bool isDragging = false;
     bool autoWB = true;
-    bool neutralSample = false;
+    bool hasNeutral = false;
 
     // General
     bool disableCallbacks = false;

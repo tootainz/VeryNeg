@@ -12,7 +12,7 @@ inline std::tuple<float, float, float> samplePixelArea(std::vector<float>& image
     double rSum = 0.0;
     double gSum = 0.0;
     double bSum = 0.0;
-    int pixelAmount = (area.right - area.left)*(area.bottom - area.top);
+    int pixelAmount = (area.right - area.left + 1) * (area.bottom - area.top + 1);
 
     auto sumPixels = [&rSum, &gSum, &bSum](float r, float g, float b) {
         rSum += r;
@@ -22,9 +22,9 @@ inline std::tuple<float, float, float> samplePixelArea(std::vector<float>& image
 
     iterateImageAreaImmutableSingleThread(image, sumPixels, imageWidth, area);
 
-    float rAverage = rSum/pixelAmount;
-    float gAverage = gSum/pixelAmount;
-    float bAverage = bSum/pixelAmount;
+    float rAverage = rSum/(pixelAmount * 1.0);
+    float gAverage = gSum/(pixelAmount * 1.0);
+    float bAverage = bSum/(pixelAmount * 1.0);
 
     return {rAverage, gAverage, bAverage};
 }

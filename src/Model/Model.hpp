@@ -3,6 +3,8 @@
 #include <vector>
 #include <filesystem>
 
+#include <nlohmann/json.hpp>
+
 #include "../Negative/Negative.hpp"
 #include "../Negative/ImageArea.hpp"
 
@@ -31,6 +33,9 @@ private:
     // Index of the negative that is currently selected and should be displayed
     int currentNegativeIndex;
 
+    // Place to store the held settings in the editor
+    nlohmann::json heldSettings;
+
 
 public:
     // PUBLIC METHODS
@@ -43,6 +48,7 @@ public:
     void changeCurrentNegativeById(int id);
     void previousNegative();
     void nextNegative();
+    
 
     // NEGATIVE IO
     Negative* addNegative(std::filesystem::path imagePath);

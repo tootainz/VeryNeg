@@ -52,15 +52,15 @@
                     </div>
                     
                     <div class="selectButtons">
-                        <button class="targetButton" id="sampleBorder">*</button>
+                        <input type="checkbox" class="targetButton" id="sampleBorder">*</input>
                         <input type="checkbox" id="border">Border</input>
                     </div>
                     <div class="selectButtons">
-                        <button class="targetButton" id="sampleDensest">*</button>    
+                        <input type="checkbox" class="targetButton" id="sampleDensest">*</input>    
                         <input type="checkbox" id="densest">Densest</input>
                     </div>
                     <div class="selectButtons">
-                        <button class="targetButton" id="setScanArea">*</button>   
+                        <input type="checkbox" class="targetButton" id="setScanArea">*</input>   
                         <input type="text" value="0" id="setScanBorder"></input>
                         <input type="checkbox" id="scanArea">Scan Area</input>
                     </div>
@@ -80,7 +80,7 @@
 
                     <div class="selectButtons">
                         <label for="preset">Preset</label>
-                        <select name="preset" id="scanGamma">
+                        <select name="preset" id="preset">
                             <option value="flat">flat</option>
                             <option value="print">Print</option>
                         </select>
@@ -110,7 +110,7 @@
 
                     <input type="checkbox" id="autoWb">Auto white balance</input>
                     <div class="selectButtons">
-                        <button class="targetButton" id="sampleNeutral">*</button>
+                        <input type="checkbox" class="targetButton" id="sampleNeutral">*</input>
                         <input type="checkbox" id="neutral">Neutral point</input>
                     </div>
 

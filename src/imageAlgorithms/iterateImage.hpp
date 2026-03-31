@@ -21,8 +21,8 @@ inline void iterateImageAreaImmutableSingleThread(std::vector<float>& image, std
         return (x + y*imageWidth)*3 + channel;
     };
 
-    for (int y = area.top; y < area.bottom; ++y) {
-        for (int x = area.left; x < area.right; ++x) {
+    for (int y = area.top; y <= area.bottom; ++y) {
+        for (int x = area.left; x <= area.right; ++x) {
             int pixel = xyToPixelIndex(x, y, 0, imageWidth);
             float red = image[pixel];
             float green = image[pixel+1];

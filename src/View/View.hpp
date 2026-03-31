@@ -76,7 +76,7 @@ public:
     
     // SETTERS
     void setSliderValue(std::string name, float value);
-    void setCheckboxValue(std::string name, float value);
+    void setCheckboxValue(std::string name, bool value);
     void setNumbericValue(std::string name, float value);
     void setPreset(std::string name, float value);
     void setSelection(ImageArea area);
@@ -84,6 +84,7 @@ public:
 
     // GETTERS
     Rml::Context* getRmlContext();
+    ImageArea getPreviewArea();
 
     // RENDERING
     void render();
