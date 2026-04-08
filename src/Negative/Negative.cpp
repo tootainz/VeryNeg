@@ -85,6 +85,7 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
+    std::string defaultDataPath = "./resources/data_templates/negativeDataTemplate.neg";
     std::string dataName = std::filesystem::path(this->path)
         .replace_extension(".neg")
         .string();
@@ -93,7 +94,7 @@ void Negative::readNegativeData() {
     if (!file) {
         std::println("failed to find negativeData file called {}", dataName);
         std::println("generating default data");
-        file.open("assets/negativeDataTemplate.neg");
+        file.open(defaultDataPath);
     }
     // Try to parse the .neg file
     try {
@@ -108,7 +109,7 @@ void Negative::readNegativeData() {
         std::println("generating default data");
         file.close();
         file.clear();
-        file.open("assets/negativeDataTemplate.neg");
+        file.open(defaultDataPath);
         this->negativeData = nlohmann::json::parse(file);
         file.close();
     }
@@ -116,7 +117,7 @@ void Negative::readNegativeData() {
     if (this->negativeData["version"] != this->NEGATIVEDATA_VERSION) {
         std::println("Incompatible NegativeData version");
         std::println("generating default data");
-        file.open("assets/negativeDataTemplate.neg");
+        file.open(defaultDataPath);
         this->negativeData = nlohmann::json::parse(file);
         file.close();
     }
@@ -1019,4 +1020,7 @@ void Negative::renderWorking() {
     this->writeNegativeData();
 
     return;
+}
+
+void Negative::renderFinal() {
 }

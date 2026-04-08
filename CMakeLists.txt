@@ -6,27 +6,50 @@ project("VeryNeg" VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 
 # add executable
-add_executable(VeryNeg src/main.cpp
-  src/Controller/Controller.cpp
-  src/Negative/Negative.cpp
-  src/Model/Model.cpp
-  src/View/View.cpp
-  src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
+add_executable(VeryNeg
+    src/main.cpp
+    src/Controller/Controller.cpp
+    src/Negative/Negative.cpp
+    src/Model/Model.cpp
+    src/View/View.cpp
+    src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
 )
+
+# # add executable with MacOs .app bundle
+# add_executable(VeryNeg MACOSX_BUNDLE
+#     src/main.cpp
+#     src/Controller/Controller.cpp
+#     src/Negative/Negative.cpp
+#     src/Model/Model.cpp
+#     src/View/View.cpp
+#     src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
+# )
+
+# set_target_properties(VeryNeg PROPERTIES
+#     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist
+# )
 
 # ------------------------------------------------
-# Copy static assets
+# Copy static resources
 
-# Create a target that copies the assets folder
-add_custom_target(CopyAssets ALL
+# # Copy resources into the .app bundle
+# add_custom_command(TARGET VeryNeg POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#             "${CMAKE_SOURCE_DIR}/resources"
+#             "$<TARGET_BUNDLE_DIR:VeryNeg>/Contents/Resources"
+#     COMMENT "Copying resources to .app bundle Resources folder"
+# )
+
+# Create a target that copies the resources folder
+add_custom_target(CopyResources ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/assets"
-            "$<TARGET_FILE_DIR:VeryNeg>/assets"
-    COMMENT "Copying assets to build folder"
+            "${CMAKE_SOURCE_DIR}/resources"
+            "$<TARGET_FILE_DIR:VeryNeg>/resources"
+    COMMENT "Copying resources to build folder"
 )
 
-# Make sure VeryNeg depends on the assets target
-add_dependencies(VeryNeg CopyAssets)
+# Make sure VeryNeg depends on the resources target
+add_dependencies(VeryNeg CopyResources)
 
 # ------------------------------------------------
 # Add libraries

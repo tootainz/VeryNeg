@@ -1,0 +1,416 @@
+/*
+GENERAL
+------------------------------------------------------
+*/
+
+body {
+    font-family: "Oceert";
+    width: 100%;
+    height: 100%;
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 5px;
+}
+
+p {
+    display: block;
+}
+
+h2 {
+    font-size: 14px;
+}
+
+/*
+INPUTS
+--------
+*/
+
+/* Sliders */
+
+input.range {
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+input.range:hover {
+    background-color: #00000012;
+}
+
+input.range slidertrack {
+    background-color: #000000;
+    height: 5px;
+    margin-top: 12.5px;
+}
+
+input.range sliderbar {
+    background-color: #b3ada9;
+    height: 20px;
+    width: 20px;
+    border-color: #00000000;
+    border-width: 1px;
+    border-radius: 10px;
+    margin-top: 5px;
+}
+
+input.range sliderbar:active {
+    border-color: #e4ded7;
+}
+
+/* Checkbox */
+
+input.checkbox {
+    display: block;
+    background-color: #212020;
+    border-color: #212020;
+    border-width: 1px;
+    border-radius: 3px;
+    padding: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+input.checkbox:checked {
+    background-color: #8a8682;
+}
+ 
+input.checkbox:hover {
+    border-color: #8a8682;
+    border-width: 1px;
+}
+
+input.checkbox:active {
+    background-color: #8a8682;
+}
+
+/* Drop down */
+
+select {
+    background-color: #52504e;
+    border-radius: 3px;
+    padding: 5px;
+    margin: 5px;
+}
+
+option {
+    background-color: #52504e;
+    border-radius: 3px;
+    padding: 5px;
+    margin: 5px;
+}
+
+/* Button */
+
+button {
+    box-sizing: border-box;
+    display: block;
+    color: #000000;
+    background-color: #b3ada9;
+    border-radius: 3px;
+    padding: 5px;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #a09a96;
+}
+
+button:active {
+    background-color: #8a8682;
+}
+
+
+/*
+LAYOUT
+------------------------------------------------------
+*/
+
+#left {
+    height: 100%;
+    width: 100%;
+    min-width: 500px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+#right {
+    width: 400px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+
+/*
+WELCOME
+------------------------------------------------------
+*/
+
+#welcome {
+    color: #000000;
+    font-size: 16px;
+    padding: 20px;
+    width: 40%;
+    height: 30%;
+    background-color: #b6b1ad;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 35%;
+    left: 30%;
+    display: none;
+}
+
+
+/*
+PREVIEW
+------------------------------------------------------
+*/
+
+#preview {
+    cursor: crosshair;
+    background-color: #0e0e0e;
+    height: 100%;
+    margin: 20px;
+}
+
+#releaseVersion {
+    font-size: 20px;
+    color: #232222;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+
+/*
+FILM ROLL
+------------------------------------------------------
+*/
+
+#bottom {
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    background-color: #343332;
+    border-color: #777370;
+    border-width: 2px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+#filmRoll {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+}
+
+.thumbnail {
+    width: 70px;
+    height: 70px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+    flex-shrink: 0;    
+}
+
+.thumbnail:hover {
+    border-color: white;
+    border-width: 1px;
+}
+
+#bottom button {
+    padding-top: 23px;
+    box-sizing: border-box;
+    text-align: center;
+    width: 20px;
+}
+
+
+/*
+EXPORT-IMPORT-DELETE
+------------------------------------------------------
+*/
+
+#exportSettings {
+    margin-top: 5px;
+    box-sizing: border-box;
+    height: 80px;
+    display: flex;
+    background-color: #777370;
+    flex-shrink: 0;
+}
+
+#exportSettings button {
+    background-color: #b3ada9;
+    color: #000000;
+    width: 100%;
+    box-sizing: border-box;
+    padding-top: 28px;
+    text-align: center;
+    margin: 5px;
+}
+
+#exportSettings button:hover {
+    background-color: #a09a96;
+    color: #000000;
+}
+
+
+/*
+SETTINGS
+------------------------------------------------------
+*/
+
+.settingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #393836;
+}
+
+.selectButtons {
+    display: flex;
+    position: relative;
+    width: 100%;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.selectButtons input.checkbox {
+    flex: 1;
+}
+
+.selectButtons .targetButton {
+    min-width: 10px;
+    min-height: 10px;
+    flex-shrink: 0;
+}
+
+.settingsTab {
+    background-color: #2d2c2b;
+    border-radius: 3px;
+    margin-bottom: 5px;
+    padding: 10px;
+}
+
+#settings {
+    gap: 0;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: auto;
+}
+
+scrollbarvertical {
+	width: 0;
+}
+
+.settingDivider {
+    border-color: #363433;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom-width: 3px;
+}
+
+
+/*
+PRE-CONVERT
+--------
+*/
+
+#preConvertSettings {
+    display: flex;
+    flex-direction: column;
+}
+
+#convert {
+    text-align: center;
+    height: 40px;
+    font-size: 20px;
+    width: 100%;
+    display: block;
+    background-color: #2a2928;
+    border-radius: 3px;
+    padding: 10px;
+    margin: 0px;
+}
+
+#convert:hover {
+    color: #2a2928;
+    decorator: image( "./graphics/cmy_gradient_2.png" fill );
+}
+
+#convertBG {
+    padding: 2px;
+    height: 40px;
+    width: 100%;
+    border-radius: 3px;
+    decorator: image( "./graphics/cmy_gradient_2_rounded.png" fill );
+}
+
+/*
+POST-CONVERT
+--------
+*/
+
+#postConvertSettings {
+    display: flex;
+    flex-direction: column;
+}
+
+.cyan {
+    color: #00ffff;
+}
+
+.magenta {
+    color: #ff00ff;
+}
+
+.yellow {
+    color: #ffff00;
+}
+
+#c-r sliderbar {
+    background-color: #00d5ff;
+}
+
+#m-g sliderbar {
+    background-color: #e600ff;
+}
+
+#y-b sliderbar {
+    background-color: #ffdd00;
+}
+
+
+/*
+SHARPEN
+------------------------------------------------------
+*/
+
+#sharpenContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+#sharpenPreview {
+    background-color: #0e0e0e;
+    width: 200px;
+    height: 200px;
+}

@@ -3,11 +3,12 @@
 #include <print>
 #include <filesystem>
 
-#include "../../libraries/portable-file-dialogs.h"
-#include "../RmlUi_Backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
+
+#include "../RmlUi_Backend/RmlUi_Backend.hpp"
+#include "../../libraries/portable-file-dialogs.h"
 
 #include "commands.hpp"
 #include "../Negative/ImageArea.hpp"
@@ -549,7 +550,7 @@ void Controller::ButtonPressResetEdits() {
 
 void Controller::ButtonPressSetPreset(std::string name) {
     Negative* negative = this->model.getCurrentNegative();
-    std::filesystem::path path = std::format("./assets/presets/{}.json", name);
+    std::filesystem::path path = std::format("./resources/presets/{}.json", name);
     if (negative) {
         negative->applyPreset(path);
         this->updateEditSettings(*negative);

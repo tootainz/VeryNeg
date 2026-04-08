@@ -4,10 +4,11 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
-#include "RmlUi_Backend/RmlUi_Backend.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi_Platform_SFML.h>
 #include <RmlUi_Renderer_GL2.h>
+
+#include "RmlUi_Backend/RmlUi_Backend.hpp"
 
 #include "Negative/Negative.hpp"
 #include "View/View.hpp"
@@ -37,7 +38,7 @@ int main() {
 
     // SFML window
     sf::ContextSettings settings;
-    settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, higher values = more smoothing
+    settings.antiAliasingLevel = 4; // 0 = no anti-aliasing, 4 = standard, 8 = better
     sf::RenderWindow window(sf::VideoMode({1600, 1000}), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi
