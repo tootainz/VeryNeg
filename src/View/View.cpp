@@ -17,16 +17,12 @@ View::View(sf::RenderWindow& window) :
     selection({0.0f, 0.0f}),
     thumbnails()
 {
-    std::string fontPath = std::format("./resources/fonts/oceert_smooth.otf");
-    Rml::LoadFontFace(fontPath);
-
-    std::string documentPath = std::format("./resources/ui/veryNegConvert.rml");
-    Rml::ElementDocument* document = this->rmlContext->LoadDocument(documentPath);
+    Rml::LoadFontFace("./resources/fonts/oceert_smooth.otf");
+    Rml::ElementDocument* document = this->rmlContext->LoadDocument("./resources/ui/veryNegConvert.rml");
     this->rmlDocument = document;
     if (document) {
         document->Show();
     }
-
     this->updatePreviewSize();
     this->updatePreviewScale();
     this->updatePreviewPos();
@@ -284,7 +280,10 @@ void View::render() {
     RmlBackend::PresentFrame();
 
     // Draw the non RmlUi stuff
-    
+
+    // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
+    window.pushGLStates();
+
     // Preview
     this->window.draw(previewSprite);
 
@@ -298,6 +297,9 @@ void View::render() {
         this->window.draw(thumbnail->sprite);
     }
 
+    // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
+    window.popGLStates();
+    
     this->window.display();
     // -------------------------------------------------------
 }

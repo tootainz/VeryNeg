@@ -14,15 +14,15 @@
             }
         },
         {
-            "name": "default production",
-            "description": "default preset",
+            "name": "default release",
+            "description": "default release preset",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Production"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ]

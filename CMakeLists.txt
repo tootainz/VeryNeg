@@ -29,6 +29,7 @@ add_executable(VeryNeg
 #     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist
 # )
 
+
 # ------------------------------------------------
 # Copy static resources
 
@@ -51,13 +52,19 @@ add_custom_target(CopyResources ALL
 # Make sure VeryNeg depends on the resources target
 add_dependencies(VeryNeg CopyResources)
 
+
 # ------------------------------------------------
 # Add libraries
 
 include(FetchContent)
 
+# OpenGL
 find_package(OpenGL REQUIRED)
+
+# OIIO
 find_package(OpenImageIO REQUIRED)
+
+# RmlUi
 
 # Set properties that will be used while building RMLUI
 set(RMLUI_BACKEND "SFML_GL2" CACHE STRING "" FORCE)
@@ -69,6 +76,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(RmlUi)
 
+# SFML
 FetchContent_Declare(
     SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -78,9 +86,11 @@ FetchContent_Declare(
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
+# json
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
+# RmlUi_sfml_backend
 add_library(rmlui_sfml STATIC
   libraries/rmlui-backends/RmlUi_Platform_SFML.cpp
   libraries/rmlui-backends/RmlUi_Renderer_GL2.cpp
@@ -90,7 +100,15 @@ target_include_directories(rmlui_sfml
 )
 target_link_libraries(rmlui_sfml PRIVATE RmlUi::RmlUi SFML::Graphics)
 
+
 # ------------------------------------------------
 
 # link dependencies
-target_link_libraries(VeryNeg PRIVATE OpenImageIO::OpenImageIO SFML::Graphics nlohmann_json::nlohmann_json RmlUi::RmlUi rmlui_sfml ${OPENGL_LIBRARIES})
+target_link_libraries(VeryNeg PRIVATE
+    OpenImageIO::OpenImageIO
+    SFML::Graphics
+    nlohmann_json::nlohmann_json
+    RmlUi::RmlUi
+    rmlui_sfml
+    ${OPENGL_LIBRARIES}
+)
