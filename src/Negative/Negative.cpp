@@ -38,7 +38,7 @@ static float exponentDampenerFixer(float value) {
 int Negative::nextId = 0;
 const std::string Negative::NEGATIVEDATA_VERSION = "0.2.0";
 const std::string Negative::PRESETDATA_VERSION = "0.1.0";
-const float Negative::DRAGGING_SCALE = 0.3f;
+const float Negative::DRAGGING_SCALE = 0.4f;
 
 
 // PREVIEW CACHING
@@ -76,7 +76,7 @@ bool Negative::readConversionCache() {
     input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
     std::println("loaded cahce");
     input->close();
-    this->renderDragging();
+    this->renderDraggingConversion();
     return true;
 }
 
@@ -178,6 +178,237 @@ std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
     };
 }
 
+std::unique_ptr<std::vector<float>> Negative::renderFinal() {
+    
+    std::unique_ptr<std::vector<float>> finalPixels = std::make_unique<std::vector<float>>(this->originalPixels);
+    
+    this->renderConversion(*finalPixels, this->width, this->height, this->numberOfChannels, 1.0f);
+    this->renderEdits(*finalPixels, this->numberOfChannels);
+
+    return finalPixels;
+}
+
+void Negative::renderEdits(std::vector<float>& pixels, int channels) {
+
+    std::println("Editing the image");
+
+    // Collect all the edit values needed from negativedata
+
+    // Color balance
+    float rBalance = exponentDampenerFixer(this->negativeData["edits"]["rBalance"]);
+    float gBalance = exponentDampenerFixer(this->negativeData["edits"]["gBalance"]);
+    float bBalance = exponentDampenerFixer(this->negativeData["edits"]["bBalance"]);
+    
+    // Intensity
+    float density = this->negativeData["edits"]["density"];
+    float contrast = exponentDampenerFixer(this->negativeData["edits"]["contrast"]);
+    
+    float shadows = this->negativeData["edits"]["shadows"];
+    float blacks = this->negativeData["edits"]["blacks"];
+    float highlights = this->negativeData["edits"]["highlights"];
+    float whites = this->negativeData["edits"]["whites"];
+
+    auto applyEdits = [&](float& r, float& g, float& b) {
+        // Color balance
+        r = rationalCurveFunction(r, rBalance);
+        g = rationalCurveFunction(g, gBalance);
+        b = rationalCurveFunction(b, bBalance);
+
+        // Exposure
+        r = curveExposureFunction(r, density);
+        g = curveExposureFunction(g, density);
+        b = curveExposureFunction(b, density);
+
+        // Contrast
+        r = contrastFunction(r, contrast);
+        g = contrastFunction(g, contrast);
+        b = contrastFunction(b, contrast);
+
+        // blacks and whites
+        r = blacksFunction(r, blacks);
+        g = blacksFunction(g, blacks);
+        b = blacksFunction(b, blacks);
+
+        r = whitesFunction(r, whites);
+        g = whitesFunction(g, whites);
+        b = whitesFunction(b, whites);
+
+        // Shadows and highlights
+        r = shadowsFunction(r, shadows);
+        g = shadowsFunction(g, shadows);
+        b = shadowsFunction(b, shadows);
+        
+        r = highlightsFunction(r, highlights);
+        g = highlightsFunction(g, highlights);
+        b = highlightsFunction(b, highlights);
+
+        // Display gamma
+        r = gammaFunction(r, 1.0f/2.2f);
+        g = gammaFunction(g, 1.0f/2.2f);
+        b = gammaFunction(b, 1.0f/2.2f);
+    };
+
+    iterateImageMutableMultiThread(pixels, applyEdits);
+}
+
+void Negative::renderConversion(std::vector<float>& pixels, int width, int height, int channels, float scale) {
+
+    // 1. CONVERT TO LINEAR
+    // If the scan has a baked in gamma, remove that and convert into linear
+    float correctionGamma = this->negativeData["conversion"]["scanGamma"];
+    gamma(pixels, correctionGamma, EditChannel::RGB);
+    std::println("Transformed image into linear by correcting a gamma of {}", correctionGamma);
+
+    std::println("starting negative conversion pipeline");
+
+    // 2. DETERMINE THE DENSEST VALUES AND THE FILM BORDER VALUES
+
+    // Store measured values
+    float transparentsR;
+    float transparentsG;
+    float transparentsB;
+    float opaquestsR;
+    float opaquestsG;
+    float opaquestsB;
+
+    // Border and densest have not both been sampled by the user
+    if (!this->negativeData["conversion"]["hasDensest"] || !this->negativeData["conversion"]["hasBorder"]) {
+
+        // Sample the border and densest automatically
+        // First blur the image slightly to remove noise and extremities
+        // Only sample the area indicated by this->scanArea if we are usign scanArea, otherwise sample the whole image
+
+        ImageArea scanArea;
+
+        // Check if we are using scan area
+        std::println("has scan area: {}", this->getHasScanArea());
+        if (this->getHasScanArea()) {
+            scanArea = this->getScanArea(scale);
+            std::println("image dimensions are {} * {}", width, height);
+            std::println("scanarea dimesnions are x {} - {}, y {} - {}", scanArea.left, scanArea.right, scanArea.top, scanArea.bottom);
+        }
+        else {
+            scanArea = ImageArea{0, 0, width, height};
+        }
+        
+        // the blur will be stored in a separate vector, crop the blur vector to this->scanArea
+        auto [blurredPixels, blurredWidth, blurredHeight] = crop(pixels, width, height, scanArea);
+        std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
+
+        int blurRadius = this->negativeData["conversion"]["samplingBlur"];
+        blurRadius = blurRadius * scale;
+        std::println("blur radius is: {}", blurRadius);
+
+        // Perform the actual blur
+        boxFilter(blurredPixels, blurredWidth, blurredHeight, blurRadius);
+
+        // Measure brightest and darkest pixels from the blurred image
+        // Brightest = most transparent = low density
+        // Darkest = most opaque = high density
+
+        std::println("getting the brightest and darkest pixels");
+
+        // The border has not been sampled by the user
+        if (!this->negativeData["conversion"]["hasBorder"]) {
+            // Sampling border
+            std::println("sampling border");
+            transparentsR = std::get<0>(getBrightestPixel(blurredPixels, EditChannel::R));
+            transparentsG = std::get<1>(getBrightestPixel(blurredPixels, EditChannel::G));
+            transparentsB = std::get<2>(getBrightestPixel(blurredPixels, EditChannel::B));
+        }
+        // The border has been sampled by the user
+        else {
+            transparentsR = this->negativeData["conversion"]["border"]["r"];
+            transparentsG = this->negativeData["conversion"]["border"]["g"];
+            transparentsB = this->negativeData["conversion"]["border"]["b"];
+        }
+
+        // The densest has not been sampled by the user
+        if (!this->negativeData["conversion"]["hasDensest"]) {
+            std::println("sampling densest");
+            // Sampling densest
+            opaquestsR = std::get<0>(getDarkestPixel(blurredPixels, EditChannel::R));
+            opaquestsG = std::get<1>(getDarkestPixel(blurredPixels, EditChannel::G));
+            opaquestsB = std::get<2>(getDarkestPixel(blurredPixels, EditChannel::B));
+        }
+        // The border has been sampled by the user
+        else {
+            opaquestsR = this->negativeData["conversion"]["densest"]["r"];
+            opaquestsG = this->negativeData["conversion"]["densest"]["g"];
+            opaquestsB = this->negativeData["conversion"]["densest"]["b"];
+        }
+
+    }
+    // Border and densest have both been sampled by the user
+    else {
+        // Get the results from negativeData
+        // Border
+        transparentsR = this->negativeData["conversion"]["border"]["r"];
+        transparentsG = this->negativeData["conversion"]["border"]["g"];
+        transparentsB = this->negativeData["conversion"]["border"]["b"];
+
+        // Densest
+        opaquestsR = this->negativeData["conversion"]["densest"]["r"];
+        opaquestsG = this->negativeData["conversion"]["densest"]["g"];
+        opaquestsB = this->negativeData["conversion"]["densest"]["b"];
+    }
+
+    // Save the finally used densest and border values
+    this->setBorder(transparentsR, transparentsG, transparentsB);
+    this->setDensest(opaquestsR, opaquestsG, opaquestsB);
+
+    // Convert the measured values to actual density values
+    // NOTE: Do i actually need this though?
+    
+    float brightestRDensity = scanToDensity(opaquestsR);
+    float brightestGDensity = scanToDensity(opaquestsG);
+    float brightestBDensity = scanToDensity(opaquestsB);
+
+    float darkestRDensity = scanToDensity(transparentsR);
+    float darkestGDensity = scanToDensity(transparentsG);
+    float darkestBDensity = scanToDensity(transparentsB);
+
+    // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
+
+    // Balance the black point and white point densities to all match the red channel
+    // This makes sure that the film border is actually white and the densest is actually black
+    levelsR(pixels, opaquestsR, transparentsR, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsG(pixels, opaquestsG, transparentsG, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsB(pixels, opaquestsB, transparentsB, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+
+    // 4. INVERT
+
+    // Perform the inversion and normalize to the highest and darkest values
+    compromiseInvert(pixels, darkestRDensity, brightestRDensity);
+
+    return;
+}
+
+void Negative::initializeSharpnessPreview() {
+    std::println("initializing sharpness preview");
+
+    // Use OIIO::ImageBuf for ease of scaling resizing etc
+    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageBuf originalBuf(originalSpec, this->originalPixels.data());
+
+    // The sharpness preview will be taken from the center of the image
+    int x = this->width/2;
+    int y = this->height/2;
+    int halfSize = this->SHARPNESS_PREVIEW_SIZE/2;
+    int xBegin = x - halfSize;
+    int yBegin = y - halfSize;
+    int xEnd = x + halfSize;
+    int yEnd = y + halfSize;
+
+    std::println("the sharpness preview area is defined by left {}, top {}, right {}, bottom {}", xBegin, yBegin, xEnd, yEnd);
+
+    OIIO::ROI previewRoi(xBegin, xEnd, yBegin, yEnd);
+
+    this->sharpnessPreviewOriginalPixels.resize(this->SHARPNESS_PREVIEW_SIZE*this->SHARPNESS_PREVIEW_SIZE*3);
+    originalBuf.get_pixels(previewRoi, OIIO::TypeDesc::FLOAT, this->sharpnessPreviewOriginalPixels.data());
+
+    std::println("initialized sharpness preview");
+}
 
 // INITIALIZER
 // ----------------------------------------------------------------------------------------------------------------
@@ -248,26 +479,35 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     workingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->workingPixels.data());
     std::println("Working pixels generated");
 
+    // Generate the sharpness preview
+    this->initializeSharpnessPreview();
+
     // Generate convertedPixels array
     this->convertedPixels = this->workingPixels;
     // Generate dragging array
-    this->renderDragging();
+    this->renderDraggingConversion();
 
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
 
-    if(this->negativeData["general"]["isConverted"] && !this->readConversionCache()) {
-        this->renderWorking();
-    }
-    
-    // set the scanArea
+    // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
-        this->setScanArea({0, 0, this->workingWidth, this->workingHeight});
+        this->setScanArea({0, 0, this->width, this->height}, 1.0f);
     }
 
+    // Convert the image or read from cache if it is supposed to be converted
+    if(this->negativeData["general"]["isConverted"] && !this->readConversionCache()) {
+        this->renderWorkingConversion();
+    }
+
+    // Check and convert the Sharpnesspreview as well
+    this->renderSharpnessPreviewConversion();
+
+
     // 5. apply edits from the saved data
-    this->renderEdits(true);
-    this->renderEdits(false);
+    this->renderWorkingEdits();
+    this->renderDraggingEdits();
+    this->renderSharpnessPreviewEdits();
 
     // 6. Create a thumbnail
     this->renderThumbnail();
@@ -343,6 +583,39 @@ ImageData Negative::getThumbnail() {
     };
 }
 
+ImageData Negative::getSharpnessPreview() {
+    std::println("generating sharpness preview");
+
+    int srcChannels = this->numberOfChannels;
+    int previewWidth = this->SHARPNESS_PREVIEW_SIZE;
+    int previewHeight = this->SHARPNESS_PREVIEW_SIZE;
+
+    const std::vector<float>& previewPixels = this->sharpnessPreviewEditedPixels;
+
+    std::vector<uint8_t> previewData(previewWidth * previewHeight * 4); // always RGBA
+
+    for (int i = 0; i < previewWidth * previewHeight; ++i) {
+        float r = (srcChannels > 0 ? previewPixels[i*srcChannels + 0] : 0.0f);
+        float g = (srcChannels > 1 ? previewPixels[i*srcChannels + 1] : 0.0f);
+        float b = (srcChannels > 2 ? previewPixels[i*srcChannels + 2] : 0.0f);
+        float a = 1.0f; // fully opaque
+
+        // Clamp and scale to 0–255
+        previewData[i*4 + 0] = static_cast<uint8_t>(std::clamp(r, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 1] = static_cast<uint8_t>(std::clamp(g, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 2] = static_cast<uint8_t>(std::clamp(b, 0.0f, 1.0f) * 255.0f);
+        previewData[i*4 + 3] = static_cast<uint8_t>(std::clamp(a, 0.0f, 1.0f) * 255.0f);
+    }
+
+    std::println("generated sharpness preview data");
+
+    return {
+        previewData,
+        previewWidth,
+        previewHeight
+    };
+}
+
 int Negative::getId() {
     return this->id;
 }
@@ -355,6 +628,11 @@ int Negative::getWorkingHeight() {
     return this->workingHeight;
 }
 
+float Negative::getWorkingScale() {
+    std::println("working scale inside getworkingscale function is: {}", this->workingScale);
+    return this->workingScale;
+}
+
 std::filesystem::path Negative::getPath() {
     return this->path;
 }
@@ -362,22 +640,42 @@ std::filesystem::path Negative::getPath() {
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::exportPositive(std::filesystem::path imagePath) {
+bool Negative::exportPositive(std::filesystem::path imagePath, bool jpeg) {
+
     std::println("Saving positive");
-    std::string filePath = std::format("{}.tif", imagePath.string());
 
-    // Use OIIO::ImageBuf for ease of transformign the pixel data type
-    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-    OIIO::ImageBuf originalBuf(originalSpec, this->editedPixels.data());
+    std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
 
-    // For now we want to save images as 16bit
-    if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
-        std::println("Failed to save image");
-        return false;
+    if (jpeg) {
+        std::string filePath = std::format("{}.jpeg", imagePath.string());
+
+        // Use OIIO::ImageBuf for ease of transforming the pixel data type
+        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
+
+        // Save 8bit for jpeg
+        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
+            std::println("Failed to save image");
+            return false;
+        }
+        std::println("Saved positive successfully");
+        return true;
     }
-    std::println("Saved positive successfully");
-    
-    return true;
+    else {
+        std::string filePath = std::format("{}.tif", imagePath.string());
+
+        // Use OIIO::ImageBuf for ease of transformign the pixel data type
+        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
+
+        // For now we want to save images as 16bit
+        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
+            std::println("Failed to save image");
+            return false;
+        }
+        std::println("Saved positive successfully");
+        return true;
+    }
 }
 
 
@@ -393,12 +691,14 @@ void Negative::setHasScanArea(bool has) {
     this->negativeData["conversion"]["hasScanArea"] = has;
 }
 
-void Negative::setScanArea(ImageArea area) {
+void Negative::setScanArea(ImageArea area, float scale) {
+    std::println("setScanArea called");
+    std::println("scale = {}", scale);
     std::println("incoming scanArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
-    this->negativeData["conversion"]["scanArea"]["left"] = area.left;
-    this->negativeData["conversion"]["scanArea"]["top"] = area.top;
-    this->negativeData["conversion"]["scanArea"]["right"] = area.right;
-    this->negativeData["conversion"]["scanArea"]["bottom"] = area.bottom;
+    this->negativeData["conversion"]["scanArea"]["left"] = area.left * (1.0f/scale);
+    this->negativeData["conversion"]["scanArea"]["top"] = area.top * (1.0f/scale);
+    this->negativeData["conversion"]["scanArea"]["right"] = area.right * (1.0f/scale);
+    this->negativeData["conversion"]["scanArea"]["bottom"] = area.bottom * (1.0f/scale);
 }
 
 void Negative::setHasBorder(bool has) {
@@ -432,7 +732,8 @@ void Negative::setDensestByCoords(int x, int y) {
 }
 
 void Negative::convert() {
-    this->renderWorking();
+    this->renderWorkingConversion();
+    this->renderSharpnessPreviewConversion();
 }
 
 void Negative::resetConversion() {
@@ -566,12 +867,18 @@ bool Negative::getHasBorder() {
     return this->negativeData["conversion"]["hasBorder"];
 }
 
-ImageArea Negative::getScanArea() {
+ImageArea Negative::getScanArea(float scale) {
+    std::println("getScanArea called");
+    std::println("scale = {}", scale);
     ImageArea scanArea;
-    scanArea.left = this->negativeData["conversion"]["scanArea"]["left"];
-    scanArea.top = this->negativeData["conversion"]["scanArea"]["top"];
-    scanArea.right = this->negativeData["conversion"]["scanArea"]["right"];
-    scanArea.bottom = this->negativeData["conversion"]["scanArea"]["bottom"];
+    float left = this->negativeData["conversion"]["scanArea"]["left"];
+    float top = this->negativeData["conversion"]["scanArea"]["top"];
+    float right = this->negativeData["conversion"]["scanArea"]["right"];
+    float bottom = this->negativeData["conversion"]["scanArea"]["bottom"];
+    scanArea.left = left * scale;
+    scanArea.top = top * scale;
+    scanArea.right = right * scale;
+    scanArea.bottom = bottom * scale;
     std::println("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
     return scanArea;
 }
@@ -694,123 +1001,8 @@ void Negative::renderThumbnail() {
     std::println("generated thumbnail data");
 }
 
-void Negative::renderEdits(bool dragging) {
-    
-    // Determine if this is used to render a smaller dragging preview or a final preview after dragging stops
-    if (dragging) {
-        this->editedDraggingPixels = this->convertedDraggingPixels;
-    }
-    else {
-        this->editedPixels = this->convertedPixels;
-    }
-    std::vector<float>& targetPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
+void Negative::renderDraggingConversion() {
 
-    std::println("Editing the image");
-
-    // Combined one loop
-    float rBalance = exponentDampenerFixer(this->negativeData["edits"]["rBalance"]);
-    float gBalance = exponentDampenerFixer(this->negativeData["edits"]["gBalance"]);
-    float bBalance = exponentDampenerFixer(this->negativeData["edits"]["bBalance"]);
-    
-    float density = this->negativeData["edits"]["density"];
-
-    float printDensity = this->negativeData["edits"]["density"];
-    std::println("density is {}", printDensity);
-    
-    float contrast = exponentDampenerFixer(this->negativeData["edits"]["contrast"]);
-    
-    float shadows = this->negativeData["edits"]["shadows"];
-    float blacks = this->negativeData["edits"]["blacks"];
-    float highlights = this->negativeData["edits"]["highlights"];
-    float whites = this->negativeData["edits"]["whites"];
-
-    auto applyEdits = [&](float& r, float& g, float& b) {
-        // Color balance
-        r = rationalCurveFunction(r, rBalance);
-        g = rationalCurveFunction(g, gBalance);
-        b = rationalCurveFunction(b, bBalance);
-
-        // Exposure
-        r = curveExposureFunction(r, density);
-        g = curveExposureFunction(g, density);
-        b = curveExposureFunction(b, density);
-
-        // Contrast
-        r = contrastFunction(r, contrast);
-        g = contrastFunction(g, contrast);
-        b = contrastFunction(b, contrast);
-
-        // blacks and whites
-        r = blacksFunction(r, blacks);
-        g = blacksFunction(g, blacks);
-        b = blacksFunction(b, blacks);
-
-        r = whitesFunction(r, whites);
-        g = whitesFunction(g, whites);
-        b = whitesFunction(b, whites);
-
-        // Shadows and highlights
-        r = shadowsFunction(r, shadows);
-        g = shadowsFunction(g, shadows);
-        b = shadowsFunction(b, shadows);
-        
-        r = highlightsFunction(r, highlights);
-        g = highlightsFunction(g, highlights);
-        b = highlightsFunction(b, highlights);
-
-        // Display gamma
-        r = gammaFunction(r, 1.0f/2.2f);
-        g = gammaFunction(g, 1.0f/2.2f);
-        b = gammaFunction(b, 1.0f/2.2f);
-    };
-
-    iterateImageMutableMultiThread(targetPixels, applyEdits);
-
-    // // Separate loops
-    // // Color Balance
-    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["rBalance"]), EditChannel::R);
-    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["gBalance"]), EditChannel::G);
-    // colorBalance(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["bBalance"]), EditChannel::B);
-
-    // // Exposure
-    // curveExposure(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["density"]), EditChannel::RGB);
-
-    // // Contrast
-    // contrast(this->editedPixels, exponentDampenerFixer(this->negativeData["edits"]["contrast"]), EditChannel::RGB);
-
-    // shadows(this->editedPixels, this->negativeData["edits"]["shadows"]);
-    // blacks(this->editedPixels, this->negativeData["edits"]["blacks"]);
-    
-    // highlights(this->editedPixels, this->negativeData["edits"]["highlights"]);
-    // whites(this->editedPixels, this->negativeData["edits"]["whites"]);
-
-    // // Apply display gamma
-    // std::println("applying general display gamma correction");
-    // gamma(this->editedPixels, 1.0/2.2, EditChannel::RGB);
-
-    if (!dragging) {
-        std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->editedPixels, EditChannel::R);
-        std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->editedPixels, EditChannel::R);
-
-        std::tuple<float, float, float> brightestAfterG = getBrightestPixel(this->editedPixels, EditChannel::G);
-        std::tuple<float, float, float> darkestAfterG = getDarkestPixel(this->editedPixels, EditChannel::G);
-
-        std::tuple<float, float, float> brightestAfterB = getBrightestPixel(this->editedPixels, EditChannel::B);
-        std::tuple<float, float, float> darkestAfterB = getDarkestPixel(this->editedPixels, EditChannel::B);
-
-        std::println("brightestRMeasurement after edits: {}", std::get<0>(brightestAfterR));
-        std::println("brightestGMeasurement after edits: {}", std::get<1>(brightestAfterG));
-        std::println("brightestBMeasurement after edits: {}", std::get<2>(brightestAfterB));
-
-        std::println("darkestRMeasurement after edits: {}", std::get<0>(darkestAfterR));
-        std::println("darkestGMeasurement after edits: {}", std::get<1>(darkestAfterG));
-        std::println("darkestBMeasurement after edits: {}", std::get<2>(darkestAfterB));
-    }
-
-    this->writeNegativeData();
-}
-
-void Negative::renderDragging() {
     // Use OIIO::ImageBuf for ease of scaling resizing etc
     OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     OIIO::ImageBuf convertedBuf(convertedSpec, this->convertedPixels.data());
@@ -827,179 +1019,20 @@ void Negative::renderDragging() {
     draggingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->convertedDraggingPixels.data());
     std::println("Dragging pixels generated");
 
+    // Copy the converted pixels to the edited pixels as well
     this->editedDraggingPixels = this->convertedDraggingPixels;
 }
 
-void Negative::renderWorking() {
+void Negative::renderWorkingConversion() {
 
     // Copy the original workingPixels, we will be editing the convertedPixels vector
     this->convertedPixels = this->workingPixels;
 
-    // 1. CONVERT TO LINEAR
-    // If the scan has a baked in gamma, remove that and convert into linear
-    float correctionGamma = this->negativeData["conversion"]["scanGamma"];
-    gamma(this->convertedPixels, correctionGamma, EditChannel::RGB);
-    std::println("Transformed image into linear by correcting a gamma of {}", correctionGamma);
+    // Perform the conversion
 
-    std::println("starting negative conversion pipeline");
+    this->renderConversion(this->convertedPixels, this->workingWidth, this->workingHeight, this->numberOfChannels, this->workingScale);
 
-    // 2. DETERMINE THE DENSEST VALUES AND THE FILM BORDER VALUES
-
-    // Store measured values
-    float transparentsR;
-    float transparentsG;
-    float transparentsB;
-    float opaquestsR;
-    float opaquestsG;
-    float opaquestsB;
-
-    // Border and densest have not both been sampled by the user
-    if (!this->negativeData["conversion"]["hasDensest"] || !this->negativeData["conversion"]["hasBorder"]) {
-
-        // Sample the border and densest automatically
-        // First blur the image slightly to remove noise and extremities
-        // Only sample the area indicated by this->scanArea if we are usign scanArea, otherwise sample the whole image
-
-        ImageArea scanArea;
-
-        // Check if we are using scan area
-        if (this->getHasScanArea()) {
-            scanArea = this->getScanArea();
-            std::println("has scan area: {}", this->getHasScanArea());
-            std::println("scanAreaTop: {}, scanareaBottom: {}, scanarea left: {}, scanarearigth: {}", scanArea.top, scanArea.bottom, scanArea.left, scanArea.right);
-        }
-        else {
-            scanArea = ImageArea{0, 0, this->workingWidth, this->workingHeight};
-        }
-        // the blur will be stored in a separate vector, crop the blur vector to this->scanArea
-        std::tuple<std::vector<float>, int, int> blurredCropResult = crop(this->convertedPixels, this->workingWidth, this->workingHeight, scanArea);
-
-        // Get the size of the cropped blur vector
-        std::vector<float> blurredPixels = std::get<0>(blurredCropResult);
-        int blurredWidth = std::get<1>(blurredCropResult);
-        int blurredHeight = std::get<2>(blurredCropResult);
-        std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
-
-        // Perform the actual blur
-        boxFilter(blurredPixels, blurredWidth, blurredHeight, 20);
-
-        // Measure brightest and darkest pixels from the blurred image
-        // Brightest = most transparent = low density
-        // Darkest = most opaque = high density
-
-        std::println("getting the brightest and darkest pixels");
-
-        // The border has not been sampled by the user
-        if (!this->negativeData["conversion"]["hasBorder"]) {
-            // Sampling border
-            std::println("sampling border");
-            transparentsR = std::get<0>(getBrightestPixel(blurredPixels, EditChannel::R));
-            transparentsG = std::get<1>(getBrightestPixel(blurredPixels, EditChannel::G));
-            transparentsB = std::get<2>(getBrightestPixel(blurredPixels, EditChannel::B));
-        }
-        // The border has been sampled by the user
-        else {
-            transparentsR = this->negativeData["conversion"]["border"]["r"];
-            transparentsG = this->negativeData["conversion"]["border"]["g"];
-            transparentsB = this->negativeData["conversion"]["border"]["b"];
-        }
-
-        // The densest has not been sampled by the user
-        if (!this->negativeData["conversion"]["hasDensest"]) {
-            std::println("sampling densest");
-            // Sampling densest
-            opaquestsR = std::get<0>(getDarkestPixel(blurredPixels, EditChannel::R));
-            opaquestsG = std::get<1>(getDarkestPixel(blurredPixels, EditChannel::G));
-            opaquestsB = std::get<2>(getDarkestPixel(blurredPixels, EditChannel::B));
-        }
-        // The border has been sampled by the user
-        else {
-            opaquestsR = this->negativeData["conversion"]["densest"]["r"];
-            opaquestsG = this->negativeData["conversion"]["densest"]["g"];
-            opaquestsB = this->negativeData["conversion"]["densest"]["b"];
-        }
-
-    }
-    // Border and densest have both been sampled by the user
-    else {
-        // Get the results from negativeData
-        // Border
-        transparentsR = this->negativeData["conversion"]["border"]["r"];
-        transparentsG = this->negativeData["conversion"]["border"]["g"];
-        transparentsB = this->negativeData["conversion"]["border"]["b"];
-
-        // Densest
-        opaquestsR = this->negativeData["conversion"]["densest"]["r"];
-        opaquestsG = this->negativeData["conversion"]["densest"]["g"];
-        opaquestsB = this->negativeData["conversion"]["densest"]["b"];
-    }
-
-    // Some handy prints for debugging
-    std::println("transparentsRMeasurement: {}", transparentsR);
-    std::println("transparentsGMeasurement: {}", transparentsG);
-    std::println("transparentsBMeasurement: {}", transparentsB);
-
-    std::println("opaquestsRMeasurement: {}", opaquestsR);
-    std::println("opaquestsGMeasurement: {}", opaquestsG);
-    std::println("opaquestsBMeasurement: {}", opaquestsB);
-
-    // Convert the measured values to actual density values
-    
-    float brightestRDensity = scanToDensity(opaquestsR);
-    float brightestGDensity = scanToDensity(opaquestsG);
-    float brightestBDensity = scanToDensity(opaquestsB);
-
-    std::println("brightestRDensity: {}", brightestRDensity);
-    std::println("brightestGDensity: {}", brightestGDensity);
-    std::println("brightestBDensity: {}", brightestBDensity);
-
-    float darkestRDensity = scanToDensity(transparentsR);
-    float darkestGDensity = scanToDensity(transparentsG);
-    float darkestBDensity = scanToDensity(transparentsB);
-
-    std::println("darkestRDensity: {}", darkestRDensity);
-    std::println("darkestGDensity: {}", darkestGDensity);
-    std::println("darkestBDensity: {}", darkestBDensity);
-
-    // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
-
-    // Balance the black point and white point densities to all match the red channel
-    // This makes sure that the film border is actually white and the densest is actually black
-    levelsR(this->convertedPixels, opaquestsR, transparentsR, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsG(this->convertedPixels, opaquestsG, transparentsG, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsB(this->convertedPixels, opaquestsB, transparentsB, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-
-    // 4. INVERT
-
-    // Perform the inversion and normalize to the highest and darkest values
-    compromiseInvert(this->convertedPixels, darkestRDensity, brightestRDensity);
-
-    // Handy measurements for debugging
-    // TODO: remove from production
-
-    std::tuple<float, float, float> brightestAfterR = getBrightestPixel(this->convertedPixels, EditChannel::R);
-    std::tuple<float, float, float> darkestAfterR = getDarkestPixel(this->convertedPixels, EditChannel::R);
-
-    std::tuple<float, float, float> brightestAfterG = getBrightestPixel(this->convertedPixels, EditChannel::G);
-    std::tuple<float, float, float> darkestAfterG = getDarkestPixel(this->convertedPixels, EditChannel::G);
-
-    std::tuple<float, float, float> brightestAfterB = getBrightestPixel(this->convertedPixels, EditChannel::B);
-    std::tuple<float, float, float> darkestAfterB = getDarkestPixel(this->convertedPixels, EditChannel::B);
-
-    std::println("brightestRMeasurement after conversion: {}", std::get<0>(brightestAfterR));
-    std::println("brightestGMeasurement after conversion: {}", std::get<1>(brightestAfterG));
-    std::println("brightestBMeasurement after conversion: {}", std::get<2>(brightestAfterB));
-
-    std::println("darkestRMeasurement after conversion: {}", std::get<0>(darkestAfterR));
-    std::println("darkestGMeasurement after conversion: {}", std::get<1>(darkestAfterG));
-    std::println("darkestBMeasurement after conversion: {}", std::get<2>(darkestAfterB));
-
-    // 4. WHITE BALANCE
-
-    // Auto White balance
-    //grayWorld(this->convertedPixels);
-
-    // 5. SETUP FOR EDITING
+    // SETUP FOR EDITING
 
     // Chache the result for quicker recovery in the future
     this->writeConversionCache();
@@ -1008,10 +1041,10 @@ void Negative::renderWorking() {
     this->editedPixels = this->convertedPixels;
 
     // Also generate the dragging pixels for slider changing
-    this->renderDragging();
+    this->renderDraggingConversion();
 
     // Render Edits
-    this->renderEdits(false);
+    this->renderEdits(this->editedPixels, this->numberOfChannels);
 
     // Tell negativedata that this image is supposed to be converted
     this->negativeData["general"]["isConverted"] = true;
@@ -1022,5 +1055,65 @@ void Negative::renderWorking() {
     return;
 }
 
-void Negative::renderFinal() {
+void Negative::renderDraggingEdits() {
+    this->editedDraggingPixels = this->convertedDraggingPixels;
+    this->renderEdits(this->editedDraggingPixels, this->numberOfChannels);
+    this->writeNegativeData();
+    return;
+}
+
+void Negative::renderSharpnessPreviewConversion() {
+
+    this->sharpnessPreviewConvertedPixels = this->sharpnessPreviewOriginalPixels;
+
+    if(this->negativeData["general"]["isConverted"]) {
+        // 1. CONVERT TO LINEAR
+        // If the scan has a baked in gamma, remove that and convert into linear
+        float correctionGamma = this->negativeData["conversion"]["scanGamma"];
+        gamma(this->sharpnessPreviewConvertedPixels, correctionGamma, EditChannel::RGB);
+
+        // 2. GET THE DENSEST VALUES AND THE FILM BORDER VALUES
+
+        // get the measured values from the initial conversion
+        auto [rBorder, gBorder, bBorder] = this->getBorder();
+        auto [rDensest, gDensest, bDensest] = this->getDensest();
+
+        // Convert the measured values to actual density values
+        // NOTE: Do i actually need this though?
+        
+        float brightestRDensity = scanToDensity(rDensest);
+        float brightestGDensity = scanToDensity(gDensest);
+        float brightestBDensity = scanToDensity(bDensest);
+
+        float darkestRDensity = scanToDensity(rBorder);
+        float darkestGDensity = scanToDensity(gBorder);
+        float darkestBDensity = scanToDensity(bBorder);
+
+        // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
+
+        // Balance the black point and white point densities to all match the red channel
+        // This makes sure that the film border is actually white and the densest is actually black
+        levelsR(this->sharpnessPreviewConvertedPixels, rDensest, rBorder, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+        levelsG(this->sharpnessPreviewConvertedPixels, gDensest, gBorder, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+        levelsB(this->sharpnessPreviewConvertedPixels, bDensest, bBorder, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+
+        // 4. INVERT
+
+        // Perform the inversion and normalize to the highest and darkest values
+        compromiseInvert(this->sharpnessPreviewConvertedPixels, darkestRDensity, brightestRDensity);
+    }
+    return;
+}
+
+void Negative::renderSharpnessPreviewEdits() {
+    this->sharpnessPreviewEditedPixels = this->sharpnessPreviewConvertedPixels;
+    this->renderEdits(this->sharpnessPreviewEditedPixels, this->numberOfChannels);
+    return;
+}
+
+void Negative::renderWorkingEdits() {
+    this->editedPixels = this->convertedPixels;
+    this->renderEdits(this->editedPixels, this->numberOfChannels);
+    this->writeNegativeData();
+    return;
 }

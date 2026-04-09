@@ -13,6 +13,8 @@ View::View(sf::RenderWindow& window) :
     window(window),
     previewTexture(std::make_unique<sf::Texture>()),
     previewSprite(*this->previewTexture),
+    sharpnessPreviewTexture(std::make_unique<sf::Texture>()),
+    sharpnessPreviewSprite(*this->sharpnessPreviewTexture),
     rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
     selection({0.0f, 0.0f}),
     thumbnails()
@@ -239,6 +241,10 @@ void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->updatePreviewScale();
 }
 
+void View::setSharpnessPreviewTexture(std::unique_ptr<sf::Texture> texture) {
+    this->sharpnessPreviewTexture = std::move(texture);
+    this->sharpnessPreviewSprite = sf::Sprite(*this->sharpnessPreviewTexture);
+}
 
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------
@@ -268,6 +274,8 @@ void View::render() {
     // UPDATING
 
     this->updateThumbnailsPos();
+    this->sharpnessPreviewSprite.setPosition({10,10});
+    this->sharpnessPreviewSprite.setScale({2.0f, 2.0f});
 
     // -------------------------------------------------------
     this->window.clear();
@@ -286,6 +294,9 @@ void View::render() {
 
     // Preview
     this->window.draw(previewSprite);
+
+    // Sharpness preview
+    this->window.draw(sharpnessPreviewSprite);
 
     // Selection
     if (this->displaySelection) {

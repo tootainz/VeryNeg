@@ -62,6 +62,7 @@ void Controller::mainLoop() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview(bool dragging) {
+    std::println("updatign preview");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
         std::println("preview negative exists");
@@ -76,11 +77,27 @@ void Controller::updatePreview(bool dragging) {
     }
 }
 
+void Controller::updateSharpnessPreview() {
+    std::println("updatign sharpness preview");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        std::println("preview negative exists");
+        std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getSharpnessPreview()));
+        std::println("preview successfully recovered from model");
+        this->view.setSharpnessPreviewTexture(std::move(previewTexture));
+    }
+    else {
+        std::println("preview negative doesnt exist");
+        // Clear the preview
+        this->view.setSharpnessPreviewTexture(std::make_unique<sf::Texture>());
+    }
+}
+
 void Controller::updateEditSettings(Negative& negative) {
     this->uiState.disableCallbacks = true;
 
     float scanGamma = negative.getScanGamma();
-    ImageArea scanArea = negative.getScanArea();
+    ImageArea scanArea = negative.getScanArea(negative.getWorkingScale());
     bool hasScanArea = negative.getHasScanArea();
     bool hasDensest = negative.getHasDensest();
     bool hasBorder = negative.getHasBorder();
@@ -135,9 +152,11 @@ void Controller::undo() {
         Negative* negative = this->model.getCurrentNegative();
         if (negative) {
             this->updateEditSettings(*negative);
-            negative->renderEdits(this->uiState.isDragging);
+            negative->renderWorkingEdits();
+            negative->renderSharpnessPreviewEdits();
         }
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -146,9 +165,11 @@ void Controller::redo() {
         Negative* negative = this->model.getCurrentNegative();
         if (negative) {
             this->updateEditSettings(*negative);
-            negative->renderEdits(this->uiState.isDragging);
+            negative->renderWorkingEdits();
+            negative->renderSharpnessPreviewEdits();
         }
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -190,11 +211,12 @@ void Controller::ButtonPressAddNegative() {
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
     this->view.LoadThumbnails();
-    this->updatePreview(this->uiState.isDragging);
+    this->updatePreview(false);
+    this->updateSharpnessPreview();
     this->view.updatePreviewSize();
     this->view.updatePreviewScale();
     this->view.updatePreviewPos();
-    this->updatePreview(this->uiState.isDragging);
+    this->updatePreview(false);
 }
 
 void Controller::ButtonPressRemoveNegative(int id) {
@@ -225,7 +247,8 @@ void Controller::ButtonPressRemoveNegative(int id) {
     if (!this->model.getCurrentNegative()) { // negatives are empty
 
     }
-    this->updatePreview(this->uiState.isDragging);
+    this->updatePreview(false);
+    this->updateSharpnessPreview();
     this->view.updatePreviewPos();
 }
 
@@ -244,7 +267,8 @@ void Controller::ButtonPressNextNegative() {
     if (negative) {
         this->updateEditSettings(*negative);
     }
-    this->updatePreview(this->uiState.isDragging);
+    this->updatePreview(false);
+    this->updateSharpnessPreview();
     this->view.updatePreviewPos();
 }
 
@@ -264,7 +288,8 @@ void Controller::ButtonPressPreviousNegative() {
     if (negative) {
         this->updateEditSettings(*negative);
     }
-    this->updatePreview(this->uiState.isDragging);
+    this->updatePreview(false);
+    this->updateSharpnessPreview();
     this->view.updatePreviewPos();
 }
 
@@ -292,7 +317,8 @@ void Controller::ButtonPressThumbnail(int id) {
         if (negative) {
             this->updateEditSettings(*negative);
         }
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
         this->view.updatePreviewPos();
     }
 }
@@ -379,7 +405,7 @@ void Controller::SetBorder(int x, int y) {
         this->history.addCommand(
             std::make_unique<Command_Lambda>(execute, undo)
         );
-
+        
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -404,7 +430,7 @@ void Controller::ButtonPressDensest(bool checked) {
         this->history.addCommand(
             std::make_unique<Command_Lambda>(execute, undo)
         );
-
+        
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -439,6 +465,7 @@ void Controller::SetDensest(int x, int y) {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -466,6 +493,7 @@ void Controller::ButtonPressScanArea(bool checked) {
 
         std::println("checked for scan area is: {}", checked);
         std::println("uistate scan area is: {}", this->uiState.hasScanArea);
+                
         this->updatePreview(this->uiState.isDragging);
     };
 }
@@ -510,7 +538,8 @@ void Controller::ButtonPressConvert() {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -537,7 +566,8 @@ void Controller::ButtonPressResetConversion() {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -554,8 +584,10 @@ void Controller::ButtonPressSetPreset(std::string name) {
     if (negative) {
         negative->applyPreset(path);
         this->updateEditSettings(*negative);
-        negative->renderEdits(false);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
         this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -569,7 +601,7 @@ void Controller::SliderChangeSetDensity(float value) {
         auto getter = [negative]() -> float { return negative->getDensity(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -584,7 +616,7 @@ void Controller::SliderChangeSetContrast(float value) {
         auto getter = [negative]() -> float { return negative->getContrast(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -599,7 +631,7 @@ void Controller::SliderChangeSetWhites(float value) {
         auto getter = [negative]() -> float { return negative->getWhites(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -614,7 +646,7 @@ void Controller::SliderChangeSetHighlights(float value) {
         auto getter = [negative]() -> float { return negative->getHighlights(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -629,7 +661,7 @@ void Controller::SliderChangeSetShadows(float value) {
         auto getter = [negative]() -> float { return negative->getShadows(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -644,7 +676,7 @@ void Controller::SliderChangeSetBlacks(float value) {
         auto getter = [negative]() -> float { return negative->getBlacks(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -669,8 +701,8 @@ void Controller::ButtonPressAutoWhiteBalance(bool checked) {
         this->history.addCommand(
             std::make_unique<Command_Lambda>(execute, undo)
         );
-
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -695,7 +727,8 @@ void Controller::ButtonPressNeutralSample(bool checked) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
 
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -729,7 +762,8 @@ void Controller::SetNeutralSample(int x, int y) {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
     }
 }
 
@@ -743,7 +777,7 @@ void Controller::SliderChangeSetRBalance(float value) {
         auto getter = [negative]() -> float { return negative->getRBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -758,7 +792,7 @@ void Controller::SliderChangeSetGBalance(float value) {
         auto getter = [negative]() -> float { return negative->getGBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -773,7 +807,7 @@ void Controller::SliderChangeSetBBalance(float value) {
         auto getter = [negative]() -> float { return negative->getBBalance(); };
 
         this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderEdits(this->uiState.isDragging);
+        negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
 }
@@ -782,12 +816,15 @@ void Controller::SliderChangeSetBBalance(float value) {
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-void Controller::ButtonPressSavePositive() {
-    // std::println("button pressed save positive");
-    // pfd::save_file fileSaver("Choose positive location", "/");
-    // std::filesystem::path path = fileSaver.result();
-    // std::println("save path is {}", path.string());
-    // this->model.getCurrentNegative().exportPositive(path);
+void Controller::ButtonPressExport() {
+    std::println("button pressed export");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        pfd::save_file fileSaver("Choose positive location", "/");
+        std::filesystem::path path = fileSaver.result();
+        std::println("save path is {}", path.string());
+        negative->exportPositive(path, false);
+    }
 }
 
 
@@ -819,7 +856,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 this->ButtonPressAddNegative();
             }
             else if (id == "export") {
-                this->ButtonPressSavePositive();
+                this->ButtonPressExport();
             }
             else if (id == "remove") {
                 Negative* negative = this->model.getCurrentNegative();
@@ -1080,7 +1117,9 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                 Negative* negative = this->model.getCurrentNegative();
                 if (negative) {
                     std::println("setting scanArea to left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
-                    negative->setScanArea(scanArea);
+                    float scale = negative->getWorkingScale();
+                    std::println("setScanArea scale = {}", scale);
+                    negative->setScanArea(scanArea, scale);
                 }
             }
         }
@@ -1103,13 +1142,16 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             this->uiState.isDragging = false;
             Negative* negative = this->model.getCurrentNegative();
             if (negative) {
-                negative->renderEdits(false);
+                negative->renderWorkingEdits();
+                negative->renderSharpnessPreviewEdits();
                 int id = negative->getId();
                 negative->renderThumbnail();
                 ImageData thumbnail = negative->getThumbnail();
                 this->view.updateThumbnail(createPreviewtexture(thumbnail), id);
             }
+
             this->updatePreview(false);
+            this->updateSharpnessPreview();
         }
 
         // Hand the event over to the RmlUi context.

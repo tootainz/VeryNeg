@@ -59,7 +59,7 @@ private:
     // Working image is a smaller version of the original in order to speed up the live editing process
     std::vector<float> workingPixels;
     std::vector<float> convertedPixels;         // Pixels after the negative conversion
-    std::vector<float> convertedDraggingPixels; // Pixels after the covnersion, but used when dragging a slider to improve preview performance
+    std::vector<float> convertedDraggingPixels; // Pixels after the conversion, but used when dragging a slider to improve preview performance
     std::vector<float> editedPixels;            // Pixels after applying all the post-covnert edits
     std::vector<float> editedDraggingPixels;    // Pixels after the edits, but used when dragging a slider to improve preview performance
     float workingScale;                           // How much the working image is scaled down from the original, calculated automatically to fit UI
@@ -70,7 +70,9 @@ private:
     std::vector<uint8_t> thumbnailPixels;
 
     // Sharpness Preview
-    std::vector<uint8_t> sharpnessPreviewPixels;
+    std::vector<float> sharpnessPreviewOriginalPixels;
+    std::vector<float> sharpnessPreviewConvertedPixels;
+    std::vector<float> sharpnessPreviewEditedPixels;
 
     // Edit settings that are saved for future sessions
     nlohmann::json negativeData;
@@ -94,6 +96,14 @@ private:
     // HELPERS
     std::tuple<float,float,float> samplePixels(int workingX, int workingY);
 
+    // Internal rendering methods
+    std::unique_ptr<std::vector<float>> renderFinal();
+    void renderEdits(std::vector<float>& pixels, int channels);
+    void renderConversion(std::vector<float>& pixels, int width, int height, int channels, float scale);
+
+    // Sharpness preview
+    void initializeSharpnessPreview();
+
     // INITIALIZER
     bool initializeNegative(std::filesystem::path imagePath);
 
@@ -114,17 +124,18 @@ public:
     int getId();
     int getWorkingWidth();
     int getWorkingHeight();
+    float getWorkingScale();
     std::filesystem::path getPath();
 
     // EXPORTING
-    bool exportPositive(std::filesystem::path imagePath);
+    bool exportPositive(std::filesystem::path imagePath, bool jpeg);
 
     // SETTING EDIT SETTINGS
 
     // PRE-CONVERT
     float setScanGamma(float value);
     void setHasScanArea(bool has);
-    void setScanArea(ImageArea area);
+    void setScanArea(ImageArea area, float scale);
     void setHasBorder(bool has);
     void setBorder(float r, float g, float b);
     void setBorderByCoords(int x, int y);
@@ -167,7 +178,7 @@ public:
     bool getHasDensest();
     std::tuple<float, float, float> getDensest();
     bool getHasScanArea();
-    ImageArea getScanArea();
+    ImageArea getScanArea(float scale);
 
     // POST-CONVERT
     // Intensity
@@ -190,10 +201,12 @@ public:
     // Sharpening
     float getSharpening();
 
-    // Rendering methods
+    // Public rendering methods
+    void renderWorkingConversion();
+    void renderWorkingEdits();
+    void renderDraggingConversion();
+    void renderDraggingEdits();
+    void renderSharpnessPreviewConversion();
+    void renderSharpnessPreviewEdits();
     void renderThumbnail();
-    void renderEdits(bool dragging);
-    void renderDragging();
-    void renderWorking();
-    void renderFinal();
 };

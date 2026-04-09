@@ -13,7 +13,7 @@
     },
 
     "conversion": {
-        "samplingBlur": 20,
+        "samplingBlur": 40,
         "hasBorder": false,
         "border": {
             "r": 0.0,

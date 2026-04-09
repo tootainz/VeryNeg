@@ -39,6 +39,12 @@ private:
     float previewCenterOffsetX = 0;
     float previewCenterOffsetY = 0;
 
+    // Sharpness preview
+    std::unique_ptr<sf::Texture> sharpnessPreviewTexture;
+    sf::Sprite sharpnessPreviewSprite;
+    int sharpnessPreviewWidth = 200;
+    int sharpnessPreviewHeight = 200;
+
     // Window
     sf::RenderWindow& window;
     
@@ -81,6 +87,7 @@ public:
     void setPreset(std::string name, float value);
     void setSelection(ImageArea area);
     void setPreviewTexture(std::unique_ptr<sf::Texture> texture);
+    void setSharpnessPreviewTexture(std::unique_ptr<sf::Texture> texture);
 
     // GETTERS
     Rml::Context* getRmlContext();

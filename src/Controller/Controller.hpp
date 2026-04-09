@@ -57,6 +57,7 @@ private:
 
     // UPDATE GUI
     void updatePreview(bool dragging);
+    void updateSharpnessPreview();
     void updateEditSettings(Negative& negative);
 
     // UNDO REDO
@@ -108,7 +109,7 @@ private:
     void SliderChangeSetBBalance(float value);
 
     // EXPORTING
-    void ButtonPressSavePositive();
+    void ButtonPressExport();
 
     // EVENT LISTENER
     void ProcessEvent(Rml::Event& event) override;
