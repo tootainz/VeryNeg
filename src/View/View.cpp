@@ -13,8 +13,8 @@ View::View(sf::RenderWindow& window) :
     window(window),
     previewTexture(std::make_unique<sf::Texture>()),
     previewSprite(*this->previewTexture),
-    sharpnessPreviewTexture(std::make_unique<sf::Texture>()),
-    sharpnessPreviewSprite(*this->sharpnessPreviewTexture),
+    sharpeningPreviewTexture(std::make_unique<sf::Texture>()),
+    sharpeningPreviewSprite(*this->sharpeningPreviewTexture),
     rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
     selection({0.0f, 0.0f}),
     thumbnails()
@@ -28,6 +28,9 @@ View::View(sf::RenderWindow& window) :
     this->updatePreviewSize();
     this->updatePreviewScale();
     this->updatePreviewPos();
+
+    this->updateFilmRollRenderArea();
+    this->updateSettingsRenderArea();
 
     this->selection.setFillColor(sf::Color::Transparent);
     this->selection.setOutlineThickness(1.0f);
@@ -198,6 +201,40 @@ std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
     return std::tuple<int, int>(previewX, previewY);
 }
 
+void View::updateFilmRollRenderArea() {
+    Rml::Element* filmRollElement = this->rmlDocument->GetElementById("filmRoll");
+
+    int width = filmRollElement->GetOffsetWidth();
+    int height = filmRollElement->GetOffsetHeight();
+
+    int left = filmRollElement->GetAbsoluteLeft();
+    int top = filmRollElement->GetAbsoluteTop();
+
+    this->filmRollRenderArea = {left, top, left+width, top+height};
+}
+
+// SHARPENING MANAGEMENT
+// ----------------------------------------------------------------------------------------------------------------
+
+void View::updateSharpeningPreviewPos() {
+    Rml::Element* previewElement = this->rmlDocument->GetElementById("sharpeningPreview");
+    float x = previewElement->GetAbsoluteLeft();
+    float y = previewElement->GetAbsoluteTop();
+    this->sharpeningPreviewSprite.setPosition({x, y});
+}
+
+void View::updateSettingsRenderArea() {
+    Rml::Element* settingsRenderArea = this->rmlDocument->GetElementById("settings");
+
+    int width = settingsRenderArea->GetOffsetWidth();
+    int height = settingsRenderArea->GetOffsetHeight();
+
+    int left = settingsRenderArea->GetAbsoluteLeft();
+    int top = settingsRenderArea->GetAbsoluteTop();
+
+    this->settingsRenderArea= {left, top, left+width, top+height};
+}
+
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -241,9 +278,9 @@ void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->updatePreviewScale();
 }
 
-void View::setSharpnessPreviewTexture(std::unique_ptr<sf::Texture> texture) {
-    this->sharpnessPreviewTexture = std::move(texture);
-    this->sharpnessPreviewSprite = sf::Sprite(*this->sharpnessPreviewTexture);
+void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
+    this->sharpeningPreviewTexture = std::move(texture);
+    this->sharpeningPreviewSprite = sf::Sprite(*this->sharpeningPreviewTexture);
 }
 
 // GETTERS
@@ -274,8 +311,7 @@ void View::render() {
     // UPDATING
 
     this->updateThumbnailsPos();
-    this->sharpnessPreviewSprite.setPosition({10,10});
-    this->sharpnessPreviewSprite.setScale({2.0f, 2.0f});
+    this->updateSharpeningPreviewPos();
 
     // -------------------------------------------------------
     this->window.clear();
@@ -296,7 +332,18 @@ void View::render() {
     this->window.draw(previewSprite);
 
     // Sharpness preview
-    this->window.draw(sharpnessPreviewSprite);
+    glEnable(GL_SCISSOR_TEST);    // This is some weird opengl stuff that i dont have experience with for maskign parts of the sprite
+    glScissor(
+        this->settingsRenderArea.left,
+        this->window.getSize().y - this->settingsRenderArea.bottom,
+        this->settingsRenderArea.right - this->settingsRenderArea.left,
+        this->settingsRenderArea.bottom - this->settingsRenderArea.top
+    );
+
+    // Draw the actual sprite
+    this->window.draw(sharpeningPreviewSprite);
+
+    glDisable(GL_SCISSOR_TEST);
 
     // Selection
     if (this->displaySelection) {
@@ -304,9 +351,18 @@ void View::render() {
     }
 
     // Thumbnails
+    glEnable(GL_SCISSOR_TEST);    // This is some weird opengl stuff that i dont have experience with for maskign parts of the sprite
+    glScissor(
+        this->filmRollRenderArea.left,
+        this->window.getSize().y - this->filmRollRenderArea.bottom,
+        this->filmRollRenderArea.right - this->filmRollRenderArea.left,
+        this->filmRollRenderArea.bottom - this->filmRollRenderArea.top
+    );
+    // Draw the actual sprites
     for (const auto& thumbnail : this->thumbnails) {
         this->window.draw(thumbnail->sprite);
     }
+    glDisable(GL_SCISSOR_TEST);
 
     // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
     window.popGLStates();

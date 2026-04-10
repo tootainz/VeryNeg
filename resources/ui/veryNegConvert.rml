@@ -67,7 +67,7 @@
 
                     <div class="selectButtons" id="convertContainer">
                         <div id="convertBG">
-                            <button class="magenta" id="convert">CONVERT</button>
+                            <button id="convert">CONVERT</button>
                         </div>
                     </div>
                 </div>
@@ -132,12 +132,14 @@
 
                     <h2 class="settingDivider">Sharpness</h2>
 
-                    <div id="sharpenContainer">
-                        <div id="sharpenPreview"></div>
+                    <div id="sharpeningContainer">
+                        <div id="sharpeningPreview"></div>
                     </div>
 
-                    <label for="sharpening">Unsharp masking</label>
-                    <input type="range" id="sharpening" name="sharpening" min="-5" max="5" value="0" step="0.02"/>
+                    <label for="sharpeningAmount">Unsharp masking amount</label>
+                    <input type="range" id="sharpeningAmount" name="sharpeningAmount" min="0" max="10" value="0" step="0.1"/>
+                    <label for="sharpeningDiameter">Unsharp masking diameter</label>
+                    <input type="range" id="sharpeningDiameter" name="sharpeningDiameter" min="5" max="12" value="5" step="1"/>
 
                 </div>
             </div>

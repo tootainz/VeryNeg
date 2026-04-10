@@ -1,5 +1,5 @@
 {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "name": "flat",
 
     "density": 0.0,
@@ -19,5 +19,6 @@
     "gBalance": 0.0,
     "bBalance": 0.0,
     "saturation": 0.0,
-    "sharpening": 0.0
+    "sharpeningAmount": 0.0,
+    "sharpeningDiameter": 5
 }

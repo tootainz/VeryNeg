@@ -1,12 +1,9 @@
 #pragma once
 
-#include "boxFilter.hpp"
-
-#pragma once
-
-#include "boxFilter.hpp"
 #include <vector>
 #include <cmath>
+
+#include "boxFilter.hpp"
 
 // Implemented with the help of ChatGPT since i was lazy
 
@@ -34,7 +31,7 @@ inline std::vector<int> computeBoxDiameters(float sigma, int n) {
     return sizes;
 }
 
-inline void gaussianFilter( std::vector<float>& image, int imageWidth, int imageHeight, int filterDiameter, int resolution) {
+inline void gaussianFilter(std::vector<float>& image, int imageWidth, int imageHeight, int filterDiameter, int resolution) {
     // Approximate sigma from diameter assuming Gaussian covers ~3σ each side
     float sigma = filterDiameter / 6.0f;
 

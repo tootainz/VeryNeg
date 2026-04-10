@@ -84,12 +84,12 @@ void Controller::updateSharpnessPreview() {
         std::println("preview negative exists");
         std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getSharpnessPreview()));
         std::println("preview successfully recovered from model");
-        this->view.setSharpnessPreviewTexture(std::move(previewTexture));
+        this->view.setSharpeningPreviewTexture(std::move(previewTexture));
     }
     else {
         std::println("preview negative doesnt exist");
         // Clear the preview
-        this->view.setSharpnessPreviewTexture(std::make_unique<sf::Texture>());
+        this->view.setSharpeningPreviewTexture(std::make_unique<sf::Texture>());
     }
 }
 
@@ -116,6 +116,9 @@ void Controller::updateEditSettings(Negative& negative) {
     float bBalance = negative.getBBalance();
     float saturation = negative.getSaturation();
 
+    float sharpeningAmount = negative.getSharpeningAmount();
+    float sharpeningDiameter = negative.getSharpeningDiameter();
+
     this->view.setSliderValue("scanGamma", scanGamma);
     this->view.setSelection(scanArea);
     this->view.setCheckboxValue("scanArea", hasScanArea);
@@ -140,6 +143,9 @@ void Controller::updateEditSettings(Negative& negative) {
     this->view.setSliderValue("c-r", rBalance);
     this->view.setSliderValue("m-g", gBalance);
     this->view.setSliderValue("y-b", bBalance);
+
+    this->view.setSliderValue("sharpeningAmount", sharpeningAmount);
+    this->view.setSliderValue("sharpeningDiameter", sharpeningDiameter);
 
     this->uiState.disableCallbacks = false;
 }
@@ -523,6 +529,7 @@ void Controller::ButtonPressConvert() {
 
         auto execute = [this, negative]() {
             negative->convert();
+            negative->renderSharpnessPreviewConversion();
             int id = negative->getId();
             negative->renderThumbnail();
             ImageData thumbnail = negative->getThumbnail();
@@ -531,6 +538,7 @@ void Controller::ButtonPressConvert() {
 
         auto undo = [this, negative]() {
             negative->resetConversion();
+            negative->renderSharpnessPreviewConversion();
             int id = negative->getId();
             negative->renderThumbnail();
             ImageData thumbnail = negative->getThumbnail();
@@ -812,6 +820,31 @@ void Controller::SliderChangeSetBBalance(float value) {
     }
 }
 
+void Controller::SliderChangeSetSharpeningAmount(float value) {
+    std::println("Sharpening amount slider value was changed to {}", value);
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto setter = [negative](float v) -> float { return negative->setSharpeningAmount(v); };
+        auto getter = [negative]() -> float { return negative->getSharpeningAmount(); };
+
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+    }
+}
+
+void Controller::SliderChangeSetSharpeningDiameter(float value) {
+    std::println("Sharpening diameter slider value was changed to {}", value);
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto setter = [negative](float v) -> float { return negative->setSharpeningDiameter(v); };
+        auto getter = [negative]() -> float { return negative->getSharpeningDiameter(); };
+
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+    }
+}
 
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
@@ -956,6 +989,12 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 }
                 else if (id == "y-b") {
                     this->SliderChangeSetBBalance(value);
+                }
+                else if (id == "sharpeningAmount") {
+                    this->SliderChangeSetSharpeningAmount(value);
+                }
+                else if (id == "sharpeningDiameter") {
+                    this->SliderChangeSetSharpeningDiameter(value);
                 }
             }
         }
@@ -1175,6 +1214,8 @@ void Controller::eventLoop() {
             this->view.updatePreviewSize();
             this->view.updatePreviewScale();
             this->view.updatePreviewPos();
+            this->view.updateFilmRollRenderArea();
+            this->view.updateSettingsRenderArea();
             this->updatePreview(false);
         }
 

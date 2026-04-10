@@ -33,7 +33,7 @@ private:
     static const int PREVIEW_SIZE = 1000;
     static const int THUMBNAIL_SIZE = 500;
     static const int EYEDROPPER_SIZE = 5;
-    static const int SHARPNESS_PREVIEW_SIZE = 100;
+    static const int SHARPNESS_PREVIEW_SIZE = 200;
     static const std::string NEGATIVEDATA_VERSION;
     static const std::string PRESETDATA_VERSION;
     static const float DRAGGING_SCALE;
@@ -167,7 +167,8 @@ public:
     float setSaturation(float value);
 
     // Sharpening
-    float setSharpening(float value);
+    float setSharpeningAmount(float value);
+    float setSharpeningDiameter(float value);
 
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
@@ -199,7 +200,8 @@ public:
     float getSaturation();
 
     // Sharpening
-    float getSharpening();
+    float getSharpeningAmount();
+    float getSharpeningDiameter();
 
     // Public rendering methods
     void renderWorkingConversion();

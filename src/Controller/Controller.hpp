@@ -108,6 +108,10 @@ private:
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
 
+    // Sharpening
+    void SliderChangeSetSharpeningAmount(float value);
+    void SliderChangeSetSharpeningDiameter(float value);
+
     // EXPORTING
     void ButtonPressExport();
 

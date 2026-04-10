@@ -23,6 +23,7 @@
 #include "../imageAlgorithms/contrast.hpp"
 #include "../imageAlgorithms/curveBlacksShadows.hpp"
 #include "../imageAlgorithms/curveWhitesHighlights.hpp"
+#include "../imageAlgorithms/unsharpMask.hpp"
 
 
 // STATIC HELPER FUNCTIONS
@@ -36,8 +37,8 @@ static float exponentDampenerFixer(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 int Negative::nextId = 0;
-const std::string Negative::NEGATIVEDATA_VERSION = "0.2.0";
-const std::string Negative::PRESETDATA_VERSION = "0.1.0";
+const std::string Negative::NEGATIVEDATA_VERSION = "0.3.0";
+const std::string Negative::PRESETDATA_VERSION = "0.2.0";
 const float Negative::DRAGGING_SCALE = 0.4f;
 
 
@@ -184,6 +185,7 @@ std::unique_ptr<std::vector<float>> Negative::renderFinal() {
     
     this->renderConversion(*finalPixels, this->width, this->height, this->numberOfChannels, 1.0f);
     this->renderEdits(*finalPixels, this->numberOfChannels);
+    unsharpMask(*finalPixels, this->width, this->height, this->getSharpeningAmount(), this->getSharpeningDiameter());
 
     return finalPixels;
 }
@@ -763,7 +765,8 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         float gBalance = presetData["gBalance"];
         float bBalance = presetData["bBalance"];
         float saturation = presetData["saturation"];
-        float sharpening = presetData["sharpening"];
+        float sharpeningAmount = presetData["sharpeningAmount"];
+        float sharpeningDiameter = presetData["sharpeningDiameter"];
 
         this->setDensity(density);
         this->setContrast(contrast);
@@ -776,7 +779,8 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         this->setGBalance(gBalance);
         this->setBBalance(bBalance);
         this->setSaturation(saturation);
-        this->setSharpening(sharpening);
+        this->setSharpeningAmount(sharpeningAmount);
+        this->setSharpeningDiameter(sharpeningDiameter);
     }
 }
 
@@ -851,9 +855,16 @@ float Negative::setSaturation(float value) {
     return this->getSaturation();
 }
 
-float Negative::setSharpening(float value) {
-    this->negativeData["edits"]["sharpening"] = value;
-    return this->getSharpening();
+float Negative::setSharpeningAmount(float value) {
+    std::println("setting sharpening amount to {}", value);
+    this->negativeData["edits"]["sharpeningAmount"] = value;
+    return this->getSharpeningAmount();
+}
+
+float Negative::setSharpeningDiameter(float value) {
+    std::println("setting sharpening diameter to {}", value);
+    this->negativeData["edits"]["sharpeningDiameter"] = value;
+    return this->getSharpeningDiameter();
 }
 
 // GETTING EDIT SETTINGS FROM NEGATIVEDATA PRE-CONVERT
@@ -964,8 +975,12 @@ float Negative::getSaturation() {
     return this->negativeData["edits"]["saturation"];
 }
 
-float Negative::getSharpening() {
-    return this->negativeData["edits"]["sharpening"];
+float Negative::getSharpeningAmount() {
+    return this->negativeData["edits"]["sharpeningAmount"];
+}
+
+float Negative::getSharpeningDiameter() {
+    return this->negativeData["edits"]["sharpeningDiameter"];
 }
 
 // RENDERING METHODS
@@ -1108,6 +1123,7 @@ void Negative::renderSharpnessPreviewConversion() {
 void Negative::renderSharpnessPreviewEdits() {
     this->sharpnessPreviewEditedPixels = this->sharpnessPreviewConvertedPixels;
     this->renderEdits(this->sharpnessPreviewEditedPixels, this->numberOfChannels);
+    unsharpMask(sharpnessPreviewEditedPixels, this->SHARPNESS_PREVIEW_SIZE, this->SHARPNESS_PREVIEW_SIZE, this->getSharpeningAmount(),this->getSharpeningDiameter());
     return;
 }
 

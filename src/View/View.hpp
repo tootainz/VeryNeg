@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <RmlUi/Core.h>
+#include <SFML/OpenGL.hpp>
 
 #include "../Negative/ImageArea.hpp"
 #include "Thumbnail.hpp"
@@ -40,10 +41,11 @@ private:
     float previewCenterOffsetY = 0;
 
     // Sharpness preview
-    std::unique_ptr<sf::Texture> sharpnessPreviewTexture;
-    sf::Sprite sharpnessPreviewSprite;
-    int sharpnessPreviewWidth = 200;
-    int sharpnessPreviewHeight = 200;
+    std::unique_ptr<sf::Texture> sharpeningPreviewTexture;
+    sf::Sprite sharpeningPreviewSprite;
+    int sharpeningPreviewWidth = 200;
+    int sharpeningPreviewHeight = 200;
+    ImageArea settingsRenderArea;
 
     // Window
     sf::RenderWindow& window;
@@ -58,6 +60,7 @@ private:
     // Thumbnails
     int lastThumbnailposition = 0;
     std::vector<std::unique_ptr<Thumbnail>> thumbnails;
+    ImageArea filmRollRenderArea;
 
 public:
     // PUBLIC METHODS
@@ -79,6 +82,11 @@ public:
     void updatePreviewPos();
     std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
     std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);
+    void updateFilmRollRenderArea();
+
+    // SHARPENING MANAGEMENT
+    void updateSharpeningPreviewPos();
+    void updateSettingsRenderArea();
     
     // SETTERS
     void setSliderValue(std::string name, float value);
@@ -87,7 +95,7 @@ public:
     void setPreset(std::string name, float value);
     void setSelection(ImageArea area);
     void setPreviewTexture(std::unique_ptr<sf::Texture> texture);
-    void setSharpnessPreviewTexture(std::unique_ptr<sf::Texture> texture);
+    void setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture);
 
     // GETTERS
     Rml::Context* getRmlContext();

@@ -1,5 +1,5 @@
 {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "name": "print",
 
     "density": 0.0,
@@ -19,5 +19,6 @@
     "gBalance": 0.0,
     "bBalance": 1.0,
     "saturation": 0.0,
-    "sharpening": 2.0
+    "sharpeningAmount": 2.8,
+    "sharpeningDiameter": 5
 }

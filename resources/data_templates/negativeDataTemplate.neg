@@ -1,5 +1,5 @@
 {
-    "version": "0.2.0",
+    "version": "0.3.0",
 
     "general": {
         "isConverted": false,
@@ -54,6 +54,7 @@
         "gBalance": 0.0,
         "bBalance": 0.0,
         "saturation": 0.0,
-        "sharpening": 0.0
+        "sharpeningAmount": 0.0,
+        "sharpeningDiameter": 5
     }
 }
