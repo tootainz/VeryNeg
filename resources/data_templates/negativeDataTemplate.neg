@@ -1,0 +1,60 @@
+{
+    "version": "0.3.0",
+
+    "general": {
+        "isConverted": false,
+        "isCropped": false,
+        "crop": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+        }
+    },
+
+    "conversion": {
+        "samplingBlur": 40,
+        "hasBorder": false,
+        "border": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0
+        },
+        "hasDensest": false,
+        "densest": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0
+        },
+        "hasScanArea": false,
+        "scanArea": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+        },
+        "scanGamma": 1.8
+    },
+
+    "edits": {
+        "density": 0.0,
+        "contrast": 0.0,
+        "highlights": 0.0,
+        "shadows": 0.0,
+        "blacks": 0.0,
+        "whites": 0.0,
+        "autoWB": true,
+        "hasNeutralPoint": false,
+        "neutralPoint": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0
+        },
+        "rBalance": 0.0,
+        "gBalance": 0.0,
+        "bBalance": 0.0,
+        "saturation": 0.0,
+        "sharpeningAmount": 0.0,
+        "sharpeningDiameter": 5
+    }
+}
