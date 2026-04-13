@@ -172,6 +172,8 @@ public:
 
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
+    nlohmann::json getNegativeData();
+
     // PRE-CONVERT
     float getScanGamma();
     bool getHasBorder();
@@ -180,6 +182,7 @@ public:
     std::tuple<float, float, float> getDensest();
     bool getHasScanArea();
     ImageArea getScanArea(float scale);
+    bool getIsConverted();
 
     // POST-CONVERT
     // Intensity

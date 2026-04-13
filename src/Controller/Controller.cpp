@@ -150,6 +150,13 @@ void Controller::updateEditSettings(Negative& negative) {
     this->view.setSliderValue("sharpeningAmount", sharpeningAmount);
     this->view.setSliderValue("sharpeningDiameter", sharpeningDiameter);
 
+    // reset held checkboxes
+    this->view.setCheckboxValue("holdConversion", false);
+    this->view.setCheckboxValue("holdEdits", false);
+    this->view.setCheckboxValue("holdColor", false);
+    this->view.setCheckboxValue("holdIntensity", false);
+    this->view.setCheckboxValue("holdSharpening", false);
+
     this->uiState.disableCallbacks = false;
 }
 
@@ -182,6 +189,41 @@ void Controller::redo() {
     }
 }
 
+// GUI EVENTS HOLDING
+// ----------------------------------------------------------------------------------------------------------------
+
+void Controller::applyHeld() {
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        std::println("applying held settings");
+        if (this->uiState.heldConvert) {
+            this->model.applyHoldPreConvert();
+        }
+        if (this->uiState.heldEdits) {
+            this->model.applyHoldPostConvert();
+        }
+        else {
+            if (this->uiState.heldColor) {
+                this->model.applyHoldColor();
+            }
+            if (this->uiState.heldIntensity) {
+                this->model.applyHoldIntensity();
+            }
+            if (this->uiState.heldSharpening) {
+                this->model.applyHoldSharpening();
+            }
+        }
+        this->updateEditSettings(*negative);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
+        negative->renderThumbnail();
+        int id = negative->getId();
+        ImageData thumbnail = negative->getThumbnail();
+        this->view.updateThumbnail(std::move(createPreviewtexture(thumbnail)), id);
+    }
+}
 
 // GUI EVENTS NEGATIVE NAVIGATION
 // ----------------------------------------------------------------------------------------------------------------
@@ -336,7 +378,42 @@ void Controller::ButtonPressThumbnail(int id) {
 // GUI EVENTS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
-void Controller::OptionPressSetScanGamma(float value) {
+void Controller::CheckboxPressHoldConvert(bool checked) {
+    std::println("hold convert pressed");
+    std::println("value is {}", checked);
+    bool previousChecked = !checked;
+
+    auto execute = [this, checked]() {
+        if (checked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldConvert = checked;
+    };
+
+    auto undo = [this, previousChecked]() {
+        if (previousChecked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldConvert = previousChecked;
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+}
+
+void Controller::OptionPressSetScanGamma(float value)
+{
     std::println("scan gamma set to {}", value);
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -353,11 +430,11 @@ void Controller::OptionPressSetScanGamma(float value) {
         this->history.addCommand(
             std::make_unique<Command_Lambda>(execute, undo)
         );
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     };
 }
 
-void Controller::ButtonPressBorder(bool checked) {
+void Controller::CheckboxPressBorder(bool checked) {
     std::println("Border pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -378,7 +455,7 @@ void Controller::ButtonPressBorder(bool checked) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
 
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     }
 }
 
@@ -388,7 +465,7 @@ void Controller::ButtonPressSetBorder() {
         // Update the view to mach UiState since this didn't come directly from the main checkbox
         this->view.setCheckboxValue("border", true);
         // Update the UiState and model
-        this->ButtonPressBorder(true);
+        this->CheckboxPressBorder(true);
     }
     std::println("Setting Border");
     this->uiState.selectingBorder = !this->uiState.selectingBorder;
@@ -415,11 +492,11 @@ void Controller::SetBorder(int x, int y) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
         
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     }
 }
 
-void Controller::ButtonPressDensest(bool checked) {
+void Controller::CheckboxPressDensest(bool checked) {
     std::println("Densest pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -440,7 +517,7 @@ void Controller::ButtonPressDensest(bool checked) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
         
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     }
 }
 
@@ -450,7 +527,7 @@ void Controller::ButtonPressSetDensest() {
         // Update the view to mach UiState since this didn't come directly from the main checkbox
         this->view.setCheckboxValue("densest", true);
         // Update the UiState and model
-        this->ButtonPressDensest(true);
+        this->CheckboxPressDensest(true);
     }
     this->uiState.selectingDensest = !this->uiState.selectingDensest;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
@@ -475,11 +552,11 @@ void Controller::SetDensest(int x, int y) {
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
         
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     }
 }
 
-void Controller::ButtonPressScanArea(bool checked) {
+void Controller::CheckboxPressScanArea(bool checked) {
     std::println("scan area pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -503,7 +580,7 @@ void Controller::ButtonPressScanArea(bool checked) {
         std::println("checked for scan area is: {}", checked);
         std::println("uistate scan area is: {}", this->uiState.hasScanArea);
                 
-        this->updatePreview(this->uiState.isDragging);
+        this->updatePreview(false);
     };
 }
 
@@ -513,7 +590,7 @@ void Controller::ButtonPressSetScanArea() {
         // Update the view to mach UiState since this didn't come directly from scanArea checkbox
         this->view.setCheckboxValue("scanArea", true);
         // Update the UiState and model
-        this->ButtonPressScanArea(true);
+        this->CheckboxPressScanArea(true);
     }
     this->uiState.selectingScanArea = !this->uiState.selectingScanArea;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
@@ -585,8 +662,41 @@ void Controller::ButtonPressResetConversion() {
 // GUI EVENTS POST-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
-void Controller::ButtonPressResetEdits() {
+void Controller::CheckboxPressHoldEdits(bool checked) {
+    std::println("hold edits pressed");
+    bool previousChecked = !checked;
 
+    auto execute = [this, checked]() {
+        if (checked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldEdits = checked;
+    };
+
+    auto undo = [this, previousChecked]() {
+        if (previousChecked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldEdits = previousChecked;
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+}
+
+void Controller::ButtonPressResetEdits()
+{
 }
 
 void Controller::OptionPressSetPreset(std::string name) {
@@ -602,7 +712,45 @@ void Controller::OptionPressSetPreset(std::string name) {
     }
 }
 
-void Controller::SliderChangeSetDensity(float value) {
+void Controller::CheckboxPressHoldIntensity(bool checked) {
+    std::println("hold intensity pressed");
+    bool previousChecked = !checked;
+
+    auto execute = [this, checked]() {
+        if (checked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldIntensity = checked;
+    };
+
+    auto undo = [this, previousChecked]() {
+        if (previousChecked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldIntensity = previousChecked;
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+}
+
+void Controller::ButtonPressResetIntensity()
+{
+}
+
+void Controller::SliderChangeSetDensity(float value)
+{
     std::println("Slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
@@ -692,7 +840,45 @@ void Controller::SliderChangeSetBlacks(float value) {
     }
 }
 
-void Controller::ButtonPressAutoWhiteBalance(bool checked) {
+void Controller::CheckboxPressHoldColor(bool checked) {
+    std::println("hold edits pressed");
+    bool previousChecked = !checked;
+
+    auto execute = [this, checked]() {
+        if (checked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldColor = checked;
+    };
+
+    auto undo = [this, previousChecked]() {
+        if (previousChecked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldColor = previousChecked;
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+}
+
+void Controller::ButtonPressResetColor()
+{
+}
+
+void Controller::CheckboxPressAutoWhiteBalance(bool checked)
+{
     std::println("AutoWB pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -717,7 +903,7 @@ void Controller::ButtonPressAutoWhiteBalance(bool checked) {
     }
 }
 
-void Controller::ButtonPressNeutralSample(bool checked) {
+void Controller::CheckboxPressNeutralSample(bool checked) {
     std::println("Neutral Balance pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -749,7 +935,7 @@ void Controller::ButtonPressSetNeutralSample() {
         // Update the view to mach UiState since this didn't come directly from scanArea checkbox
         this->view.setCheckboxValue("neutral", true);
         // Update the UiState and model
-        this->ButtonPressNeutralSample(true);
+        this->CheckboxPressNeutralSample(true);
     }
     this->uiState.selectingNeutral = !this->uiState.selectingNeutral;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
@@ -821,6 +1007,43 @@ void Controller::SliderChangeSetBBalance(float value) {
         negative->renderDraggingEdits();
         this->updatePreview(this->uiState.isDragging);
     }
+}
+
+void Controller::CheckboxPressHoldSharpening(bool checked) {
+    std::println("hold sharpening pressed");
+    bool previousChecked = !checked;
+
+    auto execute = [this, checked]() {
+        if (checked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldSharpening = checked;
+    };
+
+    auto undo = [this, previousChecked]() {
+        if (previousChecked) {
+            this->model.holdSettings(true);
+        }
+        else {
+            if (!this->uiState.somethingIsHolding()) {
+                this->model.holdSettings(false);
+            }
+        }
+        this->uiState.heldSharpening = previousChecked;
+    };
+
+    this->history.addCommand(
+        std::make_unique<Command_Lambda>(execute, undo)
+    );
+}
+
+void Controller::ButtonPressResetSharpening()
+{
 }
 
 void Controller::SliderChangeSetSharpeningAmount(float value) {
@@ -903,7 +1126,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
         const std::string id = element->GetId();
         const std::string className = element->GetId();
 
-        // BUTTONS (Click)
+        // BUTTONS & CHECKBOXES (Click)
         if (event.GetId() == Rml::EventId::Click) {
 
             auto checkedAttribute = element->GetAttribute("checked");
@@ -911,14 +1134,11 @@ void Controller::ProcessEvent(Rml::Event& event) {
             if (checkedAttribute) {
                 checked = true;
             }
+            // This is required since the value is still false, but will turn true during this press
+            checked = !checked;
 
-            if (id == "convert") {
-                this->ButtonPressConvert();
-            }
-            else if (id == "reset") {
-                this->ButtonPressResetConversion();
-            }
-            else if (id == "import") {
+            // IMPORT EXPORT REMOVE
+            if (id == "import") {
                 this->ButtonPressAddNegative();
             }
             else if (id == "export") {
@@ -940,30 +1160,8 @@ void Controller::ProcessEvent(Rml::Event& event) {
                     this->ButtonPressRemoveNegative(id);
                 }
             }
-            else if (id == "border") {
-                this->ButtonPressBorder(!checked);
-            }
-            else if (id == "sampleBorder") {
-                this->ButtonPressSetBorder();
-            }
-            else if (id == "densest") {
-                this->ButtonPressDensest(!checked);
-            }
-            else if (id == "sampleDensest") {
-                this->ButtonPressSetDensest();
-            }
-            else if (id == "scanArea") {
-                this->ButtonPressScanArea(!checked);
-            }
-            else if (id == "setScanArea") {
-                this->ButtonPressSetScanArea();
-            }
-            else if (id == "autoWB") {
-                this->ButtonPressAutoWhiteBalance(!checked);
-            }
-            else if (id == "selectNeutral") {
-                this->ButtonPressSetNeutralSample();
-            }
+
+            // FILM ROLL
             else if (id.contains("thumbnail")) {
                 int thumbnailId = 0;
                 size_t pos = id.find('_'); // find underscore
@@ -978,6 +1176,70 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
             else if (id == "previous") {
                 this->ButtonPressPreviousNegative();
+            }
+
+            // PRE-CONVERT
+            else if (id == "convert") {
+                this->ButtonPressConvert();
+            }
+            else if (id == "holdConversion") {
+                this->CheckboxPressHoldConvert(checked);
+            }
+            else if (id == "resetConversion") {
+                this->ButtonPressResetConversion();
+            }
+            else if (id == "border") {
+                this->CheckboxPressBorder(checked);
+            }
+            else if (id == "sampleBorder") {
+                this->ButtonPressSetBorder();
+            }
+            else if (id == "densest") {
+                this->CheckboxPressDensest(checked);
+            }
+            else if (id == "sampleDensest") {
+                this->ButtonPressSetDensest();
+            }
+            else if (id == "scanArea") {
+                this->CheckboxPressScanArea(checked);
+            }
+            else if (id == "setScanArea") {
+                this->ButtonPressSetScanArea();
+            }
+
+            // POST-CONVERT
+            else if (id == "holdEdits") {
+                this->CheckboxPressHoldEdits(checked);
+            }
+            else if (id == "resetEdits") {
+                this->ButtonPressResetEdits();
+            }
+
+            else if (id == "holdColor") {
+                this->CheckboxPressHoldColor(checked);
+            }
+            else if (id == "resetColor") {
+                this->ButtonPressResetColor();
+            }
+            else if (id == "autoWB") {
+                this->CheckboxPressAutoWhiteBalance(checked);
+            }
+            else if (id == "selectNeutral") {
+                this->ButtonPressSetNeutralSample();
+            }
+
+            else if (id == "holdIntensity") {
+                this->CheckboxPressHoldIntensity(checked);
+            }
+            else if (id == "resetIntensity") {
+                this->ButtonPressResetIntensity();
+            }
+
+            else if (id == "holdSharpening") {
+                this->CheckboxPressHoldSharpening(checked);
+            }
+            else if (id == "resetSharpening") {
+                this->ButtonPressResetSharpening();
             }
         }
 
@@ -1068,6 +1330,17 @@ bool Controller::handleKeyboardEvents(std::optional<sf::Event> event) {
             else {
                 this->undo();   // Cmd + Z
             }
+        }
+        // Command C
+        else if (keyPressed->system && keyPressed->code == sf::Keyboard::Key::C) {
+            this->CheckboxPressHoldConvert(true);
+            this->CheckboxPressHoldEdits(true);
+            this->view.setCheckboxValue("holdConversion", true);
+            this->view.setCheckboxValue("holdEdits", true);
+        }
+        // Command V
+        else if (keyPressed->system && keyPressed->code == sf::Keyboard::Key::V) {
+            this->applyHeld();
         }
         return true;
     }

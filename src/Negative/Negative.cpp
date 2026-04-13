@@ -873,7 +873,12 @@ float Negative::setSharpeningDiameter(float value) {
 // GETTING EDIT SETTINGS FROM NEGATIVEDATA PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
-float Negative::getScanGamma() {
+nlohmann::json Negative::getNegativeData() {
+    return this->negativeData;
+}
+
+float Negative::getScanGamma()
+{
     return this->negativeData["conversion"]["scanGamma"];
 }
 
@@ -895,6 +900,10 @@ ImageArea Negative::getScanArea(float scale) {
     scanArea.bottom = bottom * scale;
     std::println("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
     return scanArea;
+}
+
+bool Negative::getIsConverted() {
+    return this->negativeData["general"]["isConverted"];
 }
 
 std::tuple<float, float, float> Negative::getBorder() {

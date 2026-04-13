@@ -85,6 +85,16 @@ input.checkbox:active {
     background-color: #8a8682;
 }
 
+.holdBox:active {
+    color: #000000;
+    decorator: image( "./graphics/button2.png" fill );
+}
+
+.holdBox:checked {
+    color: #000000;
+    decorator: image( "./graphics/button1.png" fill );
+}
+
 /* Drop down */
 
 select {

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <print>
 
 
 // CONSTRUCTOR
@@ -99,6 +100,130 @@ void Model::removeNegativeById(int id) {
     this->currentNegativeIndex = std::max(0, this->currentNegativeIndex - 1);
 }
 
+void Model::holdSettings(bool hold) {
+    if (hold) {
+        std::println("settings held");
+        this->heldNegative = this->getCurrentNegative();
+    }
+    else {
+        std::println("settings unheld");
+        this->heldNegative = nullptr;
+    }
+}
+
+void Model::applyHoldPreConvert() {
+
+    Negative* negative = this->getCurrentNegative();
+    if (negative && this->heldNegative) {
+
+        std::println("applying held pre convert settings");
+
+        // Get held settings
+        float scanGamma = this->heldNegative->getScanGamma();
+
+        ImageArea scanArea = this->heldNegative->getScanArea(this->heldNegative->getWorkingScale());
+        bool hasScanArea = this->heldNegative->getHasScanArea();
+
+        bool hasDensest = this->heldNegative->getHasDensest();
+        bool hasBorder = this->heldNegative->getHasBorder();
+        auto [densestR, densestG, densestB] = this->heldNegative->getDensest();
+        auto [borderR, borderG, borderB] = this->heldNegative->getBorder();
+
+        bool isConverted = this->heldNegative->getIsConverted();
+
+        // Apply held settings
+        negative->setScanGamma(scanGamma);
+
+        negative->setHasScanArea(hasScanArea);
+        if (hasScanArea) {
+            negative->setScanArea(scanArea, this->heldNegative->getWorkingScale());
+        }
+
+        negative->setHasDensest(hasDensest);
+        if (hasDensest) {
+            negative->setDensest(densestR, densestG, densestB);
+        }
+        negative->setHasBorder(hasBorder);
+        if (hasBorder) {
+            negative->setBorder(borderR, borderG, borderB);
+        }
+
+        if (isConverted) negative->convert();
+    }
+}
+
+void Model::applyHoldPostConvert() {
+    this->applyHoldColor();
+    this->applyHoldIntensity();
+    this->applyHoldSharpening();
+}
+
+void Model::applyHoldColor() {
+    Negative* negative = this->getCurrentNegative();
+    if (negative && this->heldNegative) {
+
+        // Get held settings
+        bool autoWB = this->heldNegative->getAutoWB();
+        bool hasNeutral = this->heldNegative->getHasNeutral();
+        auto [neutralR, neutralG, neutralB] = this->heldNegative->getNeutral();
+
+        float rBalance = this->heldNegative->getRBalance();
+        float gBalance = this->heldNegative->getGBalance();
+        float bBalance = this->heldNegative->getBBalance();
+
+        float saturation = this->heldNegative->getSaturation();
+
+        // Apply held settings
+        negative->setAutoWB(autoWB);
+
+        negative->setHasNeutral(hasNeutral);
+        if (hasNeutral) {
+            negative->setNeutral(neutralR, neutralG, neutralB);
+        }
+
+        negative->setRBalance(rBalance);
+        negative->setGBalance(gBalance);
+        negative->setBBalance(bBalance);
+
+        negative->setSaturation(saturation);
+    }
+}
+
+void Model::applyHoldIntensity() {
+    Negative* negative = this->getCurrentNegative();
+    if (negative && this->heldNegative) {
+
+        // Get held settings
+        float density = this->heldNegative->getDensity();
+        float contrast = this->heldNegative->getContrast();
+        float whites = this->heldNegative->getWhites();
+        float highlights = this->heldNegative->getHighlights();
+        float shadows = this->heldNegative->getShadows();
+        float blacks = this->heldNegative->getBlacks();
+
+        // Get held settings
+        negative->setDensity(density);
+        negative->setContrast(contrast);
+        negative->setWhites(whites);
+        negative->setHighlights(highlights);
+        negative->setShadows(shadows);
+        negative->setBlacks(blacks);
+    }
+}
+
+void Model::applyHoldSharpening() {
+    Negative* negative = this->getCurrentNegative();
+    if (negative && this->heldNegative) {
+
+        // Get held settings
+        float sharpeningAmount = this->heldNegative->getSharpeningAmount();
+        float sharpeningDiameter = this->heldNegative->getSharpeningDiameter();
+
+        // Apply held settings
+        negative->setSharpeningAmount(sharpeningAmount);
+        negative->setSharpeningDiameter(sharpeningDiameter);
+    }
+}
 
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------

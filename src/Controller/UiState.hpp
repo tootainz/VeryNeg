@@ -6,6 +6,7 @@
 struct UiState {
 
     // Pre convert
+    bool heldConvert = false;
     bool hasBorder = false;
     bool hasDensest = false;
     bool hasScanArea = false;
@@ -35,9 +36,23 @@ struct UiState {
     bool selectingNeutral = false;
 
     // Post-convert
+    bool heldEdits = false;
     bool isDragging = false;
     bool autoWB = true;
     bool hasNeutral = false;
+    bool heldColor = false;
+    bool heldIntensity = false;
+    bool heldSharpening = false;
+
+    // Helper for held settings
+    bool somethingIsHolding() {
+        return
+            this->heldConvert   ||
+            this->heldEdits  ||
+            this->heldColor     ||
+            this->heldIntensity ||
+            this->heldSharpening;
+    }
 
     // Export
     std::string exportFileFormat = "tiff";

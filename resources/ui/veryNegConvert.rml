@@ -25,8 +25,8 @@
                     
                     <div class="settingHeader">
                         <h2>Pre-Convert</h2>
-                        <button id="reset">Reset</button>
-                        <input type="checkbox">Hold</input>
+                        <button id="resetConversion">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdConversion">Hold</input>
                     </div>
 
                     <div class="selectButtons">
@@ -63,8 +63,8 @@
 
                     <div class="settingHeader">
                         <h2>Post-Convert</h2>
-                        <button id="reset">Reset</button>
-                        <input type="checkbox">Hold</input>
+                        <button id="resetEdits">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdEdits">Hold</input>
                     </div>
 
                     <div class="selectButtons">
@@ -77,8 +77,8 @@
 
                     <div class="settingHeader">
                         <h2>Color</h2>
-                        <button id="reset">Reset</button>
-                        <input type="checkbox">Hold</input>
+                        <button id="resetColor">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdColor">Hold</input>
                     </div>
 
                     <input type="checkbox" id="autoWb">Auto white balance</input>
@@ -102,8 +102,8 @@
                     
                     <div class="settingHeader">
                         <h2>Intensity</h2>
-                        <button id="reset">Reset</button>
-                        <input type="checkbox">Hold</input>
+                        <button id="resetIntensity">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdIntensity">Hold</input>
                     </div>
 
                     <label for="density">Density</label>
@@ -127,8 +127,8 @@
 
                     <div class="settingHeader">
                         <h2>Sharpening</h2>
-                        <button id="reset">Reset</button>
-                        <input type="checkbox">Hold</input>
+                        <button id="resetSharpening">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdSharpening">Hold</input>
                     </div>
 
                     <div id="sharpeningContainer">

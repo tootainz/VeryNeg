@@ -67,6 +67,9 @@ private:
 
     // GUI EVENTS
 
+    // Apply held settings
+    void applyHeld();
+
     // NEGATIVE NAVIGATION
     void ButtonPressAddNegative();
     void ButtonPressRemoveNegative(int id);
@@ -75,24 +78,28 @@ private:
     void ButtonPressThumbnail(int id);
     
     // PRE-CONVERT
+    void CheckboxPressHoldConvert(bool checked);
     void OptionPressSetScanGamma(float value);
-    void ButtonPressBorder(bool checked);
+    void CheckboxPressBorder(bool checked);
     void ButtonPressSetBorder();
     void SetBorder(int x, int y);
-    void ButtonPressDensest(bool checked);
+    void CheckboxPressDensest(bool checked);
     void ButtonPressSetDensest();
     void SetDensest(int x, int y);
-    void ButtonPressScanArea(bool checked);
+    void CheckboxPressScanArea(bool checked);
     void ButtonPressSetScanArea();
     void ButtonPressSetScanAreaNumber();
     void ButtonPressConvert();
     void ButtonPressResetConversion();
 
     // POST-CONVERT
+    void CheckboxPressHoldEdits(bool checked);
     void ButtonPressResetEdits();
     void OptionPressSetPreset(std::string name);
 
     // Intensity
+    void CheckboxPressHoldIntensity(bool checked);
+    void ButtonPressResetIntensity();
     void SliderChangeSetDensity(float value);
     void SliderChangeSetContrast(float value);
     void SliderChangeSetWhites(float value);
@@ -100,9 +107,11 @@ private:
     void SliderChangeSetShadows(float value);
     void SliderChangeSetBlacks(float value);
 
-    // White balance
-    void ButtonPressAutoWhiteBalance(bool checked);
-    void ButtonPressNeutralSample(bool checked);
+    // Color
+    void CheckboxPressHoldColor(bool checked);
+    void ButtonPressResetColor();
+    void CheckboxPressAutoWhiteBalance(bool checked);
+    void CheckboxPressNeutralSample(bool checked);
     void ButtonPressSetNeutralSample();
     void SetNeutralSample(int x, int y);
     void SliderChangeSetRBalance(float value);
@@ -110,6 +119,8 @@ private:
     void SliderChangeSetBBalance(float value);
 
     // Sharpening
+    void CheckboxPressHoldSharpening(bool checked);
+    void ButtonPressResetSharpening();
     void SliderChangeSetSharpeningAmount(float value);
     void SliderChangeSetSharpeningDiameter(float value);
 
