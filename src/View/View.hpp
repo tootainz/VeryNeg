@@ -96,6 +96,7 @@ public:
     void setSelection(ImageArea area);
     void setPreviewTexture(std::unique_ptr<sf::Texture> texture);
     void setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture);
+    void setPopUp(std::string name, bool value);
 
     // GETTERS
     Rml::Context* getRmlContext();

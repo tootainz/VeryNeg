@@ -333,7 +333,7 @@ void Controller::ButtonPressThumbnail(int id) {
 // GUI EVENTS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
-void Controller::ButtonPressSetScanGamma(float value) {
+void Controller::OptionPressSetScanGamma(float value) {
     std::println("scan gamma set to {}", value);
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -586,7 +586,7 @@ void Controller::ButtonPressResetEdits() {
 
 }
 
-void Controller::ButtonPressSetPreset(std::string name) {
+void Controller::OptionPressSetPreset(std::string name) {
     Negative* negative = this->model.getCurrentNegative();
     std::filesystem::path path = std::format("./resources/presets/{}.json", name);
     if (negative) {
@@ -851,15 +851,45 @@ void Controller::SliderChangeSetSharpeningDiameter(float value) {
 
 void Controller::ButtonPressExport() {
     std::println("button pressed export");
+    this->view.setPopUp("exportSettings", true);
+}
+
+void Controller::ButtonPressExportCurrent() {
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
         std::println("save path is {}", path.string());
-        negative->exportPositive(path, false);
+        negative->exportPositive(path, this->uiState.exportFileFormat);
     }
 }
 
+void Controller::ButtonPressExportAll() {
+    std::vector<Negative>& negatives = this->model.getAllNegatives();
+    if (negatives.size() > 0) {
+        pfd::save_file fileSaver("Choose positive location", "/");
+        std::filesystem::path path = fileSaver.result();
+        std::println("save path is {}", path.string());
+        for (auto negative : negatives) {
+
+            std::filesystem::path currentPath = path;
+            std::string name = currentPath.filename();
+            std::string newName = std::format("{}_{}", name, negative.getId());
+            currentPath.replace_filename(newName);
+
+            negative.exportPositive(currentPath, this->uiState.exportFileFormat);
+        }
+    }
+}
+
+void Controller::ButtonPressExportCancel() {
+    this->view.setPopUp("exportSettings", false);
+}
+
+void Controller::OptionPressImageFormat(std::string format) {
+    std::println("Export image format is {}", format);
+    this->uiState.exportFileFormat = format;
+}
 
 // EVENT LISTENER
 // ----------------------------------------------------------------------------------------------------------------
@@ -890,6 +920,15 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
             else if (id == "export") {
                 this->ButtonPressExport();
+            }
+            else if (id == "exportCancel") {
+                this->ButtonPressExportCancel();
+            }
+            else if (id == "exportCurrent") {
+                this->ButtonPressExportCurrent();
+            }
+            else if (id == "exportAll") {
+                this->ButtonPressExportAll();
             }
             else if (id == "remove") {
                 Negative* negative = this->model.getCurrentNegative();
@@ -952,10 +991,13 @@ void Controller::ProcessEvent(Rml::Event& event) {
             if (element->GetTagName() == "select") {
 
                     if (id == "scanGamma") {
-                        this->ButtonPressSetScanGamma(value);
+                        this->OptionPressSetScanGamma(value);
                     }
                     else if (id == "preset") {
-                        this->ButtonPressSetPreset(stringValue);
+                        this->OptionPressSetPreset(stringValue);
+                    }
+                    else if (id == "imageFormat") {
+                        this->OptionPressImageFormat(stringValue);
                     }
             }
             // SLIDERS

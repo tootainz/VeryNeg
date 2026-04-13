@@ -4,19 +4,6 @@
 		<link type="text/rcss" href="./veryNegConvert_styles.rcss"/>
 	</head>
 	<body>
-        <div id="welcome">
-            <p>VeryNeg v0.4.0</p>
-            <p>by Joonatan Koponen</p>
-            <p>2026</p>
-
-            <p>Welcome!</p>
-
-            <p>This is VeryNeg, an application designed to automatically convert film negative scans to positives</p>
-            <p>Currently the application only supports 16bit tiff files created with a flatbed scanner</p>
-
-            <p>Press anywhere to close the welcome message</p>
-        </div>
-
         <div id="left">
             <div id="preview">
                 <div id="releaseVersion">
@@ -143,11 +130,24 @@
 
                 </div>
             </div>
-            <div id="exportSettings">
+            <div id="importExport">
                 <button id="import">Import</button>
                 <button id="export">Export</button>
                 <button id="remove">Remove</button>
             </div>
+        </div>
+        <div class="hidden" id="exportSettings">
+                <h2>Export Positive</h2>
+                <div class="selectButtons">
+                    <label for="imageFormat">Image format</label>
+                    <select name="imageFormat" id="imageFormat">
+                        <option value="tiff">tiff</option>
+                        <option value="jpeg">jpeg</option>
+                    </select>
+                </div>
+                <button id="exportCancel">Cancel</button>
+                <button id="exportCurrent">Export Current</button>
+                <button id="exportAll">Export All</button>
         </div>
 	</body>
 </rml>

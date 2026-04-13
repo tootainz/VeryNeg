@@ -128,7 +128,7 @@ public:
     std::filesystem::path getPath();
 
     // EXPORTING
-    bool exportPositive(std::filesystem::path imagePath, bool jpeg);
+    bool exportPositive(std::filesystem::path imagePath, std::string imageFormat);
 
     // SETTING EDIT SETTINGS
 

@@ -39,6 +39,9 @@ struct UiState {
     bool autoWB = true;
     bool hasNeutral = false;
 
+    // Export
+    std::string exportFileFormat = "tiff";
+
     // General
     bool disableCallbacks = false;
 

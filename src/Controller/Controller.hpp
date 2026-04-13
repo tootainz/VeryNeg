@@ -74,7 +74,7 @@ private:
     void ButtonPressThumbnail(int id);
     
     // PRE-CONVERT
-    void ButtonPressSetScanGamma(float value);
+    void OptionPressSetScanGamma(float value);
     void ButtonPressBorder(bool checked);
     void ButtonPressSetBorder();
     void SetBorder(int x, int y);
@@ -89,7 +89,7 @@ private:
 
     // POST-CONVERT
     void ButtonPressResetEdits();
-    void ButtonPressSetPreset(std::string name);
+    void OptionPressSetPreset(std::string name);
 
     // Intensity
     void SliderChangeSetDensity(float value);
@@ -114,6 +114,10 @@ private:
 
     // EXPORTING
     void ButtonPressExport();
+    void ButtonPressExportCurrent();
+    void ButtonPressExportAll();
+    void ButtonPressExportCancel();
+    void OptionPressImageFormat(std::string name);
 
     // EVENT LISTENER
     void ProcessEvent(Rml::Event& event) override;

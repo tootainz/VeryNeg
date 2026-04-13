@@ -283,6 +283,20 @@ void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->sharpeningPreviewSprite = sf::Sprite(*this->sharpeningPreviewTexture);
 }
 
+void View::setPopUp(std::string name, bool value) {
+    Rml::Element* popUpElement = this->rmlDocument->GetElementById(name);
+    if (popUpElement) {
+        if (value) {
+            std::println("popup shown");
+            popUpElement->SetClass("hidden", false);
+        }
+        else {
+            std::println("popup hidden");
+            popUpElement->SetClass("hidden", true);
+        }
+    }
+}
+
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------
 

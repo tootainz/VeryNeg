@@ -58,4 +58,5 @@ public:
     // GETTERS
     Negative* getCurrentNegative();
     Negative* getNegativeById(int id);
+    std::vector<Negative>& getAllNegatives();
 };

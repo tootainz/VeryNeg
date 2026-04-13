@@ -642,13 +642,13 @@ std::filesystem::path Negative::getPath() {
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::exportPositive(std::filesystem::path imagePath, bool jpeg) {
+bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat) {
 
     std::println("Saving positive");
 
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
 
-    if (jpeg) {
+    if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
 
         // Use OIIO::ImageBuf for ease of transforming the pixel data type
@@ -663,10 +663,10 @@ bool Negative::exportPositive(std::filesystem::path imagePath, bool jpeg) {
         std::println("Saved positive successfully");
         return true;
     }
-    else {
-        std::string filePath = std::format("{}.tif", imagePath.string());
+    else if (imageFormat == "tiff") {
+        std::string filePath = std::format("{}.tiff", imagePath.string());
 
-        // Use OIIO::ImageBuf for ease of transformign the pixel data type
+        // Use OIIO::ImageBuf for ease of transforming the pixel data type
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
         OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
 

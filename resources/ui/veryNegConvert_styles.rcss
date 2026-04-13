@@ -47,12 +47,12 @@ input.range slidertrack {
 
 input.range sliderbar {
     background-color: #b3ada9;
-    height: 20px;
-    width: 20px;
+    height: 12px;
+    width: 12px;
     border-color: #00000000;
     border-width: 1px;
-    border-radius: 10px;
-    margin-top: 5px;
+    border-radius: 6px;
+    margin-top: 8px;
 }
 
 input.range sliderbar:active {
@@ -243,7 +243,7 @@ EXPORT-IMPORT-DELETE
 ------------------------------------------------------
 */
 
-#exportSettings {
+#importExport {
     margin-top: 5px;
     box-sizing: border-box;
     height: 80px;
@@ -252,7 +252,7 @@ EXPORT-IMPORT-DELETE
     flex-shrink: 0;
 }
 
-#exportSettings button {
+#importExport button {
     background-color: #b3ada9;
     color: #000000;
     width: 100%;
@@ -262,7 +262,7 @@ EXPORT-IMPORT-DELETE
     margin: 5px;
 }
 
-#exportSettings button:hover {
+#importExport button:hover {
     background-color: #a09a96;
     color: #000000;
 }
@@ -416,4 +416,41 @@ SHARPEN
     background-color: #0e0e0e;
     width: 200px;
     height: 200px;
+}
+
+/*
+EXPORT SETTINGS
+------------------------------------------------------
+*/
+
+#exportSettings {
+    flex-direction: column;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    padding: 5px;
+    color: #000000;
+    background-color: #777370;
+    width: 300px;
+    height: auto;
+    z-index: 2;
+    box-sizing: border-box;
+}
+
+#exportSettings.hidden {
+    display: none;
+}
+
+
+#exportSettings button {
+    background-color: #b3ada9;
+    color: #000000;
+    box-sizing: border-box;
+    padding-top: 28px;
+    text-align: center;
+}
+
+#exportSettings button:hover {
+    background-color: #a09a96;
+    color: #000000;
 }

@@ -128,3 +128,7 @@ Negative* Model::getNegativeById(int id) {
         return nullptr;
     }
 }
+
+std::vector<Negative>& Model::getAllNegatives() {
+    return this->negatives;
+}
