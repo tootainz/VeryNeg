@@ -57,6 +57,9 @@ void Controller::mainLoop() {
 	};
 }
 
+void Controller::cleanup() {
+    this->model.cleanCache();
+}
 
 // UPDATE GUI
 // ----------------------------------------------------------------------------------------------------------------

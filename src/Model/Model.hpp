@@ -49,7 +49,6 @@ public:
     void previousNegative();
     void nextNegative();
     
-
     // NEGATIVE IO
     Negative* addNegative(std::filesystem::path imagePath);
     Negative* addNegative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
@@ -59,4 +58,7 @@ public:
     Negative* getCurrentNegative();
     Negative* getNegativeById(int id);
     std::vector<Negative>& getAllNegatives();
+
+    // CLEANUP
+    void cleanCache();
 };

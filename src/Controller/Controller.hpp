@@ -49,6 +49,7 @@ public:
 
     // MAIN LOOP
     void mainLoop();
+    void cleanup();
 
 
 private:

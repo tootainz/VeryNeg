@@ -75,7 +75,11 @@
                         </select>
                     </div>
 
-                    <h2 class="settingDivider">Color</h2>
+                    <div class="settingHeader">
+                        <h2>Color</h2>
+                        <button id="reset">Reset</button>
+                        <input type="checkbox">Hold</input>
+                    </div>
 
                     <input type="checkbox" id="autoWb">Auto white balance</input>
                     <div class="selectButtons">
@@ -96,7 +100,11 @@
                     <input type="range" id="saturation" name="saturation" min="-5" max="5" value="0" step="0.02"/>
 
                     
-                    <h2 class="settingDivider">Intensity</h2>
+                    <div class="settingHeader">
+                        <h2>Intensity</h2>
+                        <button id="reset">Reset</button>
+                        <input type="checkbox">Hold</input>
+                    </div>
 
                     <label for="density">Density</label>
                     <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.05"/>
@@ -117,7 +125,11 @@
                     <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.02"/>
 
 
-                    <h2 class="settingDivider">Sharpness</h2>
+                    <div class="settingHeader">
+                        <h2>Sharpening</h2>
+                        <button id="reset">Reset</button>
+                        <input type="checkbox">Hold</input>
+                    </div>
 
                     <div id="sharpeningContainer">
                         <div id="sharpeningPreview"></div>

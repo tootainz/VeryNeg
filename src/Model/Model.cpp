@@ -1,12 +1,15 @@
 #include "Model.hpp"
 
 #include <algorithm>
+#include <filesystem>
 
 
 // CONSTRUCTOR
 // ----------------------------------------------------------------------------------------------------------------
 
-Model::Model() {}
+Model::Model() {
+    std::filesystem::create_directories("./cache");
+}
 
 
 // NEGATIVE NAVIGATION
@@ -131,4 +134,12 @@ Negative* Model::getNegativeById(int id) {
 
 std::vector<Negative>& Model::getAllNegatives() {
     return this->negatives;
+}
+
+
+// CLEANUP
+// ----------------------------------------------------------------------------------------------------------------
+
+void Model::cleanCache(){
+    std::filesystem::remove_all("./cache");
 }

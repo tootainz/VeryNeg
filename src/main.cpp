@@ -65,6 +65,7 @@ int main() {
     // CLEANUP
     // ------------------------------------------------------------------------------------------------------
 
+    controller.cleanup();
     Rml::Shutdown();
     RmlBackend::Shutdown();
 

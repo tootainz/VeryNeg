@@ -46,8 +46,8 @@ const float Negative::DRAGGING_SCALE = 0.4f;
 // ----------------------------------------------------------------------------------------------------------------
 
 bool Negative::writeConversionCache() {
-    std::println("Saving cahched conversion");
-    std::string fileName = std::format("{}_chache.tif", this->name);
+    std::println("Saving cached conversion");
+    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -66,7 +66,7 @@ bool Negative::writeConversionCache() {
 bool Negative::readConversionCache() {
 
     std::println("trying to open cache");
-    std::string fileName = std::format("{}_chache.tif", this->name);
+    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
     auto input = OIIO::ImageInput::open(fileName);
 
     if (!input) {
@@ -677,6 +677,9 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         }
         std::println("Saved positive successfully");
         return true;
+    }
+    else {
+        return false;
     }
 }
 
