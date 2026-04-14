@@ -685,7 +685,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
         // Embed ICC profile
         std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc::UINT8, OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, srgbProfileBlob.size()), OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
 
         // Prints handy knowledge about the image
         std::println("This image has the following data");
@@ -709,7 +709,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
         // Embed ICC profile
         std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc::UINT8, OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, srgbProfileBlob.size()), OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
 
         // Prints handy knowledge about the image
         std::println("This image has the following data");
