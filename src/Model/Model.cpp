@@ -10,6 +10,12 @@
 
 Model::Model() {
     std::filesystem::create_directories("./cache");
+    if (!this->profiler.getWasConstructed()) {
+        this->wasConstructed = false;
+    }
+    else {
+        this->wasConstructed = true;
+    }
 }
 
 
@@ -50,7 +56,7 @@ void Model::nextNegative() {
 // NEVER call delete on these pointers, they do not own the negative
 Negative* Model::addNegative(std::filesystem::path imagePath) {
     
-    this->negatives.push_back(Negative(imagePath));
+    this->negatives.push_back(Negative(imagePath, &this->profiler));
 
     if (negatives.size() == 1) currentNegativeIndex = 0;
     else currentNegativeIndex += 1;
@@ -70,7 +76,7 @@ Negative* Model::addNegative(std::filesystem::path imagePath) {
 // NEVER call delete on these pointers, they do not own the negative
 Negative* Model::addNegative(std::filesystem::path imagePath, int id) {
 
-    this->negatives.push_back(Negative(imagePath, id));
+    this->negatives.push_back(Negative(imagePath, &this->profiler, id));
 
     if (negatives.size() == 1) currentNegativeIndex = 0;
     else currentNegativeIndex += 1;
@@ -261,6 +267,9 @@ std::vector<Negative>& Model::getAllNegatives() {
     return this->negatives;
 }
 
+bool Model::getWasConstructed() {
+    return this->wasConstructed;
+}
 
 // CLEANUP
 // ----------------------------------------------------------------------------------------------------------------

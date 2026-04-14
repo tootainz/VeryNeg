@@ -433,6 +433,22 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
 
+    // Get the ICC profile if it exists
+    // Stores a pointer to the attribute if it exists
+    const OIIO::ParamValue* attribute = spec.find_attribute("ICCProfile", OIIO::TypeDesc::UNKNOWN);
+    if (attribute) {
+        // Get the icc profile uint8_t data array from the attribute
+        std::span iccData = attribute->as_cspan<uint8_t>();
+        if (!iccData.empty()) {
+            // Store the profile if it exists
+            this->iccProfile = std::vector<uint8_t>(iccData.begin(), iccData.end());
+        }
+        else {
+            // The attribute does not have a profile
+            this->iccProfile = std::nullopt;
+        }
+    }
+
     // not RGB or Grayscale
     if (this->numberOfChannels != 3 && this->numberOfChannels != 1) {
         std::println("The image contains wrong amount of channels");
@@ -450,6 +466,13 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     std::println("{}", metadata);
     
     input->close();
+
+    // 1.5. Convert to adobe rgb if not already
+    bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->numberOfChannels, this->iccProfile);
+    if (!iccConverted) {
+        // The profile conversion failed
+        return false;
+    }
 
     // 2. Generate the working image
 
@@ -521,14 +544,18 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 // CONSTRUCTORS
 // ----------------------------------------------------------------------------------------------------------------
 
-Negative::Negative(std::filesystem::path imagePath) {
+Negative::Negative(std::filesystem::path imagePath, ColorProfiler* profiler) :
+    profiler(profiler)
+{
     this->id = this->nextId;
     this->nextId++;
     this->successfullyCreated = this->initializeNegative(imagePath);
     return;
 }
 
-Negative::Negative(std::filesystem::path imagePath, int id) {
+Negative::Negative(std::filesystem::path imagePath, ColorProfiler* profiler, int id) :
+    profiler(profiler)
+{
     this->id = id;
     this->successfullyCreated = this->initializeNegative(imagePath);
     return;
@@ -550,8 +577,7 @@ ImageData Negative::getPreview(bool dragging) {
     int previewWidth = dragging ? this->workingWidth*this->DRAGGING_SCALE : this->workingWidth;
     int previewHeight = dragging ? this->workingHeight*this->DRAGGING_SCALE : this->workingHeight;
 
-    const std::vector<float>& previewPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
-
+    std::vector<float>& previewPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
     std::vector<uint8_t> previewData(previewWidth * previewHeight * 4); // always RGBA
 
     for (int i = 0; i < previewWidth * previewHeight; ++i) {
@@ -568,6 +594,9 @@ ImageData Negative::getPreview(bool dragging) {
     }
 
     std::println("generated preview data");
+
+    // Transform from working space to display space
+    this->profiler->adobeToDisplay(previewData, 4);
 
     return {
         previewData,
@@ -647,12 +676,22 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     std::println("Saving positive");
 
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
+    this->profiler->adobeToSRGB(*finalPixels, this->numberOfChannels);
 
     if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
 
         // Use OIIO::ImageBuf for ease of transforming the pixel data type
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+        // Embed ICC profile
+        std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc::UINT8, OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+
+        // Prints handy knowledge about the image
+        std::println("This image has the following data");
+        std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
+        std::println("{}", metadata);
+
         OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
 
         // Save 8bit for jpeg
@@ -668,6 +707,15 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 
         // Use OIIO::ImageBuf for ease of transforming the pixel data type
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+        // Embed ICC profile
+        std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc::UINT8, OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+
+        // Prints handy knowledge about the image
+        std::println("This image has the following data");
+        std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
+        std::println("{}", metadata);
+
         OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
 
         // For now we want to save images as 16bit

@@ -3,11 +3,14 @@
 #include <vector>
 #include <fstream>
 #include <tuple>
+#include <optional>
 
 #include <nlohmann/json.hpp>
+#include <lcms2.h>
 
 #include "ImageData.hpp"
 #include "ImageArea.hpp"
+#include "../ColorProfiler/ColorProfiler.hpp"
 
 
 /**
@@ -55,6 +58,7 @@ private:
     int numberOfChannels;
     int width;
     int height;
+    std::optional<std::vector<uint8_t>> iccProfile = std::nullopt;
     
     // Working image is a smaller version of the original in order to speed up the live editing process
     std::vector<float> workingPixels;
@@ -77,6 +81,8 @@ private:
     // Edit settings that are saved for future sessions
     nlohmann::json negativeData;
 
+    // Reference to the color profiler for transforms
+    ColorProfiler* profiler;
 
 private:
     // PRIVATE METHODS
@@ -113,8 +119,8 @@ public:
     // ------------------------------------------------------------------------------------------------------------------------------------
 
     // CONSTRUCTORS
-    Negative(std::filesystem::path imagePath);
-    Negative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
+    Negative(std::filesystem::path imagePath, ColorProfiler* profiler);
+    Negative(std::filesystem::path imagePath, ColorProfiler* profiler, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
     bool wasCreated(); // Tells whether intialization was succesful
 
     // GETTERS FOR THE UI

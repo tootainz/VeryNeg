@@ -13,6 +13,7 @@ add_executable(VeryNeg
     src/Model/Model.cpp
     src/View/View.cpp
     src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
+    src/ColorProfiler/ColorProfiler.cpp
 )
 
 # # add executable with MacOs .app bundle
@@ -64,6 +65,13 @@ find_package(OpenGL REQUIRED)
 # OIIO
 find_package(OpenImageIO REQUIRED)
 
+# LCMS
+find_library(LCMS2_LIB
+    NAMES lcms2
+    PATHS /opt/homebrew/lib /usr/local/lib
+    REQUIRED
+)
+
 # RmlUi
 
 # Set properties that will be used while building RMLUI
@@ -103,6 +111,10 @@ target_link_libraries(rmlui_sfml PRIVATE RmlUi::RmlUi SFML::Graphics)
 
 # ------------------------------------------------
 
+target_include_directories(VeryNeg PRIVATE
+    /opt/homebrew/include
+)
+
 # link dependencies
 target_link_libraries(VeryNeg PRIVATE
     OpenImageIO::OpenImageIO
@@ -111,4 +123,13 @@ target_link_libraries(VeryNeg PRIVATE
     RmlUi::RmlUi
     rmlui_sfml
     ${OPENGL_LIBRARIES}
+    ${LCMS2_LIB}
 )
+
+if(APPLE)
+    target_link_libraries(VeryNeg PRIVATE
+        "-framework CoreGraphics"
+        "-framework ApplicationServices"
+        "-framework CoreFoundation"
+    )
+endif()

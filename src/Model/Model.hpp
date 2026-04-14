@@ -7,6 +7,7 @@
 
 #include "../Negative/Negative.hpp"
 #include "../Negative/ImageArea.hpp"
+#include "../ColorProfiler/ColorProfiler.hpp"
 
 
 /**
@@ -35,6 +36,11 @@ private:
 
     // Pointer to the negative that the held settigns are taken from. If there are no negatives, returns nullptr
     Negative* heldNegative = nullptr;
+
+    // Color profiler for color management
+    ColorProfiler profiler;
+
+    bool wasConstructed;
 
 public:
     // PUBLIC METHODS
@@ -65,6 +71,7 @@ public:
     Negative* getCurrentNegative();
     Negative* getNegativeById(int id);
     std::vector<Negative>& getAllNegatives();
+    bool getWasConstructed();
 
     // CLEANUP
     void cleanCache();

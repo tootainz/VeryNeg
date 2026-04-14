@@ -52,6 +52,9 @@ int main() {
 
     // Application logic following MVC pattern
     Model model;
+    if (!model.getWasConstructed()) {
+        return -1;
+    }
     View view(window);
     Controller controller(window, view, model);
 

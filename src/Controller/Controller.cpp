@@ -1096,7 +1096,7 @@ void Controller::ButtonPressExportAll() {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
         std::println("save path is {}", path.string());
-        for (auto negative : negatives) {
+        for (auto& negative : negatives) {
 
             std::filesystem::path currentPath = path;
             std::string name = currentPath.filename();
