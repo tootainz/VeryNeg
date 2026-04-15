@@ -88,16 +88,16 @@
                     </div>
 
                     <label class="cyan" for="c-r">Cyan-Red</label>
-                    <input type="range" id="c-r" name="c-r" min="-3.0" max="3.0" value="0" step="0.02"/>
+                    <input type="range" id="c-r" name="c-r" min="-4.0" max="4.0" value="0" step="0.1"/>
 
                     <label class="magenta" for="m-g">Magenta-Green</label>
-                    <input type="range" id="m-g" name="m-g" min="-3.0" max="3.0" value="0" step="0.02"/>
+                    <input type="range" id="m-g" name="m-g" min="-4.0" max="4.0" value="0" step="0.1"/>
 
                     <label class="yellow" for="y-b">Yellow-Blue</label>
-                    <input type="range" id="y-b" name="y-b" min="-3.0" max="3.0" value="0" step="0.02"/>
+                    <input type="range" id="y-b" name="y-b" min="-4.0" max="4.0" value="0" step="0.1"/>
 
                     <label for="saturation">Saturation</label>
-                    <input type="range" id="saturation" name="saturation" min="-5" max="5" value="0" step="0.02"/>
+                    <input type="range" id="saturation" name="saturation" min="-5" max="5" value="0" step="0.1"/>
 
                     
                     <div class="settingHeader">
@@ -107,22 +107,22 @@
                     </div>
 
                     <label for="density">Density</label>
-                    <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.05"/>
+                    <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.01"/>
 
                     <label for="contrast">Contrast</label>
-                    <input type="range" id="contrast" name="contrast" min="-3.0" max="3.0" value="0" step="0.02"/>
+                    <input type="range" id="contrast" name="contrast" min="-5.0" max="5.0" value="0" step="0.1"/>
 
                     <label for="whites">Whites</label>
-                    <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.02"/>
+                    <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.1"/>
 
                     <label for="highlights">Highlights</label>
-                    <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.02"/>
+                    <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.1"/>
 
                     <label for="shadows">Shadows</label>
-                    <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.02"/>
+                    <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.1"/>
 
                     <label for="blacks">Blacks</label>
-                    <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.02"/>
+                    <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.1"/>
 
 
                     <div class="settingHeader">

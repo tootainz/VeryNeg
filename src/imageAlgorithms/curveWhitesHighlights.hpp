@@ -7,54 +7,38 @@
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
 
+// Whites
+const float WHITES_DECREASE_DAMPENING = 0.1f;
+const int WHITES_INCREASE_SHARPNESS = 40.0f;
+const int WHITES_DECREASE_SHARPNESS = 5.0f;
 
-int const WHITES_SHARPNESS = 5;
-int const HIGHLIGHTS_SHARPNESS = 1;
-float const W_INCREASE_DAMPENING = 0.3f;
-float const W_SHARPNESS_MULTIPLIER = 11.0f;
-float const W_DECREASE_SLOPE_DAMPENING = 0.1f;
+inline float whitesFunction(float input, float value) {
 
-inline float lightsFunction(float input, float value, int sharpness) {
+    if (value >= 0.0f) {
+        float amount = value;
+        float absoluteInput = std::abs(input-1.0f);
 
-    // Make sure sharpness is odd
-    int correctedSharpness = sharpness;
-    if (sharpness % 2 == 0) {
-        correctedSharpness += 1;
-    }
-
-    if (value < 0.0f) {
-        // (1-d)x + dx^sharpness
-        // sharpness needs multiplying as well
-        // d = adjustment amount * dampening
-
-        float amount = -value*W_INCREASE_DAMPENING;
-        float multipliedSharpness = correctedSharpness * W_SHARPNESS_MULTIPLIER;
-
-        float result = (1.0f-amount)*input + amount*std::pow(input, multipliedSharpness);
+        float result = 1.0f + (WHITES_INCREASE_SHARPNESS*(input-1.0f)) / ((WHITES_INCREASE_SHARPNESS-1.0f) + std::pow(absoluteInput, -amount));
         return std::clamp(result, 0.0f, 1.0f);
     }
     else {
-        // 1 + c(x-1) + (1-c)(b(x-1))/((b-1)+|(x-1)|^d)
-        // c = linear section slope * dampening
-        // b = sharpness * multiplier
-        // d = adjustment amount
+        float amount = value*WHITES_DECREASE_DAMPENING;
 
-        float amount = value;
-        float multipliedSharpness = correctedSharpness * W_SHARPNESS_MULTIPLIER; 
-        float slope = 1.0f/sharpness*W_DECREASE_SLOPE_DAMPENING;
-        float absoluteInput = std::abs(input-1);
+        float base = input - 1.0f;
+        // This signedpow stuff is really weird and i dont know why i have to do it.
+        // Below is my original function commented out. For some reason a calculator understands it but c++ doesnt
+        // So i need to do some randoms tuff that only ChatGPT could tell me
+        // Anyways the weird signedpow function works
 
-        float result = 1.0f + slope*(input-1.0f) + (1.0f-slope)*(multipliedSharpness*(input-1.0f)) / ((multipliedSharpness-1.0f) + std::pow(absoluteInput, -amount));
+        // float result = 1.0f + (1.0f+amount)*(input - 1.0f) - amount*std::pow(input-1.0f, 1.0f/WHITES_DECREASE_SHARPNESS);
+        // return std::clamp(result, 0.0f, 1.0f);
+
+        float signedPow = std::copysign(std::pow(std::abs(base), 1.0f / WHITES_DECREASE_SHARPNESS), base);
+
+        float result = 1.0f + (1.0f + amount) * base - amount * signedPow;
+
         return std::clamp(result, 0.0f, 1.0f);
     }
-}
-
-inline float whitesFunction(float input, float value) {
-    return lightsFunction(input, value, WHITES_SHARPNESS);
-}
-
-inline float highlightsFunction(float input, float value) {
-    return lightsFunction(input, value, HIGHLIGHTS_SHARPNESS);
 }
 
 inline void whites(std::vector<float>& image, float value) {
@@ -69,6 +53,29 @@ inline void whites(std::vector<float>& image, float value) {
     iterateImageMutableMultiThread(image, applyWhites);
     return;
 };
+
+// Highlights
+const float HIGHLIGHTS_INCREASE_DAMPENING = 0.1f;
+const int HIGHLIGHTS_INCREASE_SHARPNESS = 9.0f;
+const int HIGHLIGHTS_DECREASE_SHARPNESS = 15.0f;
+const int HIGHLIGHTS_INCREASE_SLOPE = 0.08f;
+
+inline float highlightsFunction(float input, float value) {
+
+    if (value >= 0.0f) {
+        float amount = value;
+        float absoluteInput = std::abs(input-1.0f);
+
+        float result = 1.0f + HIGHLIGHTS_INCREASE_SLOPE*(input-1.0f) + (1.0f-HIGHLIGHTS_INCREASE_SLOPE)*(HIGHLIGHTS_INCREASE_SHARPNESS*(input-1.0f)) / ((HIGHLIGHTS_INCREASE_SHARPNESS-1.0f) + std::pow(absoluteInput, -amount));
+        return std::clamp(result, 0.0f, 1.0f);
+    }
+    else {
+        float amount = value*HIGHLIGHTS_INCREASE_DAMPENING;
+
+        float result = (1.0f+amount)*input - amount*std::pow(input, HIGHLIGHTS_DECREASE_SHARPNESS);
+        return std::clamp(result, 0.0f, 1.0f);
+    }
+}
 
 inline void highlights(std::vector<float>& image, float value) {
     std::println("exposure value is: {}", value);

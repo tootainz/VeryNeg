@@ -211,29 +211,31 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
     float whites = this->negativeData["edits"]["whites"];
 
     auto applyEdits = [&](float& r, float& g, float& b) {
+        // Note the order is important here if we want to allow blacks and whites to be able to recover detail after density
+
         // Color balance
         r = rationalCurveFunction(r, rBalance);
         g = rationalCurveFunction(g, gBalance);
         b = rationalCurveFunction(b, bBalance);
-
-        // Exposure
-        r = curveExposureFunction(r, density);
-        g = curveExposureFunction(g, density);
-        b = curveExposureFunction(b, density);
-
-        // Contrast
-        r = contrastFunction(r, contrast);
-        g = contrastFunction(g, contrast);
-        b = contrastFunction(b, contrast);
-
+        
         // blacks and whites
         r = blacksFunction(r, blacks);
         g = blacksFunction(g, blacks);
         b = blacksFunction(b, blacks);
-
+        
         r = whitesFunction(r, whites);
         g = whitesFunction(g, whites);
         b = whitesFunction(b, whites);
+        
+        // Exposure
+        r = curveExposureFunction(r, density);
+        g = curveExposureFunction(g, density);
+        b = curveExposureFunction(b, density);
+        
+        // Contrast
+        r = contrastFunction(r, contrast);
+        g = contrastFunction(g, contrast);
+        b = contrastFunction(b, contrast);
 
         // Shadows and highlights
         r = shadowsFunction(r, shadows);
