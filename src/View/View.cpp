@@ -15,15 +15,18 @@ View::View(sf::RenderWindow& window) :
     previewSprite(*this->previewTexture),
     sharpeningPreviewTexture(std::make_unique<sf::Texture>()),
     sharpeningPreviewSprite(*this->sharpeningPreviewTexture),
-    rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
+    rmlContextUi(Rml::CreateContext("ui", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
+    rmlContextPopups(Rml::CreateContext("popups", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
     selection({0.0f, 0.0f}),
     thumbnails()
 {
     Rml::LoadFontFace("./resources/fonts/oceert_smooth.otf");
-    Rml::ElementDocument* document = this->rmlContext->LoadDocument("./resources/ui/veryNegConvert.rml");
-    this->rmlDocument = document;
-    if (document) {
-        document->Show();
+    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegUi.rml");
+    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegPopups.rml");
+    this->rmlDocumentUi = uiDocument;
+    this->rmlDocumentPopups = popupsDocument;
+    if (this->rmlDocumentUi) {
+        this->rmlDocumentUi->Show();
     }
     this->updatePreviewSize();
     this->updatePreviewScale();
@@ -42,17 +45,17 @@ View::View(sf::RenderWindow& window) :
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
-    Rml::Element* filmRoll = this->rmlDocument->GetElementById("filmRoll");
-    Rml::ElementPtr thumbnailElement = this->rmlDocument->CreateElement("div");
+    Rml::Element* filmRoll = this->rmlDocumentUi->GetElementById("filmRoll");
+    Rml::ElementPtr thumbnailElement = this->rmlDocumentUi->CreateElement("div");
     std::string name = std::format("thumbnail_{}", id);
     thumbnailElement->SetId(name);
     thumbnailElement->SetClass("thumbnail", true);
     filmRoll->AppendChild(std::move(thumbnailElement));
     std::println("added thumbnailElement");
 
-    this->rmlContext->Update();
+    this->rmlContextUi->Update();
 
-    Rml::Element* thumbnailElementPointer = this->rmlDocument->GetElementById(name);
+    Rml::Element* thumbnailElementPointer = this->rmlDocumentUi->GetElementById(name);
 
     auto thumbnail = std::make_unique<Thumbnail>(id, std::move(thumbnailTexture));
     std::println("created thumbnail struct");
@@ -90,7 +93,7 @@ void View::removeThumbnail(int id) {
 
     // Also remove from the RML document
     std::string name = std::format("thumbnail_{}", id);
-    Rml::Element* element = this->rmlDocument->GetElementById(name);
+    Rml::Element* element = this->rmlDocumentUi->GetElementById(name);
 
     if (element && element->GetParentNode()) {
         element->GetParentNode()->RemoveChild(element);
@@ -106,7 +109,7 @@ void View::LoadThumbnails() {
 void View::updateThumbnailsPos() {
     for (const auto& thumbnail : this->thumbnails) {
         std::string thumbnailName = std::format("thumbnail_{}", thumbnail->id);
-        Rml::Element* thumbnailElement = this->rmlDocument->GetElementById(thumbnailName);
+        Rml::Element* thumbnailElement = this->rmlDocumentUi->GetElementById(thumbnailName);
 
         const Rml::Box& box = thumbnailElement->GetBox();
         Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Border);
@@ -137,7 +140,7 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::updatePreviewSize() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
+    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("preview");
     this->previewWidth = previewElement->GetOffsetWidth();
     this->previewHeight = previewElement->GetOffsetHeight();
     std::println("preveiw size is {} * {}", this->previewWidth, this->previewHeight);
@@ -158,7 +161,7 @@ void View::updatePreviewScale() {
 }
 
 void View::updatePreviewPos() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
+    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("preview");
 
     float spriteWidth = this->previewSprite.getGlobalBounds().size.x;
     float spriteHeight = this->previewSprite.getGlobalBounds().size.y;
@@ -202,7 +205,7 @@ std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
 }
 
 void View::updateFilmRollRenderArea() {
-    Rml::Element* filmRollElement = this->rmlDocument->GetElementById("filmRoll");
+    Rml::Element* filmRollElement = this->rmlDocumentUi->GetElementById("filmRoll");
 
     int width = filmRollElement->GetOffsetWidth();
     int height = filmRollElement->GetOffsetHeight();
@@ -217,14 +220,14 @@ void View::updateFilmRollRenderArea() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::updateSharpeningPreviewPos() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("sharpeningPreview");
+    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("sharpeningPreview");
     float x = previewElement->GetAbsoluteLeft();
     float y = previewElement->GetAbsoluteTop();
     this->sharpeningPreviewSprite.setPosition({x, y});
 }
 
 void View::updateSettingsRenderArea() {
-    Rml::Element* settingsRenderArea = this->rmlDocument->GetElementById("settings");
+    Rml::Element* settingsRenderArea = this->rmlDocumentUi->GetElementById("settings");
 
     int width = settingsRenderArea->GetOffsetWidth();
     int height = settingsRenderArea->GetOffsetHeight();
@@ -239,7 +242,7 @@ void View::updateSettingsRenderArea() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::setSliderValue(std::string name, float value) {
-    Rml::Element* slider = this->rmlDocument->GetElementById(name);
+    Rml::Element* slider = this->rmlDocumentUi->GetElementById(name);
     if (slider) {
         slider->SetAttribute("value", value);
     }
@@ -247,7 +250,7 @@ void View::setSliderValue(std::string name, float value) {
 
 void View::setCheckboxValue(std::string name, bool value) {
     std::println("settign checkbox value with name {} to value {}", name, value);
-    Rml::Element* checkbox = this->rmlDocument->GetElementById(name);
+    Rml::Element* checkbox = this->rmlDocumentUi->GetElementById(name);
     if (checkbox) {
         if (!value) {
             checkbox->RemoveAttribute("checked");
@@ -284,15 +287,19 @@ void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
 }
 
 void View::setPopUp(std::string name, bool value) {
-    Rml::Element* popUpElement = this->rmlDocument->GetElementById(name);
-    if (popUpElement) {
-        if (value) {
-            std::println("popup shown");
-            popUpElement->SetClass("hidden", false);
-        }
-        else {
-            std::println("popup hidden");
-            popUpElement->SetClass("hidden", true);
+    if (this->rmlDocumentPopups) {
+        Rml::Element* popUpElement = this->rmlDocumentPopups->GetElementById(name);
+        if (popUpElement) {
+            if (value) {
+                this->rmlDocumentPopups->Show();
+                std::println("popup shown");
+                popUpElement->SetClass("hidden", false);
+            }
+            else {
+                this->rmlDocumentPopups->Hide();
+                std::println("popup hidden");
+                popUpElement->SetClass("hidden", true);
+            }
         }
     }
 }
@@ -300,12 +307,16 @@ void View::setPopUp(std::string name, bool value) {
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
-Rml::Context* View::getRmlContext() {
-    return this->rmlContext;
+Rml::Context* View::getRmlContextUi() {
+    return this->rmlContextUi;
+}
+
+Rml::Context* View::getRmlContextPopups() {
+    return this->rmlContextPopups;
 }
 
 ImageArea View::getPreviewArea() {
-    Rml::Element* preview = this->rmlDocument->GetElementById("preview");
+    Rml::Element* preview = this->rmlDocumentUi->GetElementById("preview");
     if (preview) {
         int left = preview->GetAbsoluteLeft();
         int top = preview->GetAbsoluteTop();
@@ -326,16 +337,19 @@ void View::render() {
 
     this->updateThumbnailsPos();
     this->updateSharpeningPreviewPos();
+    this->rmlContextUi->Update();
+    this->rmlContextPopups->Update();
 
     // -------------------------------------------------------
-    this->window.clear();
     // RENDERING
+    this->window.clear();
+    
+    // Clears all OpenGlstates as well
+	window.resetGLStates();
 
-    // Update and render the RmlUi
+    // Render the RmlUi main ui
     RmlBackend::BeginFrame();
-    this->rmlContext->Update();
-    this->rmlContext->Render();
-    RmlBackend::PresentFrame();
+    this->rmlContextUi->Render();
 
     // Draw the non RmlUi stuff
 
@@ -380,7 +394,11 @@ void View::render() {
 
     // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
     window.popGLStates();
-    
+
+    // Render the RmlUi popups ui
+    this->rmlContextPopups->Render();
+    RmlBackend::PresentFrame();
+
     this->window.display();
     // -------------------------------------------------------
 }

@@ -51,8 +51,10 @@ private:
     sf::RenderWindow& window;
     
     // RmlUI stuff
-    Rml::Context* rmlContext;
-    Rml::ElementDocument* rmlDocument;
+    Rml::Context* rmlContextUi;
+    Rml::ElementDocument* rmlDocumentUi;
+    Rml::Context* rmlContextPopups; // This is for rendering stuff that should be on top of sfml sprites
+    Rml::ElementDocument* rmlDocumentPopups;
 
     // Selection
     sf::RectangleShape selection;
@@ -99,7 +101,8 @@ public:
     void setPopUp(std::string name, bool value);
 
     // GETTERS
-    Rml::Context* getRmlContext();
+    Rml::Context* getRmlContextUi();
+    Rml::Context* getRmlContextPopups();
     ImageArea getPreviewArea();
 
     // RENDERING

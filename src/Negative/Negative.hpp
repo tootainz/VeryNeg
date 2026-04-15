@@ -134,7 +134,7 @@ public:
     std::filesystem::path getPath();
 
     // EXPORTING
-    bool exportPositive(std::filesystem::path imagePath, std::string imageFormat);
+    bool exportPositive(std::filesystem::path imagePath, std::string imageFormat, std::string iccProfile);
 
     // SETTING EDIT SETTINGS
 

@@ -38,9 +38,12 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     history(200)
 {
     this->window.setKeyRepeatEnabled(false);
-    Rml::Context* rmlContext = this->view.getRmlContext();
-    rmlContext->AddEventListener("click", this);
-    rmlContext->AddEventListener("change", this);
+    Rml::Context* rmlContextUi = this->view.getRmlContextUi();
+    rmlContextUi->AddEventListener("click", this);
+    rmlContextUi->AddEventListener("change", this);
+    Rml::Context* rmlContextPopups = this->view.getRmlContextPopups();
+    rmlContextPopups->AddEventListener("click", this);
+    rmlContextPopups->AddEventListener("change", this);
 }
 
 
@@ -1086,7 +1089,7 @@ void Controller::ButtonPressExportCurrent() {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
         std::println("save path is {}", path.string());
-        negative->exportPositive(path, this->uiState.exportFileFormat);
+        negative->exportPositive(path, this->uiState.exportFileFormat, "sRGB");
     }
 }
 
@@ -1103,7 +1106,7 @@ void Controller::ButtonPressExportAll() {
             std::string newName = std::format("{}_{}", name, negative.getId());
             currentPath.replace_filename(newName);
 
-            negative.exportPositive(currentPath, this->uiState.exportFileFormat);
+            negative.exportPositive(currentPath, this->uiState.exportFileFormat, "sRGB");
         }
     }
 }
@@ -1318,7 +1321,8 @@ bool Controller::handleKeyboardEvents(std::optional<sf::Event> event) {
         // Global shortcuts that take priority over the context go here.
 
         // Otherwise, hand the event over to the context by calling the input handler as normal.
-        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
 
         // The key was not consumed by the context either, try keyboard shortcuts of lower priority.
 
@@ -1433,7 +1437,8 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         }
 
         // Otherwise, hand the event over to the RmlUi context.
-        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
         return true;
     }
 
@@ -1482,7 +1487,8 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         }
 
         // Hand the event over to the RmlUi context.
-        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
         return true;
     }
 
@@ -1512,7 +1518,8 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
         }
 
         // Hand the event over to the RmlUi context.
-        RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
+        RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
         return true;
     }
 
@@ -1527,8 +1534,10 @@ void Controller::eventLoop() {
 
         // RESIZED
         if (event->is<sf::Event::Resized>()) {
-            RmlBackend::Resize(this->view.getRmlContext());
-            this->view.getRmlContext()->Update();
+            RmlBackend::Resize(this->view.getRmlContextPopups());
+            RmlBackend::Resize(this->view.getRmlContextUi());
+            this->view.getRmlContextPopups()->Update();
+            this->view.getRmlContextUi()->Update();
             this->view.updatePreviewSize();
             this->view.updatePreviewScale();
             this->view.updatePreviewPos();
@@ -1550,7 +1559,8 @@ void Controller::eventLoop() {
 
         // REST OF THE EVENTS
         else {
-            RmlSFML::InputHandler(this->view.getRmlContext(), *event);
+            RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
+            RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
         }
     }
 }

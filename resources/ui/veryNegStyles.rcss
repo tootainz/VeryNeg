@@ -464,3 +464,7 @@ EXPORT SETTINGS
     background-color: #a09a96;
     color: #000000;
 }
+
+.darken {
+    background-color: #00000022;
+}

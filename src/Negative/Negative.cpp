@@ -671,12 +671,21 @@ std::filesystem::path Negative::getPath() {
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat) {
+bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat, std::string iccProfile) {
 
     std::println("Saving positive");
 
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
-    this->profiler->adobeToSRGB(*finalPixels, this->numberOfChannels);
+    
+    std::vector<uint8_t> profileBlob;
+
+    if (iccProfile == "sRGB") {
+        this->profiler->adobeToSRGB(*finalPixels, this->numberOfChannels);
+        profileBlob = this->profiler->getSRGB();
+    }
+    else if (iccProfile == "AdobeRGB") {
+        profileBlob = this->profiler->getAdobeRGB();
+    }
 
     if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
@@ -684,8 +693,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         // Use OIIO::ImageBuf for ease of transforming the pixel data type
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
         // Embed ICC profile
-        std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, srgbProfileBlob.size()), OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
 
         // Prints handy knowledge about the image
         std::println("This image has the following data");
@@ -708,8 +716,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         // Use OIIO::ImageBuf for ease of transforming the pixel data type
         OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
         // Embed ICC profile
-        std::vector<uint8_t> srgbProfileBlob = this->profiler->getSRGB();
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, srgbProfileBlob.size()), OIIO::cspan(srgbProfileBlob.data(), srgbProfileBlob.size()));
+        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
 
         // Prints handy knowledge about the image
         std::println("This image has the following data");

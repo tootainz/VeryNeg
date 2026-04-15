@@ -1,0 +1,21 @@
+<rml>
+	<head>
+		<title>VeryNegPopups</title>
+		<link type="text/rcss" href="./veryNegStyles.rcss"/>
+	</head>
+	<body class="darken">
+        <div class="" id="exportSettings">
+                <h2>Export Positive</h2>
+                <div class="selectButtons">
+                    <label for="imageFormat">Image format</label>
+                    <select name="imageFormat" id="imageFormat">
+                        <option value="tiff">tiff</option>
+                        <option value="jpeg">jpeg</option>
+                    </select>
+                </div>
+                <button id="exportCancel">Cancel</button>
+                <button id="exportCurrent">Export Current</button>
+                <button id="exportAll">Export All</button>
+        </div>
+	</body>
+</rml>

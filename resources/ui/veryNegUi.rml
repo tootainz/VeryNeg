@@ -1,7 +1,7 @@
 <rml>
 	<head>
 		<title>VeryNeg</title>
-		<link type="text/rcss" href="./veryNegConvert_styles.rcss"/>
+		<link type="text/rcss" href="./veryNegStyles.rcss"/>
 	</head>
 	<body>
         <div id="left">
@@ -70,8 +70,8 @@
                     <div class="selectButtons">
                         <label for="preset">Preset</label>
                         <select name="preset" id="preset">
-                            <option value="flat">flat</option>
                             <option value="print">Print</option>
+                            <option value="flat">flat</option>
                         </select>
                     </div>
 
@@ -147,19 +147,6 @@
                 <button id="export">Export</button>
                 <button id="remove">Remove</button>
             </div>
-        </div>
-        <div class="hidden" id="exportSettings">
-                <h2>Export Positive</h2>
-                <div class="selectButtons">
-                    <label for="imageFormat">Image format</label>
-                    <select name="imageFormat" id="imageFormat">
-                        <option value="tiff">tiff</option>
-                        <option value="jpeg">jpeg</option>
-                    </select>
-                </div>
-                <button id="exportCancel">Cancel</button>
-                <button id="exportCurrent">Export Current</button>
-                <button id="exportAll">Export All</button>
         </div>
 	</body>
 </rml>
