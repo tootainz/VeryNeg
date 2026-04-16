@@ -16,15 +16,16 @@ private:
     cmsHTRANSFORM sRGBTransform;
 
     bool wasConstructed;
+    bool hasDisplayProfile; // tells if there is actually a display profile or if it points to sRGB profile
 
 public:
 
     ColorProfiler();
     ~ColorProfiler();
 
-    bool toAdobeRGB(std::vector<float>& image, int channelAmount, const std::optional<std::vector<uint8_t>>& iccProfile);
-    void adobeToSRGB(std::vector<float>& image, int channelAmount);
-    void adobeToDisplay(std::vector<uint8_t>& image, int channelAmount);
+    bool toAdobeRGB(std::vector<float>& image, const std::optional<std::vector<uint8_t>>& iccProfile);
+    void adobeToSRGB(std::vector<float>& image);
+    void adobeToDisplay(std::vector<uint8_t>& image);
 
     std::vector<uint8_t> getSRGB();
     std::vector<uint8_t> getAdobeRGB();

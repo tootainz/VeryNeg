@@ -27,10 +27,16 @@ static bool isAdobeRGB(cmsHPROFILE profile) {
 // Constructor
 ColorProfiler::ColorProfiler() {
 
+    // Initialize everything to null
+    this->sRGB = nullptr;
+    this->adobeRGB = nullptr;
+    this->displayProfile = nullptr;
+    this->displayTransform = nullptr;
+    this->sRGBTransform = nullptr;
+
     // Get the profiles and open them
 
     // Open AdobeRGB profile
-    this->adobeRGB = nullptr;
     this->adobeRGB = cmsOpenProfileFromFile("./resources/iccProfiles/AdobeRGB1998.icc", "r");
     if (!adobeRGB) {
         std::println("failed to open AdobeRGB profile");
@@ -39,15 +45,14 @@ ColorProfiler::ColorProfiler() {
         return;
     }
 
-    this->sRGB = nullptr;
     this->sRGB = cmsCreate_sRGBProfile();
 
     // Get the display profile from the system, if not specified, use sRGB
-    this->displayProfile = nullptr;
     std::optional<std::vector<uint8_t>> displayOptional = getDisplayProfile();
     if (displayOptional) {
         std::println("there is a display profile");
         this->displayProfile = cmsOpenProfileFromMem(displayOptional->data(), displayOptional->size());
+        this->hasDisplayProfile = true;
         if (!displayProfile) {
             std::println("failed to open display profile");
             // failed to open the display profile
@@ -58,12 +63,12 @@ ColorProfiler::ColorProfiler() {
     else {
         std::println("there is no display profile, defaulting to sRGB");
         this->displayProfile = this->sRGB;
+        this->hasDisplayProfile = false;
     }
 
     // Create the transformations
 
     // Create the AdobeRgb to Display transform
-    this->displayTransform = nullptr;
     this->displayTransform = cmsCreateTransform(
         this->adobeRGB,
         TYPE_RGBA_8,
@@ -80,7 +85,6 @@ ColorProfiler::ColorProfiler() {
     }
 
     // Create the AdobeRGB to sRGB profile transform
-    this->sRGBTransform = nullptr;
     this->sRGBTransform = cmsCreateTransform(
         this->adobeRGB,
         TYPE_RGB_FLT,
@@ -103,6 +107,9 @@ ColorProfiler::ColorProfiler() {
 ColorProfiler::~ColorProfiler() {
     cmsCloseProfile(this->adobeRGB);
     cmsCloseProfile(this->sRGB);
+    if (this->hasDisplayProfile) {
+        cmsCloseProfile(this->displayProfile);
+    }
     cmsDeleteTransform(this->displayTransform);
     cmsDeleteTransform(this->sRGBTransform);
 }
@@ -111,12 +118,13 @@ ColorProfiler::~ColorProfiler() {
 // Assumes that the data is sRGB if no profile is provided
 // Returns true of the conversion was succesful or not performed due to missing or inclomplete icc profile
 // Returns false if something went wrong in the conversion
-bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, const std::optional<std::vector<uint8_t>>& iccProfile) {
+bool ColorProfiler::toAdobeRGB(std::vector<float>& image, const std::optional<std::vector<uint8_t>>& iccProfile) {
 
     std::println("converting from input profile to adobe rgb");
     // This is practically C, since LCMS is written in C
 
     cmsHPROFILE hInProfile = nullptr;
+    bool usingSRGB = false;
 
     // check if the iccProfile actually contains a profile
     if (iccProfile) {
@@ -127,6 +135,7 @@ bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, con
             // Assume that the profile is sRGB
             std::println("failed to open embedded profile, assuming the image is in sRGB");
             hInProfile = this->sRGB;
+            usingSRGB = true;
         }
         if (isAdobeRGB(hInProfile)) {
             // The embedded profile is already AdobeRGB
@@ -137,6 +146,7 @@ bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, con
     else {
         // There is no embedded profile, default to sRGB
         std::println("there is no embedded profile, assuming the image is in sRGB");
+        usingSRGB = true;
         hInProfile = this->sRGB;
     }
 
@@ -154,12 +164,16 @@ bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, con
     if (!hTransform) {
         // Something went wrong
         std::println("Something went wrong in the transformation");
-        cmsCloseProfile(hInProfile);
+        if (!usingSRGB) {
+            cmsCloseProfile(hInProfile);
+        }
         return false;
     }
 
-    // Close the profiles
-    cmsCloseProfile(hInProfile);
+    // Close the profile if we are not using sRGB profile that should be left open
+    if (!usingSRGB) {
+        cmsCloseProfile(hInProfile);
+    }
 
     std::println("transforming icc profiles");
     // Perform the actual transformation
@@ -167,7 +181,7 @@ bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, con
         hTransform,
         image.data(),
         image.data(),
-        image.size()/channelAmount
+        image.size()/3
     );
 
     // Free the transform
@@ -178,7 +192,7 @@ bool ColorProfiler::toAdobeRGB(std::vector<float>& image, int channelAmount, con
 // Converts from working space AdobeRGB to sRGB for display or export
 // Returns true if the conversion was succesful
 // Returns false if something went wrong in the conversion
-void ColorProfiler::adobeToSRGB(std::vector<float>& image, int channelAmount) {
+void ColorProfiler::adobeToSRGB(std::vector<float>& image) {
 
     std::println("converting from Adobe RGB to sRGB");
     // Perform the actual transformation
@@ -186,12 +200,12 @@ void ColorProfiler::adobeToSRGB(std::vector<float>& image, int channelAmount) {
         this->sRGBTransform,
         image.data(),
         image.data(),
-        image.size()/channelAmount
+        image.size()/3
     );
 }
 
-// This assumes that the image is in 8 bits already
-void ColorProfiler::adobeToDisplay(std::vector<uint8_t> &image, int channelAmount){
+// This assumes that the image is in 8 bits already and has 4 channels RGBA
+void ColorProfiler::adobeToDisplay(std::vector<uint8_t> &image){
     
     std::println("converting from Adobe RGB to display");
     // Perform the actual transformation
@@ -199,7 +213,7 @@ void ColorProfiler::adobeToDisplay(std::vector<uint8_t> &image, int channelAmoun
         this->displayTransform,
         image.data(),
         image.data(),
-        image.size()/channelAmount
+        image.size()/4
     );
 }
 

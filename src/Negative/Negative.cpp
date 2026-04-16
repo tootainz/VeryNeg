@@ -470,7 +470,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     input->close();
 
     // 1.5. Convert to adobe rgb if not already
-    bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->numberOfChannels, this->iccProfile);
+    bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->iccProfile);
     if (!iccConverted) {
         // The profile conversion failed
         return false;
@@ -598,7 +598,7 @@ ImageData Negative::getPreview(bool dragging) {
     std::println("generated preview data");
 
     // Transform from working space to display space
-    this->profiler->adobeToDisplay(previewData, 4);
+    this->profiler->adobeToDisplay(previewData);
 
     return {
         previewData,
@@ -682,7 +682,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     std::vector<uint8_t> profileBlob;
 
     if (iccProfile == "sRGB") {
-        this->profiler->adobeToSRGB(*finalPixels, this->numberOfChannels);
+        this->profiler->adobeToSRGB(*finalPixels);
         profileBlob = this->profiler->getSRGB();
     }
     else if (iccProfile == "AdobeRGB") {

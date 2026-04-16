@@ -7,13 +7,13 @@
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
 
-inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.2f;
-inline const float SHADOW_DAMPENER_FIXER = 1.2f;
+inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.17f;
+inline const float SHADOW_DAMPENER_FIXER = 1.075f;
 
 inline float curveExposureFunction(float input, float value) {
 
     if (value >= 0.0f) {
-        float result = (1.0f-(-value))*input + (-value)*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT);
+        float result = (1.0f+value)*input - value*std::pow(input, HIGHLIGHT_PROTECTION_AMOUNT);
         return std::clamp(result, 0.0f, 1.0f);
     }
     else {

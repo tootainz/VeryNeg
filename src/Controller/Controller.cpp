@@ -228,6 +228,13 @@ void Controller::applyHeld() {
     }
 }
 
+// GUI EVENTS SLIDER RESET
+// ----------------------------------------------------------------------------------------------------------------
+
+void Controller::SliderReset(std::string name) {
+    this->view.setSliderValue(name, 0.0f);
+}
+
 // GUI EVENTS NEGATIVE NAVIGATION
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -1127,7 +1134,6 @@ void Controller::ProcessEvent(Rml::Event& event) {
     if (!this->uiState.disableCallbacks) {
         Rml::Element* element = event.GetTargetElement();
         const std::string id = element->GetId();
-        const std::string className = element->GetId();
 
         // BUTTONS & CHECKBOXES (Click)
         if (event.GetId() == Rml::EventId::Click) {
@@ -1243,6 +1249,17 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
             else if (id == "resetSharpening") {
                 this->ButtonPressResetSharpening();
+            }
+        }
+
+        // SLIDERS (double click)
+        // THIS IS BROKEN ATM
+        if (event.GetId() == Rml::EventId::Dblclick) {
+            std::println("double click");
+            // Reset sliders
+            if (element->GetTagName() == "input" && element->GetAttribute("type")->Get("") == "range") {
+                std::println("slider double click");
+                this->SliderReset(id);
             }
         }
 

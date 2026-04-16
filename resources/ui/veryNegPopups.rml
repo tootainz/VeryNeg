@@ -3,7 +3,7 @@
 		<title>VeryNegPopups</title>
 		<link type="text/rcss" href="./veryNegStyles.rcss"/>
 	</head>
-	<body class="darken">
+	<body>
         <div class="" id="exportSettings">
                 <h2>Export Positive</h2>
                 <div class="selectButtons">

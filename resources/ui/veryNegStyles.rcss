@@ -187,7 +187,7 @@ PREVIEW
 
 #preview {
     cursor: crosshair;
-    background-color: #0e0e0e;
+    background-color: #0e0e0e00;
     height: 100%;
     margin: 20px;
 }
@@ -463,8 +463,4 @@ EXPORT SETTINGS
 #exportSettings button:hover {
     background-color: #a09a96;
     color: #000000;
-}
-
-.darken {
-    background-color: #00000022;
 }

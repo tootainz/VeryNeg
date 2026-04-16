@@ -70,6 +70,9 @@ private:
     // Apply held settings
     void applyHeld();
 
+    // Reset sliders
+    void SliderReset(std::string name);
+
     // NEGATIVE NAVIGATION
     void ButtonPressAddNegative();
     void ButtonPressRemoveNegative(int id);
