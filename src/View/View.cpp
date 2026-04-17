@@ -197,8 +197,8 @@ void View::setPreviewOrientation(int value) {
     sf::Vector2u size = this->previewTexture->getSize();
 
     // Default origin (top-left)
-    float originX = 0.f;
-    float originY = 0.f;
+    float originX = 0.0f;
+    float originY = 0.0f;
 
     switch (value) {
         case 1: // normal

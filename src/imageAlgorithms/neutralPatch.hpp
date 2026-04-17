@@ -10,7 +10,7 @@
 #include "colorBalance.hpp"
 
 // Returns the scaling factors for the color channels
-inline std::tuple<float, float, float> neutralPatch(std::vector<float>& image, float sampleR, float sampleG, float sampleB) {
+inline std::tuple<float, float, float> neutralPatch(float sampleR, float sampleG, float sampleB) {
     std::println("Starting neutral patch algorithm");
 
     float targetGray = (sampleR + sampleG + sampleB)/3.0f;

@@ -59,9 +59,27 @@ input.range sliderbar:active {
     border-color: #e4ded7;
 }
 
+
+/* Text */
+
+input.text {
+    background-color: #212020;
+    border-color: #212020;
+}
+
+input.text:hover {
+    border-color: #8a8682;
+    border-width: 1px;
+}
+
+input.text:active {
+    background-color: #8a8682;
+}
+
 /* Checkbox */
 
 input.checkbox {
+    box-sizing: border-box;
     display: block;
     background-color: #212020;
     border-color: #212020;
@@ -131,6 +149,13 @@ button:active {
     background-color: #8a8682;
 }
 
+.iconButton {
+    overflow: hidden;
+    height: 25px;
+    width: 25px;
+    margin: 5px;
+    flex-grow: 0;
+}
 
 /*
 LAYOUT
@@ -153,6 +178,11 @@ LAYOUT
     flex-direction: column;
     justify-content: space-between;
     box-sizing: border-box;
+}
+
+.horizontalFlex {
+    display: flex;
+    flex-direction: row;
 }
 
 
@@ -222,9 +252,15 @@ FILM ROLL
 
 #filmRoll {
     display: flex;
+    gap: 5px;
     height: 100%;
     width: 100%;
     align-items: center;
+    overflow-x: auto;
+}
+
+scrollbarhorizontal {
+	height: 0;
 }
 
 .thumbnail {
@@ -299,13 +335,6 @@ SETTINGS
 }
 
 .selectButtons input.checkbox {
-    flex: 1;
-}
-
-.selectButtons .targetButton {
-    min-width: 10px;
-    min-height: 10px;
-    flex-shrink: 0;
 }
 
 .settingsTab {
@@ -361,16 +390,33 @@ PRE-CONVERT
 }
 
 #convert:hover {
-    color: #2a2928;
-    decorator: image( "./graphics/cmy_gradient_2.png" fill );
+    color: #ffffff;
+    background-color: #2b2a29;
+}
+
+#convert:active {
+    background-color: #464543;
 }
 
 #convertBG {
-    padding: 2px;
+    transition: margin-top margin-bottom padding 0.2s;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding: 1px;
     height: 40px;
     width: 100%;
     border-radius: 3px;
     decorator: image( "./graphics/cmy_gradient_2_rounded.png" fill );
+}
+
+#convertBG:hover {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 2px;
+    height: 40px;
+    width: 100%;
+    border-radius: 3px;
+    decorator: image( "./graphics/cmy_gradient.png" fill );
 }
 
 /*

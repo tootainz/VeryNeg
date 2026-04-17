@@ -100,7 +100,8 @@ private:
     std::unique_ptr<nlohmann::json> readPresetdata(std::filesystem::path path);
 
     // HELPERS
-    std::tuple<float,float,float> samplePixels(int workingX, int workingY);
+    std::tuple<float,float,float> sampleWorkingPixels(int workingX, int workingY);
+    std::tuple<float,float,float> sampleConvertedWorkingPixels(int workingX, int workingY);
 
     // Internal rendering methods
     std::unique_ptr<std::vector<float>> renderFinal();

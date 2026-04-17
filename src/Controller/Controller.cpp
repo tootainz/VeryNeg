@@ -102,6 +102,8 @@ void Controller::updateSharpnessPreview() {
 void Controller::updateEditSettings(Negative& negative) {
     this->uiState.disableCallbacks = true;
 
+    int orientation = negative.getOrientation();
+
     float scanGamma = negative.getScanGamma();
     ImageArea scanArea = negative.getScanArea(negative.getWorkingScale());
     bool hasScanArea = negative.getHasScanArea();
@@ -124,6 +126,8 @@ void Controller::updateEditSettings(Negative& negative) {
     float sharpeningAmount = negative.getSharpeningAmount();
     float sharpeningDiameter = negative.getSharpeningDiameter();
 
+    this->view.setPreviewOrientation(orientation);
+    
     this->view.setSliderValue("scanGamma", scanGamma);
     this->view.setSelection(scanArea);
     this->view.setCheckboxValue("scanArea", hasScanArea);
@@ -1019,6 +1023,9 @@ void Controller::SetNeutralSample(int x, int y) {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
+        this->updateEditSettings(*negative);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
         this->updatePreview(false);
         this->updateSharpnessPreview();
     }
@@ -1297,7 +1304,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
             else if (id == "autoWB") {
                 this->CheckboxPressAutoWhiteBalance(checked);
             }
-            else if (id == "selectNeutral") {
+            else if (id == "sampleNeutral") {
                 this->ButtonPressSetNeutralSample();
             }
 
@@ -1463,13 +1470,13 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             // Selecting only a sample point
             if (this->uiState.selectingBorder || this->uiState.selectingDensest || this->uiState.selectingNeutral) {
                 if (this->uiState.selectingBorder) {
-                    this->SetBorder( correctedMouseX, correctedMouseY);
+                    this->SetBorder(correctedMouseX, correctedMouseY);
                 }
                 else if (this->uiState.selectingDensest) {
-                    this->SetDensest( correctedMouseX, correctedMouseY);
+                    this->SetDensest(correctedMouseX, correctedMouseY);
                 }
                 else if (this->uiState.selectingNeutral) {
-                    this->SetNeutralSample( correctedMouseX, correctedMouseY);
+                    this->SetNeutralSample(correctedMouseX, correctedMouseY);
                 }
             }
             // Selecting a selection

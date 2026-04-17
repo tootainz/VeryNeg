@@ -170,14 +170,20 @@ std::unique_ptr<nlohmann::json> Negative::readPresetdata(std::filesystem::path p
 // HELPERS
 // ----------------------------------------------------------------------------------------------------------------
 
-std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
-    auto [r, g, b] = eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->EYEDROPPER_SIZE);
+std::tuple<float, float, float> Negative::sampleWorkingPixels(int workingX, int workingY) {
+    auto [r, g, b] = eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, workingX, workingY, this->EYEDROPPER_SIZE);
     // Have to remove gamma from these pixels since the conversion expects gamma to be removed
     return {
         gammaFunction(r, this->getScanGamma()),
         gammaFunction(g, this->getScanGamma()),
         gammaFunction(b, this->getScanGamma())
     };
+}
+
+std::tuple<float, float, float> Negative::sampleConvertedWorkingPixels(int workingX, int workingY) {
+    auto [r, g, b] = eyedropper(this->convertedPixels, this->workingWidth, this->workingHeight, workingX, workingY, this->EYEDROPPER_SIZE);
+    // These already have the gamma removed
+    return {r,g,b};
 }
 
 std::unique_ptr<std::vector<float>> Negative::renderFinal() {
@@ -238,7 +244,7 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
         r = curveExposureFunction(r, density);
         g = curveExposureFunction(g, density);
         b = curveExposureFunction(b, density);
-        
+
         
         // Contrast
         r = contrastFunction(r, contrast);
@@ -858,7 +864,7 @@ void Negative::setBorder(float r, float g, float b) {
 }
 
 void Negative::setBorderByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleWorkingPixels(x, y);
     this->setBorder(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
@@ -873,7 +879,7 @@ void Negative::setDensest(float r, float g, float b) {
 }
 
 void Negative::setDensestByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleWorkingPixels(x, y);
     this->setDensest(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
@@ -964,23 +970,23 @@ void Negative::setHasAutoWB(bool has) {
 }
 
 void Negative::autoWB() {
-    auto [rScaling, gScaling, bScaling] = grayWorld(this->workingPixels);
+    auto [rScaling, gScaling, bScaling] = grayWorld(this->convertedPixels);
     // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
-    this->negativeData["edits"]["rBalance"] = 4.0f * std::log(rScaling);
-    this->negativeData["edits"]["gBalance"] = 4.0f * std::log(gScaling);
-    this->negativeData["edits"]["bBalance"] = 4.0f * std::log(bScaling);
+    this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);
 }
 
 void Negative::setNeutral(float r, float g, float b) {
-    auto [rScaling, gScaling, bScaling] = neutralPatch(this->workingPixels, r, g, b);
+    auto [rScaling, gScaling, bScaling] = neutralPatch(r, g, b);
     // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
-    this->negativeData["edits"]["rBalance"] = 4.0f * std::log(rScaling);
-    this->negativeData["edits"]["gBalance"] = 4.0f * std::log(gScaling);
-    this->negativeData["edits"]["bBalance"] = 4.0f * std::log(bScaling);
+    this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);
 }
 
 void Negative::setNeutralByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleConvertedWorkingPixels(x, y);
     this->setNeutral(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 

@@ -29,10 +29,12 @@
                         <input type="checkbox" class="holdBox" id="holdOrientation">Hold</input>
                     </div>
 
-                    <button id="rotateClock">Clockwise</button>
-                    <button id="rotateCounterClock">Counter C</button>
-                    <button id="flipHorizontal">Flip H</button>
-                    <button id="flipVertical">FLip V</button>
+                    <div class="horizontalFlex">
+                        <button class="iconButton" id="rotateClock">--&gt;</button>
+                        <button class="iconButton" id="rotateCounterClock">&lt;--</button>
+                        <button class="iconButton" id="flipHorizontal">&lt;-&gt;</button>
+                        <button class="iconButton" id="flipVertical">^-V</button>
+                    </div>
 
                 </div>
 
@@ -54,15 +56,15 @@
                     </div>
                     
                     <div class="selectButtons">
-                        <input type="checkbox" class="targetButton" id="sampleBorder">*</input>
+                        <input type="checkbox" class="iconButton" id="sampleBorder">*</input>
                         <input type="checkbox" id="border">Border</input>
                     </div>
                     <div class="selectButtons">
-                        <input type="checkbox" class="targetButton" id="sampleDensest">*</input>    
+                        <input type="checkbox" class="iconButton" id="sampleDensest">*</input>    
                         <input type="checkbox" id="densest">Densest</input>
                     </div>
                     <div class="selectButtons">
-                        <input type="checkbox" class="targetButton" id="setScanArea">*</input>   
+                        <input type="checkbox" class="iconButton" id="setScanArea">*</input>   
                         <input type="text" value="0" id="setScanBorder"></input>
                         <input type="checkbox" id="scanArea">Scan Area</input>
                     </div>
@@ -104,7 +106,7 @@
 
                     <input type="checkbox" id="autoWB">Auto white balance</input>
                     <div class="selectButtons">
-                        <input type="checkbox" class="targetButton" id="sampleNeutral" name="sampleNeutral"">*</input>
+                        <input type="checkbox" class="iconButton" id="sampleNeutral" name="sampleNeutral">*</input>
                         <label for="sampleNeutral">Sample neutral</label>
                     </div>
 

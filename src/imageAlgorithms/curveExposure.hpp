@@ -7,7 +7,7 @@
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
 
-inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.17f;
+inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.14f;
 inline const float SHADOW_DAMPENER_FIXER = 1.075f;
 
 inline float curveExposureFunction(float input, float value) {
