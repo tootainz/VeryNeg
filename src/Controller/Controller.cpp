@@ -116,7 +116,6 @@ void Controller::updateEditSettings(Negative& negative) {
     float blacks = negative.getBlacks();
 
     bool autoWB = negative.getAutoWB();
-    bool hasNeutral = negative.getHasNeutral();
     float rBalance = negative.getRBalance();
     float gBalance = negative.getGBalance();
     float bBalance = negative.getBBalance();
@@ -144,8 +143,6 @@ void Controller::updateEditSettings(Negative& negative) {
 
     this->view.setCheckboxValue("autoWB", autoWB);
     this->uiState.autoWB = autoWB;
-    this->view.setCheckboxValue("neutral", hasNeutral);
-    this->uiState.hasNeutral = hasNeutral;
     this->view.setSliderValue("c-r", rBalance);
     this->view.setSliderValue("m-g", gBalance);
     this->view.setSliderValue("y-b", bBalance);
@@ -897,56 +894,27 @@ void Controller::CheckboxPressAutoWhiteBalance(bool checked)
 
         auto execute = [this, negative, checked]() {
             this->uiState.autoWB = checked;
-            negative->setAutoWB(checked);
+            negative->setHasAutoWB(checked);
+            negative->autoWB();
         };
 
         auto undo = [this, negative, previousAutoWB]() {
             this->uiState.autoWB = previousAutoWB;
-            negative->setAutoWB(previousAutoWB);
+            negative->setHasAutoWB(previousAutoWB);
         };
 
         this->history.addCommand(
             std::make_unique<Command_Lambda>(execute, undo)
         );
-        this->updatePreview(false);
-        this->updateSharpnessPreview();
-    }
-}
-
-void Controller::CheckboxPressNeutralSample(bool checked) {
-    std::println("Neutral Balance pressed");
-    Negative* negative = this->model.getCurrentNegative();
-    if (negative) {
-
-        bool previousHasNeutral = negative->getHasNeutral();
-
-        auto execute = [this, negative, checked]() {
-            this->uiState.hasNeutral = checked;
-            negative->setHasNeutral(checked);
-        };
-
-        auto undo = [this, negative, previousHasNeutral]() {
-            this->uiState.hasNeutral = previousHasNeutral;
-            negative->setHasNeutral(previousHasNeutral);
-        };
-
-        this->history.addCommand(
-            std::make_unique<Command_Lambda>(execute, undo)
-        );
-
+        this->updateEditSettings(*negative);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
         this->updatePreview(false);
         this->updateSharpnessPreview();
     }
 }
 
 void Controller::ButtonPressSetNeutralSample() {
-    std::println("Neutral balanbce button pressed");
-    if (!this->uiState.hasNeutral) {
-        // Update the view to mach UiState since this didn't come directly from scanArea checkbox
-        this->view.setCheckboxValue("neutral", true);
-        // Update the UiState and model
-        this->CheckboxPressNeutralSample(true);
-    }
     this->uiState.selectingNeutral = !this->uiState.selectingNeutral;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
 }
@@ -956,16 +924,13 @@ void Controller::SetNeutralSample(int x, int y) {
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
-        std::tuple<float, float, float> previousNeutralData = negative->getNeutral();
 
         auto execute = [negative, x, y]() {
             negative->setNeutralByCoords(x, y);
         };
 
-        auto undo = [negative, previousNeutralData]() {
-            negative->setNeutral(std::get<0>(previousNeutralData),
-                                std::get<1>(previousNeutralData),
-                                std::get<2>(previousNeutralData));
+        // FIX ME
+        auto undo = [negative]() {
         };
 
         this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -1270,7 +1235,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
             if (!valueVar) return;
 
             float value = valueVar->Get<float>(0.0f);
-            std::string stringValue = valueVar->Get<std::string>("flat");
+            std::string stringValue = valueVar->Get<std::string>("standard");
 
             // DROP-DOWNS
             if (element->GetTagName() == "select") {

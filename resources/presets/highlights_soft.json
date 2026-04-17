@@ -1,18 +1,18 @@
 {
     "version": "0.3.0",
-    "name": "template",
+    "name": "highlights soft",
 
     "density": 0.0,
-    "contrast": 0.0,
-    "highlights": 0.0,
+    "contrast": 1.5,
+    "highlights": -1.0,
     "shadows": 0.0,
-    "blacks": 0.0,
+    "blacks": -0.1,
     "whites": 0.0,
     "hasAutoWB": true,
     "rBalance": 0.0,
     "gBalance": 0.0,
     "bBalance": 0.0,
     "saturation": 0.0,
-    "sharpeningAmount": 0.0,
-    "sharpeningDiameter": 5
+    "sharpeningAmount": 2.5,
+    "sharpeningDiameter": 7
 }

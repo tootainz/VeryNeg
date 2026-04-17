@@ -11,7 +11,7 @@
 #include "gamma.hpp"
 
 
-inline void grayWorld(std::vector<float>& image) {
+inline std::tuple<float, float, float> grayWorld(std::vector<float>& image) {
 
     std::println("Starting Gray World algorithm");
 
@@ -19,9 +19,9 @@ inline void grayWorld(std::vector<float>& image) {
 
     std::println("Total amount of pixels per channel: {}", pixelAmount);
 
-    float rSum = 0;
-    float gSum = 0;
-    float bSum = 0;
+    double rSum = 0;
+    double gSum = 0;
+    double bSum = 0;
 
     auto countSums = [&](float red, float green, float blue) {
         rSum += red;
@@ -51,7 +51,5 @@ inline void grayWorld(std::vector<float>& image) {
     std::println("Scaling factor for g: {}", gScaling);
     std::println("Scaling factor for b: {}", bScaling);
 
-    multiply(image, rScaling, EditChannel::R);
-    multiply(image, gScaling, EditChannel::G);
-    multiply(image, bScaling, EditChannel::B);
+    return {rScaling, gScaling, bScaling};
 }

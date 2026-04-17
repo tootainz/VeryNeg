@@ -13,6 +13,7 @@
 #include "../imageAlgorithms/levels.hpp"
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/grayWorld.hpp"
+#include "../imageAlgorithms/neutralPatch.hpp"
 #include "../imageAlgorithms/multiply.hpp"
 #include "../imageAlgorithms/curveExposure.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
@@ -37,8 +38,8 @@ static float exponentDampenerFixer(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 int Negative::nextId = 0;
-const std::string Negative::NEGATIVEDATA_VERSION = "0.3.0";
-const std::string Negative::PRESETDATA_VERSION = "0.2.0";
+const std::string Negative::NEGATIVEDATA_VERSION = "0.5.0";
+const std::string Negative::PRESETDATA_VERSION = "0.3.0";
 const float Negative::DRAGGING_SCALE = 0.4f;
 
 
@@ -213,10 +214,16 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
     auto applyEdits = [&](float& r, float& g, float& b) {
         // Note the order is important here if we want to allow blacks and whites to be able to recover detail after density
 
+        
         // Color balance
         r = rationalCurveFunction(r, rBalance);
         g = rationalCurveFunction(g, gBalance);
         b = rationalCurveFunction(b, bBalance);
+        
+        // Display gamma
+        r = gammaFunction(r, 1.0f/2.2f);
+        g = gammaFunction(g, 1.0f/2.2f);
+        b = gammaFunction(b, 1.0f/2.2f);
         
         // blacks and whites
         r = blacksFunction(r, blacks);
@@ -232,10 +239,12 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
         g = curveExposureFunction(g, density);
         b = curveExposureFunction(b, density);
         
+        
         // Contrast
         r = contrastFunction(r, contrast);
         g = contrastFunction(g, contrast);
         b = contrastFunction(b, contrast);
+        
 
         // Shadows and highlights
         r = shadowsFunction(r, shadows);
@@ -246,10 +255,6 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
         g = highlightsFunction(g, highlights);
         b = highlightsFunction(b, highlights);
 
-        // Display gamma
-        r = gammaFunction(r, 1.0f/2.2f);
-        g = gammaFunction(g, 1.0f/2.2f);
-        b = gammaFunction(b, 1.0f/2.2f);
     };
 
     iterateImageMutableMultiThread(pixels, applyEdits);
@@ -744,7 +749,24 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 // SETTING EDIT SETTINGS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
-float Negative::setScanGamma(float value) {
+// Set the exif oriantation tag
+/*
+1 = Normal (no rotation)          
+2 = Flipped horizontally          
+3 = Rotated 180°                  
+4 = Flipped vertically            
+5 = Transposed (flip + rotate 90°)
+6 = Rotated 90° clockwise         
+7 = Transverse (flip + rotate 270°)
+8 = Rotated 270° clockwise        
+*/
+
+void Negative::setOrientation(int value) {
+    this->negativeData["general"]["orientation"] = value;
+}
+
+float Negative::setScanGamma(float value)
+{
     this->negativeData["conversion"]["scanGamma"] = value;
     return this->getScanGamma();
 }
@@ -820,7 +842,7 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         float highlights = presetData["highlights"];
         float shadows = presetData["shadows"];
         float blacks = presetData["blacks"];
-        bool autoWB = presetData["autoWB"];
+        bool autoWB = presetData["hasAutoWB"];
         float rBalance = presetData["rBalance"];
         float gBalance = presetData["gBalance"];
         float bBalance = presetData["bBalance"];
@@ -834,7 +856,7 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         this->setHighlights(highlights);
         this->setShadows(shadows);
         this->setBlacks(blacks);
-        this->setAutoWB(autoWB);
+        this->setHasAutoWB(autoWB);
         this->setRBalance(rBalance);
         this->setGBalance(gBalance);
         this->setBBalance(bBalance);
@@ -875,19 +897,24 @@ float Negative::setBlacks(float value) {
     return this->getBlacks();
 }
 
-void Negative::setAutoWB(bool has) {
-    this->negativeData["edits"]["autoWB"] = has;
+void Negative::setHasAutoWB(bool has) {
+    this->negativeData["edits"]["hasAutoWB"] = has;
 }
 
-void Negative::setHasNeutral(bool has)
-{
-    this->negativeData["edits"]["hasNeutralPoint"] = has;
+void Negative::autoWB() {
+    auto [rScaling, gScaling, bScaling] = grayWorld(this->workingPixels);
+    // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
+    this->negativeData["edits"]["rBalance"] = 4.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = 4.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = 4.0f * std::log(bScaling);
 }
 
 void Negative::setNeutral(float r, float g, float b) {
-    this->negativeData["edits"]["neutralPoint"]["r"] = r;
-    this->negativeData["edits"]["neutralPoint"]["g"] = g;
-    this->negativeData["edits"]["neutralPoint"]["b"] = b;
+    auto [rScaling, gScaling, bScaling] = neutralPatch(this->workingPixels, r, g, b);
+    // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
+    this->negativeData["edits"]["rBalance"] = 4.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = 4.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = 4.0f * std::log(bScaling);
 }
 
 void Negative::setNeutralByCoords(int x, int y) {
@@ -897,16 +924,19 @@ void Negative::setNeutralByCoords(int x, int y) {
 
 float Negative::setRBalance(float value) {
     this->negativeData["edits"]["rBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getRBalance();
 }
 
 float Negative::setGBalance(float value) {
     this->negativeData["edits"]["gBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getGBalance();
 }
 
 float Negative::setBBalance(float value) {
     this->negativeData["edits"]["bBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getBBalance();
 }
 
@@ -934,8 +964,11 @@ nlohmann::json Negative::getNegativeData() {
     return this->negativeData;
 }
 
-float Negative::getScanGamma()
-{
+int Negative::getOrientation() {
+    return this->negativeData["general"]["orientation"];
+}
+
+float Negative::getScanGamma() {
     return this->negativeData["conversion"]["scanGamma"];
 }
 
@@ -1013,19 +1046,7 @@ float Negative::getBlacks() {
 }
 
 bool Negative::getAutoWB() {
-    return this->negativeData["edits"]["autoWB"];
-}
-
-bool Negative::getHasNeutral() {
-    return this->negativeData["edits"]["hasNeutralPoint"];
-}
-
-std::tuple<float, float, float> Negative::getNeutral()
-{
-    float r = this->negativeData["edits"]["neutralPoint"]["r"];
-    float g = this->negativeData["edits"]["neutralPoint"]["g"];
-    float b = this->negativeData["edits"]["neutralPoint"]["b"];
-    return { r, g, b };
+    return this->negativeData["edits"]["hasAutoWB"];
 }
 
 float Negative::getRBalance() {

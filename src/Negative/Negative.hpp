@@ -138,6 +138,9 @@ public:
 
     // SETTING EDIT SETTINGS
 
+    // ROTATION
+    void setOrientation(int value);
+
     // PRE-CONVERT
     float setScanGamma(float value);
     void setHasScanArea(bool has);
@@ -163,8 +166,8 @@ public:
     float setBlacks(float value);
 
     // White balance
-    void setAutoWB(bool has);
-    void setHasNeutral(bool has);
+    void setHasAutoWB(bool has);
+    void autoWB();
     void setNeutral(float r, float g, float b);
     void setNeutralByCoords(int x, int y);
     float setRBalance(float value);
@@ -179,6 +182,9 @@ public:
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
     nlohmann::json getNegativeData();
+
+    // ROTATION
+    int getOrientation();
 
     // PRE-CONVERT
     float getScanGamma();
@@ -201,8 +207,6 @@ public:
 
     // White balance
     bool getAutoWB();
-    bool getHasNeutral();
-    std::tuple<float, float, float> getNeutral();
     float getRBalance();
     float getGBalance();
     float getBBalance();

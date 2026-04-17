@@ -11,8 +11,8 @@ const float GENERAL_DAMPENING = 1.0f;
 
 // Blacks
 const float BLACKS_INCREASE_DAMPENING = 0.1f;
-const int BLACKS_INCREASE_SHARPNESS = 5.0f;
-const int BLACKS_DECREASE_SHARPNESS = 40.0f;
+const float BLACKS_INCREASE_SHARPNESS = 5.0f;
+const float BLACKS_DECREASE_SHARPNESS = 40.0f;
 
 inline float blacksFunction(float input, float value) {
 
@@ -46,9 +46,9 @@ inline void blacks(std::vector<float>& image, float value) {
 
 // Shadows
 const float SHADOWS_INCREASE_DAMPENING = 0.1f;
-const int SHADOWS_INCREASE_SHARPNESS = 15.0f;
-const int SHADOWS_DECREASE_SHARPNESS = 9.0f;
-const int SHADOWS_DECREASE_SLOPE = 0.08f;
+const float SHADOWS_INCREASE_SHARPNESS = 15.0f;
+const float SHADOWS_DECREASE_SHARPNESS = 9.0f;
+const float SHADOWS_DECREASE_SLOPE = 0.08f;
 
 inline float shadowsFunction(float input, float value) {
 

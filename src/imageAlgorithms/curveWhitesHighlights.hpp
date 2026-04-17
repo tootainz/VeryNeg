@@ -9,8 +9,8 @@
 
 // Whites
 const float WHITES_DECREASE_DAMPENING = 0.1f;
-const int WHITES_INCREASE_SHARPNESS = 40.0f;
-const int WHITES_DECREASE_SHARPNESS = 5.0f;
+const float WHITES_INCREASE_SHARPNESS = 40.0f;
+const float WHITES_DECREASE_SHARPNESS = 5.0f;
 
 inline float whitesFunction(float input, float value) {
 
@@ -56,9 +56,9 @@ inline void whites(std::vector<float>& image, float value) {
 
 // Highlights
 const float HIGHLIGHTS_INCREASE_DAMPENING = 0.1f;
-const int HIGHLIGHTS_INCREASE_SHARPNESS = 9.0f;
-const int HIGHLIGHTS_DECREASE_SHARPNESS = 15.0f;
-const int HIGHLIGHTS_INCREASE_SLOPE = 0.08f;
+const float HIGHLIGHTS_INCREASE_SHARPNESS = 9.0f;
+const float HIGHLIGHTS_DECREASE_SHARPNESS = 15.0f;
+const float HIGHLIGHTS_INCREASE_SLOPE = 0.08f;
 
 inline float highlightsFunction(float input, float value) {
 

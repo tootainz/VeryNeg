@@ -114,7 +114,6 @@ private:
     void CheckboxPressHoldColor(bool checked);
     void ButtonPressResetColor();
     void CheckboxPressAutoWhiteBalance(bool checked);
-    void CheckboxPressNeutralSample(bool checked);
     void ButtonPressSetNeutralSample();
     void SetNeutralSample(int x, int y);
     void SliderChangeSetRBalance(float value);

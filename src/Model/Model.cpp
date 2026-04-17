@@ -170,9 +170,6 @@ void Model::applyHoldColor() {
 
         // Get held settings
         bool autoWB = this->heldNegative->getAutoWB();
-        bool hasNeutral = this->heldNegative->getHasNeutral();
-        auto [neutralR, neutralG, neutralB] = this->heldNegative->getNeutral();
-
         float rBalance = this->heldNegative->getRBalance();
         float gBalance = this->heldNegative->getGBalance();
         float bBalance = this->heldNegative->getBBalance();
@@ -180,16 +177,12 @@ void Model::applyHoldColor() {
         float saturation = this->heldNegative->getSaturation();
 
         // Apply held settings
-        negative->setAutoWB(autoWB);
-
-        negative->setHasNeutral(hasNeutral);
-        if (hasNeutral) {
-            negative->setNeutral(neutralR, neutralG, neutralB);
+        negative->setHasAutoWB(autoWB);
+        if (!autoWB) {
+            negative->setRBalance(rBalance);
+            negative->setGBalance(gBalance);
+            negative->setBBalance(bBalance);
         }
-
-        negative->setRBalance(rBalance);
-        negative->setGBalance(gBalance);
-        negative->setBBalance(bBalance);
 
         negative->setSaturation(saturation);
     }

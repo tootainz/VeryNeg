@@ -39,7 +39,6 @@ struct UiState {
     bool heldEdits = false;
     bool isDragging = false;
     bool autoWB = true;
-    bool hasNeutral = false;
     bool heldColor = false;
     bool heldIntensity = false;
     bool heldSharpening = false;
