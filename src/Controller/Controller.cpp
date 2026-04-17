@@ -381,6 +381,91 @@ void Controller::ButtonPressThumbnail(int id) {
     }
 }
 
+void Controller::ButtonPressRotateClock() {
+    std::println("Rotate clockwise pressed");
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto execute = [this, negative]() {
+            negative->rotateClockwise();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+        
+        auto undo = [this, negative]() {
+            negative->rotateCounterClockwise();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+        
+    }
+}
+
+void Controller::ButtonPressRotateCounterClock() {
+    std::println("Rotate counter clockwise pressed");
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto execute = [this, negative]() {
+            negative->rotateCounterClockwise();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+        
+        auto undo = [this, negative]() {
+            negative->rotateClockwise();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+        
+    }
+}
+
+void Controller::ButtonPressFlipHorizontal() {
+    std::println("flip horizontal pressed");
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto execute = [this, negative]() {
+            negative->flipHorizontal();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+
+        // Undo is same as execute since we are just flipping
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, execute)
+        );
+        
+    }
+}
+
+void Controller::ButtonPressFlipVertical() {
+    std::println("flip vertical pressed");
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto execute = [this, negative]() {
+            negative->flipHorizontal();
+            this->view.setPreviewOrientation(negative->getOrientation());
+        };
+
+        // Undo is same as execute since we are just flipping
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, execute)
+        );
+        
+    }
+}
 
 // GUI EVENTS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
@@ -1150,6 +1235,20 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
             else if (id == "previous") {
                 this->ButtonPressPreviousNegative();
+            }
+
+            // ORIENTATION
+            else if (id == "rotateClock") {
+                this->ButtonPressRotateClock();
+            }
+            else if (id == "rotateCounterClock") {
+                this->ButtonPressRotateCounterClock();
+            }
+            else if (id == "flipHorizontal") {
+                this->ButtonPressFlipHorizontal();
+            }
+            else if (id == "flipVertical") {
+                this->ButtonPressFlipVertical();
             }
 
             // PRE-CONVERT

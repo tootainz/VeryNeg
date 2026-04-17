@@ -440,6 +440,12 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
 
+    int orientation = 1;
+    // Try to get orientation form the exif data, if not working, deault to 1
+    if (spec.get_int_attribute("Orientation", 1) != 1) {
+        orientation = spec.get_int_attribute("Orientation", 1);
+    }
+
     // Get the ICC profile if it exists
     // Stores a pointer to the attribute if it exists
     const OIIO::ParamValue* attribute = spec.find_attribute("ICCProfile", OIIO::TypeDesc::UNKNOWN);
@@ -521,6 +527,9 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
+
+    // Set the orientation that was read earlier
+    this->setOrientation(orientation);
 
     // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
@@ -745,8 +754,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     }
 }
 
-
-// SETTING EDIT SETTINGS PRE-CONVERT
+// SETTING EDIT SETTIGNS ROTATION
 // ----------------------------------------------------------------------------------------------------------------
 
 // Set the exif oriantation tag
@@ -760,13 +768,67 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 7 = Transverse (flip + rotate 270°)
 8 = Rotated 270° clockwise        
 */
-
 void Negative::setOrientation(int value) {
     this->negativeData["general"]["orientation"] = value;
 }
 
-float Negative::setScanGamma(float value)
-{
+void Negative::rotateClockwise() {
+    switch (getOrientation()) {
+        case 1: setOrientation(6); break;
+        case 2: setOrientation(7); break;
+        case 3: setOrientation(8); break;
+        case 4: setOrientation(5); break;
+        case 5: setOrientation(2); break;
+        case 6: setOrientation(3); break;
+        case 7: setOrientation(4); break;
+        case 8: setOrientation(1); break;
+    }
+}
+
+void Negative::rotateCounterClockwise() {
+    switch (getOrientation()) {
+        case 1: setOrientation(8); break;
+        case 2: setOrientation(5); break;
+        case 3: setOrientation(6); break;
+        case 4: setOrientation(7); break;
+        case 5: setOrientation(4); break;
+        case 6: setOrientation(1); break;
+        case 7: setOrientation(2); break;
+        case 8: setOrientation(3); break;
+    }
+}
+
+void Negative::flipHorizontal() {
+    switch (getOrientation()) {
+        case 1: setOrientation(2); break;
+        case 2: setOrientation(1); break;
+        case 3: setOrientation(4); break;
+        case 4: setOrientation(3); break;
+        case 5: setOrientation(6); break;
+        case 6: setOrientation(5); break;
+        case 7: setOrientation(8); break;
+        case 8: setOrientation(7); break;
+    }
+}
+
+void Negative::flipVertical() {
+    switch (getOrientation()) {
+        case 1: setOrientation(4); break;
+        case 2: setOrientation(3); break;
+        case 3: setOrientation(2); break;
+        case 4: setOrientation(1); break;
+        case 5: setOrientation(8); break;
+        case 6: setOrientation(7); break;
+        case 7: setOrientation(6); break;
+        case 8: setOrientation(5); break;
+    }
+}
+
+
+// SETTING EDIT SETTINGS PRE-CONVERT
+// ----------------------------------------------------------------------------------------------------------------
+
+float Negative::setScanGamma(float value) {
     this->negativeData["conversion"]["scanGamma"] = value;
     return this->getScanGamma();
 }

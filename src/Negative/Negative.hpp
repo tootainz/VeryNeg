@@ -140,6 +140,10 @@ public:
 
     // ROTATION
     void setOrientation(int value);
+    void rotateClockwise();
+    void rotateCounterClockwise();
+    void flipHorizontal();
+    void flipVertical();
 
     // PRE-CONVERT
     float setScanGamma(float value);

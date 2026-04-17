@@ -21,6 +21,21 @@
         
         <div id="right">
             <div id="settings">
+                <div id="orientationSettings" class="settingsTab">
+                    
+                    <div class="settingHeader">
+                        <h2>Orientation</h2>
+                        <button id="resetConversion">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdOrientation">Hold</input>
+                    </div>
+
+                    <button id="rotateClock">Clockwise</button>
+                    <button id="rotateCounterClock">Counter C</button>
+                    <button id="flipHorizontal">Flip H</button>
+                    <button id="flipVertical">FLip V</button>
+
+                </div>
+
                 <div id="preConvertSettings" class="settingsTab">
                     
                     <div class="settingHeader">

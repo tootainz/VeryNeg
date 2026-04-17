@@ -35,6 +35,7 @@ private:
     float previewScale;
     int previewWidth = 800;
     int previewHeight = 800;
+    int previewOrientation = 1;
     float previewX = 0;
     float previewY = 0;
     float previewCenterOffsetX = 0;
@@ -82,6 +83,7 @@ public:
     void updatePreviewSize();
     void updatePreviewScale();
     void updatePreviewPos();
+    void setPreviewOrientation(int value);
     std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
     std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);
     void updateFilmRollRenderArea();

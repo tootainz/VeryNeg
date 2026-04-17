@@ -79,6 +79,14 @@ private:
     void ButtonPressNextNegative();
     void ButtonPressPreviousNegative();
     void ButtonPressThumbnail(int id);
+
+    // ORIENTATION
+    void CheckboxPressHoldOrientation(bool checked);
+    void ButtonPressResetOrientation();
+    void ButtonPressRotateClock();
+    void ButtonPressRotateCounterClock();
+    void ButtonPressFlipHorizontal();
+    void ButtonPressFlipVertical();
     
     // PRE-CONVERT
     void CheckboxPressHoldConvert(bool checked);

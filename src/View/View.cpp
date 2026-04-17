@@ -186,22 +186,186 @@ void View::updatePreviewPos() {
     std::println("the preview will be drawn on {},{}", this->previewX, this->previewY);
 }
 
-std::tuple<int, int> View::previewCoordsToTextureCoords(int x, int y) {
-    // First remove the preview offset, then remove the preview scale
-    // This should give us the original coords
-    float textureX = (x-this->previewX)*(1.0f/this->previewScale);
-    float textureY = (y-this->previewY)*(1.0f/this->previewScale);
-    std::println("the original coords are {},{}", textureX, textureY);
-    return std::tuple<int, int>(textureX, textureY);
+// I didn't have time to think how to unmap the orientation so this is by ChatGPT
+void View::setPreviewOrientation(int value) {
+    this->previewOrientation = value;
+
+    // Reset everything first
+    this->previewSprite.setRotation(sf::degrees(0));
+    this->previewSprite.setScale({this->previewScale, this->previewScale});
+
+    sf::Vector2u size = this->previewTexture->getSize();
+
+    // Default origin (top-left)
+    float originX = 0.f;
+    float originY = 0.f;
+
+    switch (value) {
+        case 1: // normal
+            break;
+
+        case 2: // flip horizontal
+            this->previewSprite.setScale({-this->previewScale, this->previewScale});
+            originX = size.x;
+            break;
+
+        case 3: // rotate 180
+            this->previewSprite.setRotation(sf::degrees(180));
+            originX = size.x;
+            originY = size.y;
+            break;
+
+        case 4: // flip vertical
+            this->previewSprite.setScale({this->previewScale, -this->previewScale});
+            originY = size.y;
+            break;
+
+        case 5: // transpose (flip + rotate 90)
+            this->previewSprite.setRotation(sf::degrees(90));
+            this->previewSprite.setScale({-this->previewScale, this->previewScale});
+            originX = size.x;
+            break;
+
+        case 6: // rotate 90 CW
+            this->previewSprite.setRotation(sf::degrees(90));
+            originY = size.y;
+            break;
+
+        case 7: // transverse
+            this->previewSprite.setRotation(sf::degrees(270));
+            this->previewSprite.setScale({-this->previewScale, this->previewScale});
+            originX = size.x;
+            break;
+
+        case 8: // rotate 270 CW
+            this->previewSprite.setRotation(sf::degrees(270));
+            originX = size.x;
+            break;
+    }
+
+    this->previewSprite.setOrigin({originX, originY});
+
+    // Recalculate position because bounds changed after rotation
+    this->updatePreviewPos();
+    this->updatePreviewSize();
+    this->updatePreviewScale();
 }
 
+// This was originally by me but i didn't have time to think how to unmap the orientation so this version is by ChatGPT
+std::tuple<int, int> View::previewCoordsToTextureCoords(int x, int y) {
+    // Remove preview offset + scale
+    float px = (x - this->previewX) / this->previewScale;
+    float py = (y - this->previewY) / this->previewScale;
+
+    float tx = px;
+    float ty = py;
+
+    sf::Vector2u size = this->previewTexture->getSize();
+    float w = size.x;
+    float h = size.y;
+
+    // Apply inverse orientation transform
+    switch (this->previewOrientation) {
+        case 1:
+            break;
+
+        case 2: // flip horizontal
+            tx = w - px;
+            ty = py;
+            break;
+
+        case 3: // rotate 180
+            tx = w - px;
+            ty = h - py;
+            break;
+
+        case 4: // flip vertical
+            tx = px;
+            ty = h - py;
+            break;
+
+        case 5: // transpose
+            tx = py;
+            ty = px;
+            break;
+
+        case 6: // rotate 90 CW
+            tx = py;
+            ty = h - px;
+            break;
+
+        case 7: // transverse
+            tx = h - py;
+            ty = w - px;
+            break;
+
+        case 8: // rotate 270 CW
+            tx = w - py;
+            ty = px;
+            break;
+    }
+
+    return {static_cast<int>(tx), static_cast<int>(ty)};
+}
+
+// This was originally by me but i didn't have time to think how to unmap the orientation so this version is by ChatGPT
 std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
-    // First scale by preview scale, then add the preview offset
-    // This should give us the preview coords
-    float previewX = x*this->previewScale+this->previewX;
-    float previewY = y*this->previewScale+this->previewY;
-    std::println("the preview coords are {},{}", previewX, previewY);
-    return std::tuple<int, int>(previewX, previewY);
+    float tx = x;
+    float ty = y;
+
+    float px = tx;
+    float py = ty;
+
+    sf::Vector2u size = this->previewTexture->getSize();
+    float w = size.x;
+    float h = size.y;
+
+    // Apply forward orientation transform
+    switch (this->previewOrientation) {
+        case 1:
+            break;
+
+        case 2: // flip horizontal
+            px = w - tx;
+            py = ty;
+            break;
+
+        case 3: // rotate 180
+            px = w - tx;
+            py = h - ty;
+            break;
+
+        case 4: // flip vertical
+            px = tx;
+            py = h - ty;
+            break;
+
+        case 5: // transpose
+            px = ty;
+            py = tx;
+            break;
+
+        case 6: // rotate 90 CW
+            px = h - ty;
+            py = tx;
+            break;
+
+        case 7: // transverse
+            px = h - ty;
+            py = w - tx;
+            break;
+
+        case 8: // rotate 270 CW
+            px = ty;
+            py = w - tx;
+            break;
+    }
+
+    // Apply scale + offset
+    float previewX = px * this->previewScale + this->previewX;
+    float previewY = py * this->previewScale + this->previewY;
+
+    return {static_cast<int>(previewX), static_cast<int>(previewY)};
 }
 
 void View::updateFilmRollRenderArea() {
@@ -279,6 +443,7 @@ void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->previewSprite = sf::Sprite(*this->previewTexture);
     this->previewSprite.setPosition({this->previewX, this->previewY});
     this->updatePreviewScale();
+    this->setPreviewOrientation(this->previewOrientation);
 }
 
 void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
