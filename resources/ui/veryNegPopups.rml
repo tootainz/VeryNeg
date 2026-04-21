@@ -13,6 +13,15 @@
                         <option value="jpeg">jpeg</option>
                     </select>
                 </div>
+
+                <div class="selectButtons">
+                    <label for="colorProfile">Color Profile</label>
+                    <select name="colorProfile" id="colorProfile">
+                        <option value="adobeRGB">adobeRGB</option>
+                        <option value="sRGB">sRGB</option>
+                    </select>
+                </div>
+
                 <button id="exportCancel">Cancel</button>
                 <button id="exportCurrent">Export Current</button>
                 <button id="exportAll">Export All</button>

@@ -28,9 +28,8 @@ View::View(sf::RenderWindow& window) :
     if (this->rmlDocumentUi) {
         this->rmlDocumentUi->Show();
     }
-    this->updatePreviewSize();
-    this->updatePreviewScale();
-    this->updatePreviewPos();
+    this->updatePreviewElementSize();
+    this->updatePreviewSpriteTransform();
 
     this->updateFilmRollRenderArea();
     this->updateSettingsRenderArea();
@@ -139,233 +138,233 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
 // PREVIEW MANAGEMENT
 // ----------------------------------------------------------------------------------------------------------------
 
-void View::updatePreviewSize() {
+void View::updatePreviewElementSize() {
     Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("preview");
-    this->previewWidth = previewElement->GetOffsetWidth();
-    this->previewHeight = previewElement->GetOffsetHeight();
-    std::println("preveiw size is {} * {}", this->previewWidth, this->previewHeight);
+    this->previewElementWidth = previewElement->GetOffsetWidth();
+    this->previewElementHeight = previewElement->GetOffsetHeight();
+
+    this->previewElementTop = previewElement->GetAbsoluteTop();
+    this->previewElementLeft = previewElement->GetAbsoluteLeft();
 }
 
-void View::updatePreviewScale() {
-    sf::Vector2u textureSize = this->previewTexture->getSize();
+void View::updatePreviewSpriteTransform() {
 
-    // Calculate scale factors to fit the target size
-    float scaleX = this->previewWidth / (1.0f * textureSize.x);
-    float scaleY = this->previewHeight / (1.0f * textureSize.y);
-    this->previewScale = std::min(scaleX, scaleY);
+    sf::Sprite& sprite = previewSprite;
+    const float spriteWidth = sprite.getLocalBounds().size.x;
+    const float spriteHeight = sprite.getLocalBounds().size.y;
 
-    std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
+    std::println("original sprite w {}, h {}", spriteWidth, spriteHeight);
 
-    // Apply the scale to the sprite
-    this->previewSprite.setScale({this->previewScale, this->previewScale});
-}
+    // 0. Reset everything
+    // ---------------------------------------------------------
+    sprite.setRotation(sf::degrees(0.0f));
+    sprite.setScale({1.0f, 1.0f});
+    sprite.setPosition({0.0f, 0.0f});
 
-void View::updatePreviewPos() {
-    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("preview");
+    // 1. Set origin to center
+    // ---------------------------------------------------------
+    sprite.setOrigin({spriteWidth/2.0f, spriteHeight/2.0f});
 
-    float spriteWidth = this->previewSprite.getGlobalBounds().size.x;
-    float spriteHeight = this->previewSprite.getGlobalBounds().size.y;
+    std::println("set sprite origin {}, h {}", spriteWidth/2.0f, spriteHeight/2.0f);
+
+    // 2. Apply rotation to the sprite
+    // ---------------------------------------------------------
+    switch (this->previewOrientation) {
+    // These come from what exif orientation data means
+    case 1: // normal
+        break;
+    case 3: // rotate 180
+        this->previewSprite.setRotation(sf::degrees(180.0f));
+        break;
+    case 5: // transpose (flip + rotate 90)
+        this->previewSprite.setRotation(sf::degrees(90.0f));
+        // the flipping is done when setting the scale later
+        break;
+    case 6: // rotate 90 CW
+        this->previewSprite.setRotation(sf::degrees(90.0f));
+        break;
+    case 7: // transverse
+        this->previewSprite.setRotation(sf::degrees(270.0f));
+        // the flipping is done when setting the scale later
+        break;
+    case 8: // rotate 270 CW
+        this->previewSprite.setRotation(sf::degrees(270.0f));
+        break;
+    }
     
-    std::println("spritewidth: {}, previewWidth: {}", spriteWidth, this->previewWidth);
+    // 3. Calculate preview scale to fit preview element
+    // ---------------------------------------------------------
+
+    // Get new sprite dimensions after the rotation
+    const float newSpriteWidth = sprite.getGlobalBounds().size.x;
+    const float newSpriteHeight = sprite.getGlobalBounds().size.y;
+
+    std::println("new after rotation sprite w {}, h {}", newSpriteWidth, newSpriteHeight);
+
+    // Calculate scales for both axis adn choose the smaller one
+    float scaleX = this->previewElementWidth / (1.0f * newSpriteWidth);
+    float scaleY = this->previewElementHeight / (1.0f * newSpriteHeight);
+    this->previewScaleX = this->previewScaleY = std::min(scaleX, scaleY);
+
+    // Update scale from mirroring info from orientation
+    switch (this->previewOrientation) {
+    case 2: // flip horizontal
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    case 4: // flip vertical
+        this->previewScaleY = -this->previewScaleY;
+        break;
+    case 5: // transpose (flip + rotate 90)
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    case 7: // transverse
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    }
+
+    // Apply the scale to the sprite by taking into consideration the mirroring from orientation
+    this->previewSprite.setScale({this->previewScaleX, this->previewScaleY});
+
+    std::println("sprite scale is w {}, h {}", this->previewScaleX, this->previewScaleY);
+
+    // 4. Update previewSprite Position
+    // ---------------------------------------------------------
+
+    // Get new sprite dimensions after the scaling
+    const float finalSpriteWidth = sprite.getGlobalBounds().size.x;
+    const float finalSpriteHeight = sprite.getGlobalBounds().size.y;
+
+    std::println("final sprite w {}, h {}", finalSpriteWidth, finalSpriteHeight);
 
     // if sprite width < preview width then center horizontal
-    if (spriteWidth < this->previewWidth) {
-        std::println("center preview horizontal");
-        this->previewCenterOffsetX = (this->previewWidth-spriteWidth)/2.0f;
-        this->previewCenterOffsetY = 0.0f;
+    if (finalSpriteWidth < this->previewElementWidth) {
+        this->previewOffsetX = (this->previewElementWidth-finalSpriteWidth)/2.0f;
+        this->previewOffsetY = 0.0f;
     }
     // center vertical
     else {
-        std::println("center preview vertical");
-        this->previewCenterOffsetX = 0.0f;
-        this->previewCenterOffsetY = (this->previewHeight-spriteHeight)/2.0f;
+        this->previewOffsetX = 0.0f;
+        this->previewOffsetY = (this->previewElementHeight-finalSpriteHeight)/2.0f;
     }
 
-    this->previewX = previewElement->GetAbsoluteLeft()+this->previewCenterOffsetX;
-    this->previewY = previewElement->GetAbsoluteTop()+this->previewCenterOffsetY;
-    std::println("the preview will be drawn on {},{}", this->previewX, this->previewY);
+    std::println("sprite offsets are w {}, h {}", this->previewOffsetX, this->previewOffsetY);
+
+    this->previewX = this->previewElementLeft + this->previewOffsetX + finalSpriteWidth/2.0f;
+    this->previewY = this->previewElementTop + this->previewOffsetY + finalSpriteHeight/2.0f;
+    sprite.setPosition({this->previewX, this->previewY});
+
+    std::println("sprite location is w {}, h {}", this->previewX, this->previewY);
 }
 
-// I didn't have time to think how to unmap the orientation so this is by ChatGPT
 void View::setPreviewOrientation(int value) {
     this->previewOrientation = value;
-
-    // Reset everything first
-    this->previewSprite.setRotation(sf::degrees(0));
-    this->previewSprite.setScale({this->previewScale, this->previewScale});
-
-    sf::Vector2u size = this->previewTexture->getSize();
-
-    // Default origin (top-left)
-    float originX = 0.0f;
-    float originY = 0.0f;
-
-    switch (value) {
-        case 1: // normal
-            break;
-
-        case 2: // flip horizontal
-            this->previewSprite.setScale({-this->previewScale, this->previewScale});
-            originX = size.x;
-            break;
-
-        case 3: // rotate 180
-            this->previewSprite.setRotation(sf::degrees(180));
-            originX = size.x;
-            originY = size.y;
-            break;
-
-        case 4: // flip vertical
-            this->previewSprite.setScale({this->previewScale, -this->previewScale});
-            originY = size.y;
-            break;
-
-        case 5: // transpose (flip + rotate 90)
-            this->previewSprite.setRotation(sf::degrees(90));
-            this->previewSprite.setScale({-this->previewScale, this->previewScale});
-            originX = size.x;
-            break;
-
-        case 6: // rotate 90 CW
-            this->previewSprite.setRotation(sf::degrees(90));
-            originY = size.y;
-            break;
-
-        case 7: // transverse
-            this->previewSprite.setRotation(sf::degrees(270));
-            this->previewSprite.setScale({-this->previewScale, this->previewScale});
-            originX = size.x;
-            break;
-
-        case 8: // rotate 270 CW
-            this->previewSprite.setRotation(sf::degrees(270));
-            originX = size.x;
-            break;
-    }
-
-    this->previewSprite.setOrigin({originX, originY});
-
-    // Recalculate position because bounds changed after rotation
-    this->updatePreviewPos();
-    this->updatePreviewSize();
-    this->updatePreviewScale();
+    this->updatePreviewSpriteTransform();
 }
 
-// This was originally by me but i didn't have time to think how to unmap the orientation so this version is by ChatGPT
+// Written by ChatGPT based on my coordinate transforms with the preview above
 std::tuple<int, int> View::previewCoordsToTextureCoords(int x, int y) {
-    // Remove preview offset + scale
-    float px = (x - this->previewX) / this->previewScale;
-    float py = (y - this->previewY) / this->previewScale;
+    sf::Sprite& sprite = previewSprite;
 
-    float tx = px;
-    float ty = py;
+    // 1. Convert from preview space into sprite local space
+    float localX = x - this->previewX;
+    float localY = y - this->previewY;
 
-    sf::Vector2u size = this->previewTexture->getSize();
-    float w = size.x;
-    float h = size.y;
+    // 2. Undo scale (handle flip safely)
+    float sx = this->previewScaleX;
+    float sy = this->previewScaleY;
 
-    // Apply inverse orientation transform
-    switch (this->previewOrientation) {
-        case 1:
-            break;
+    if (sx == 0.f || sy == 0.f)
+        return {0, 0};
 
-        case 2: // flip horizontal
-            tx = w - px;
-            ty = py;
-            break;
+    localX /= sx;
+    localY /= sy;
 
-        case 3: // rotate 180
-            tx = w - px;
-            ty = h - py;
-            break;
+    // 3. Undo rotation (center-based)
+    sf::Angle rot = sprite.getRotation();
+    float deg = rot.asDegrees();
 
-        case 4: // flip vertical
-            tx = px;
-            ty = h - py;
-            break;
+    float x2, y2;
 
-        case 5: // transpose
-            tx = py;
-            ty = px;
-            break;
-
-        case 6: // rotate 90 CW
-            tx = py;
-            ty = h - px;
-            break;
-
-        case 7: // transverse
-            tx = h - py;
-            ty = w - px;
-            break;
-
-        case 8: // rotate 270 CW
-            tx = w - py;
-            ty = px;
-            break;
+    if (deg == 0.f)
+    {
+        x2 = localX;
+        y2 = localY;
+    }
+    else if (deg == 180.f)
+    {
+        x2 = -localX;
+        y2 = -localY;
+    }
+    else if (deg == 90.f)
+    {
+        x2 = localY;
+        y2 = -localX;
+    }
+    else // 270
+    {
+        x2 = -localY;
+        y2 = localX;
     }
 
-    return {static_cast<int>(tx), static_cast<int>(ty)};
+    // 4. Convert from centered sprite space → texture space
+    const auto bounds = sprite.getLocalBounds();
+    float halfW = bounds.size.x / 2.0f;
+    float halfH = bounds.size.y / 2.0f;
+
+    int texX = static_cast<int>(x2 + halfW);
+    int texY = static_cast<int>(y2 + halfH);
+
+    return {texX, texY};
 }
 
-// This was originally by me but i didn't have time to think how to unmap the orientation so this version is by ChatGPT
+// Written by ChatGPT based on my coordinate transforms with the preview above
 std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
-    float tx = x;
-    float ty = y;
+    sf::Sprite& sprite = previewSprite;
 
-    float px = tx;
-    float py = ty;
+    const auto bounds = sprite.getLocalBounds();
+    float halfW = bounds.size.x / 2.0f;
+    float halfH = bounds.size.y / 2.0f;
 
-    sf::Vector2u size = this->previewTexture->getSize();
-    float w = size.x;
-    float h = size.y;
+    // 1. texture → centered sprite space
+    float cx = x - halfW;
+    float cy = y - halfH;
 
-    // Apply forward orientation transform
-    switch (this->previewOrientation) {
-        case 1:
-            break;
+    // 2. apply rotation
+    sf::Angle rot = sprite.getRotation();
+    float deg = rot.asDegrees();
 
-        case 2: // flip horizontal
-            px = w - tx;
-            py = ty;
-            break;
+    float lx, ly;
 
-        case 3: // rotate 180
-            px = w - tx;
-            py = h - ty;
-            break;
-
-        case 4: // flip vertical
-            px = tx;
-            py = h - ty;
-            break;
-
-        case 5: // transpose
-            px = ty;
-            py = tx;
-            break;
-
-        case 6: // rotate 90 CW
-            px = h - ty;
-            py = tx;
-            break;
-
-        case 7: // transverse
-            px = h - ty;
-            py = w - tx;
-            break;
-
-        case 8: // rotate 270 CW
-            px = ty;
-            py = w - tx;
-            break;
+    if (deg == 0.f)
+    {
+        lx = cx;
+        ly = cy;
+    }
+    else if (deg == 180.f)
+    {
+        lx = -cx;
+        ly = -cy;
+    }
+    else if (deg == 90.f)
+    {
+        lx = -cy;
+        ly = cx;
+    }
+    else // 270
+    {
+        lx = cy;
+        ly = -cx;
     }
 
-    // Apply scale + offset
-    float previewX = px * this->previewScale + this->previewX;
-    float previewY = py * this->previewScale + this->previewY;
+    // 3. apply scale (including flip)
+    lx *= this->previewScaleX;
+    ly *= this->previewScaleY;
 
-    return {static_cast<int>(previewX), static_cast<int>(previewY)};
+    // 4. convert to preview space
+    int px = static_cast<int>(lx + this->previewX);
+    int py = static_cast<int>(ly + this->previewY);
+
+    return {px, py};
 }
 
 void View::updateFilmRollRenderArea() {
@@ -442,8 +441,7 @@ void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->previewTexture = std::move(texture);
     this->previewSprite = sf::Sprite(*this->previewTexture);
     this->previewSprite.setPosition({this->previewX, this->previewY});
-    this->updatePreviewScale();
-    this->setPreviewOrientation(this->previewOrientation);
+    this->updatePreviewSpriteTransform();
 }
 
 void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {

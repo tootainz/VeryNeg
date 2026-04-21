@@ -25,5 +25,11 @@ inline std::tuple<float, float, float> neutralPatch(float sampleR, float sampleG
     std::println("Scaling factor for g: {}", gScaling);
     std::println("Scaling factor for b: {}", bScaling);
 
+    // Apply my interpretation of a neutral grey
+
+    rScaling = rScaling;
+    gScaling = gScaling * 0.99;
+    bScaling = bScaling * 0.87;
+
     return {rScaling, gScaling, bScaling};
 }

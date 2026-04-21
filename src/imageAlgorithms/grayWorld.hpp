@@ -47,6 +47,13 @@ inline std::tuple<float, float, float> grayWorld(std::vector<float>& image) {
     float gScaling = targetGray/gAverage;
     float bScaling = targetGray/bAverage;
 
+    // Set up my preferre neutral gray fro each channel by multiplying it
+    // My preference: Red stays as the reference point, Green is a little bit less or almost the same as red, blue is noticeably less
+
+    rScaling = rScaling;
+    gScaling = gScaling * 0.98;
+    bScaling = bScaling * 0.8;
+
     std::println("Scaling factor for r: {}", rScaling);
     std::println("Scaling factor for g: {}", gScaling);
     std::println("Scaling factor for b: {}", bScaling);

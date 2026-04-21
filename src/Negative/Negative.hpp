@@ -55,6 +55,7 @@ private:
     // All pixel data is stored in a one dimensional array, where pixels are stored sequentially with their channels as well in the order of RGB.
     // For example: [1R, 1G, 1B, 2R, 2G, 2B, 3R, 3G, 3B, ...]
     std::vector<float> originalPixels;
+    // The number of channels can currently be either 1 or 3, meaning a BW or a color negative
     int numberOfChannels;
     int width;
     int height;
@@ -139,6 +140,10 @@ public:
 
     // SETTING EDIT SETTINGS
 
+    // CROP
+    void setHasCrop(bool has);
+    void setCropArea(ImageArea area, float scale);
+
     // ROTATION
     void setOrientation(int value);
     void rotateClockwise();
@@ -187,6 +192,10 @@ public:
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
     nlohmann::json getNegativeData();
+
+    // CROP
+    bool getHasCrop();
+    ImageArea getCropArea(float scale);
 
     // ROTATION
     int getOrientation();

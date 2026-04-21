@@ -32,14 +32,17 @@ private:
     // Preview
     std::unique_ptr<sf::Texture> previewTexture;
     sf::Sprite previewSprite;
-    float previewScale;
-    int previewWidth = 800;
-    int previewHeight = 800;
+    int previewElementWidth = 800;
+    int previewElementHeight = 800;
+    int previewElementLeft = 0;
+    int previewElementTop = 0;
+    float previewOffsetX = 0.0f;
+    float previewOffsetY = 0.0f;
+    float previewX = 0.0f;
+    float previewY = 0.0f;
+    float previewScaleX;
+    float previewScaleY;
     int previewOrientation = 1;
-    float previewX = 0;
-    float previewY = 0;
-    float previewCenterOffsetX = 0;
-    float previewCenterOffsetY = 0;
 
     // Sharpness preview
     std::unique_ptr<sf::Texture> sharpeningPreviewTexture;
@@ -80,9 +83,8 @@ public:
     void updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
 
     // PREVIEW MANAGEMENT
-    void updatePreviewSize();
-    void updatePreviewScale();
-    void updatePreviewPos();
+    void updatePreviewElementSize();
+    void updatePreviewSpriteTransform();
     void setPreviewOrientation(int value);
     std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
     std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);

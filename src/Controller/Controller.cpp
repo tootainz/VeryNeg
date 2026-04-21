@@ -275,9 +275,8 @@ void Controller::ButtonPressAddNegative() {
     this->view.LoadThumbnails();
     this->updatePreview(false);
     this->updateSharpnessPreview();
-    this->view.updatePreviewSize();
-    this->view.updatePreviewScale();
-    this->view.updatePreviewPos();
+    this->view.updatePreviewElementSize();
+    this->view.updatePreviewSpriteTransform();
     this->updatePreview(false);
 }
 
@@ -311,7 +310,7 @@ void Controller::ButtonPressRemoveNegative(int id) {
     }
     this->updatePreview(false);
     this->updateSharpnessPreview();
-    this->view.updatePreviewPos();
+    this->view.updatePreviewSpriteTransform();
 }
 
 void Controller::ButtonPressNextNegative() {
@@ -331,7 +330,7 @@ void Controller::ButtonPressNextNegative() {
     }
     this->updatePreview(false);
     this->updateSharpnessPreview();
-    this->view.updatePreviewPos();
+    this->view.updatePreviewSpriteTransform();
 }
 
 void Controller::ButtonPressPreviousNegative() {
@@ -352,7 +351,7 @@ void Controller::ButtonPressPreviousNegative() {
     }
     this->updatePreview(false);
     this->updateSharpnessPreview();
-    this->view.updatePreviewPos();
+    this->view.updatePreviewSpriteTransform();
 }
 
 void Controller::ButtonPressThumbnail(int id) {
@@ -381,7 +380,7 @@ void Controller::ButtonPressThumbnail(int id) {
         }
         this->updatePreview(false);
         this->updateSharpnessPreview();
-        this->view.updatePreviewPos();
+        this->view.updatePreviewSpriteTransform();
     }
 }
 
@@ -458,7 +457,7 @@ void Controller::ButtonPressFlipVertical() {
     if (negative) {
 
         auto execute = [this, negative]() {
-            negative->flipHorizontal();
+            negative->flipVertical();
             this->view.setPreviewOrientation(negative->getOrientation());
         };
 
@@ -1626,9 +1625,8 @@ void Controller::eventLoop() {
             RmlBackend::Resize(this->view.getRmlContextUi());
             this->view.getRmlContextPopups()->Update();
             this->view.getRmlContextUi()->Update();
-            this->view.updatePreviewSize();
-            this->view.updatePreviewScale();
-            this->view.updatePreviewPos();
+            this->view.updatePreviewElementSize();
+            this->view.updatePreviewSpriteTransform();
             this->view.updateFilmRollRenderArea();
             this->view.updateSettingsRenderArea();
             this->updatePreview(false);

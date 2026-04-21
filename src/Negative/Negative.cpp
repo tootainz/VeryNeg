@@ -486,11 +486,22 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     
     input->close();
 
-    // 1.5. Convert to adobe rgb if not already
-    bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->iccProfile);
-    if (!iccConverted) {
-        // The profile conversion failed
-        return false;
+    // 1.5. Convert to working space if not already
+    // RGB
+    if (this->numberOfChannels == 3) {
+        bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->iccProfile);
+        if (!iccConverted) {
+            // The profile conversion failed
+            return false;
+        }
+    }
+    // GRAY
+    else if (this->numberOfChannels == 1) {
+        bool iccConverted = this->profiler->toGrayGamma22(this->originalPixels, this->iccProfile);
+        if (!iccConverted) {
+            // The profile conversion failed
+            return false;
+        }
     }
 
     // 2. Generate the working image
@@ -760,19 +771,36 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     }
 }
 
+// SETTING EDIT SETTIGNS CROP
+// ----------------------------------------------------------------------------------------------------------------
+
+void Negative::setHasCrop(bool has) {
+    this->negativeData["general"]["isCropped"] = has;
+}
+
+void Negative::setCropArea(ImageArea area, float scale) {
+    std::println("setCropArea called");
+    std::println("scale = {}", scale);
+    std::println("incoming cropArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
+    this->negativeData["general"]["crop"]["left"] = area.left * (1.0f/scale);
+    this->negativeData["general"]["crop"]["top"] = area.top * (1.0f/scale);
+    this->negativeData["general"]["crop"]["right"] = area.right * (1.0f/scale);
+    this->negativeData["general"]["crop"]["bottom"] = area.bottom * (1.0f/scale);
+}
+
 // SETTING EDIT SETTIGNS ROTATION
 // ----------------------------------------------------------------------------------------------------------------
 
 // Set the exif oriantation tag
 /*
-1 = Normal (no rotation)          
-2 = Flipped horizontally          
-3 = Rotated 180°                  
-4 = Flipped vertically            
+1 = Normal (no rotation)
+2 = Flipped horizontally
+3 = Rotated 180°
+4 = Flipped vertically
 5 = Transposed (flip + rotate 90°)
-6 = Rotated 90° clockwise         
+6 = Rotated 90° clockwise
 7 = Transverse (flip + rotate 270°)
-8 = Rotated 270° clockwise        
+8 = Rotated 270° clockwise
 */
 void Negative::setOrientation(int value) {
     this->negativeData["general"]["orientation"] = value;
@@ -1030,6 +1058,26 @@ float Negative::setSharpeningDiameter(float value) {
 
 nlohmann::json Negative::getNegativeData() {
     return this->negativeData;
+}
+
+bool Negative::getHasCrop() {
+    return this->negativeData["general"]["isCropped"];
+}
+
+ImageArea Negative::getCropArea(float scale) {
+    std::println("getCropArea called");
+    std::println("scale = {}", scale);
+    ImageArea cropArea;
+    float left = this->negativeData["general"]["crop"]["left"];
+    float top = this->negativeData["general"]["crop"]["top"];
+    float right = this->negativeData["general"]["crop"]["right"];
+    float bottom = this->negativeData["general"]["crop"]["bottom"];
+    cropArea.left = left * scale;
+    cropArea.top = top * scale;
+    cropArea.right = right * scale;
+    cropArea.bottom = bottom * scale;
+    std::println("reading cropArea from negative has left {}, top {}, right {}, bottom {}", cropArea.left, cropArea.top, cropArea.right, cropArea.bottom);
+    return cropArea;
 }
 
 int Negative::getOrientation() {
