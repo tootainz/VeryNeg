@@ -54,7 +54,8 @@ struct UiState {
     }
 
     // Export
-    std::string exportFileFormat = "tiff";
+    std::string exportFileFormat = "jpeg";
+    std::string exportProfile = "sRGB";
 
     // General
     bool disableCallbacks = false;

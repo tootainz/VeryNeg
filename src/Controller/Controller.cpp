@@ -1151,8 +1151,10 @@ void Controller::ButtonPressExportCurrent() {
     if (negative) {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
-        std::println("save path is {}", path.string());
-        negative->exportPositive(path, this->uiState.exportFileFormat, "sRGB");
+        if (!path.empty()) {
+            std::println("save path is {}", path.string());
+            negative->exportPositive(path, this->uiState.exportFileFormat, this->uiState.exportProfile);
+        }
     }
 }
 
@@ -1161,15 +1163,17 @@ void Controller::ButtonPressExportAll() {
     if (negatives.size() > 0) {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
-        std::println("save path is {}", path.string());
-        for (auto& negative : negatives) {
+        if (!path.empty()) {
+            std::println("save path is {}", path.string());
+            for (auto& negative : negatives) {
 
-            std::filesystem::path currentPath = path;
-            std::string name = currentPath.filename();
-            std::string newName = std::format("{}_{}", name, negative.getId());
-            currentPath.replace_filename(newName);
+                std::filesystem::path currentPath = path;
+                std::string name = currentPath.filename();
+                std::string newName = std::format("{}_{}", name, negative.getId());
+                currentPath.replace_filename(newName);
 
-            negative.exportPositive(currentPath, this->uiState.exportFileFormat, "sRGB");
+                negative.exportPositive(currentPath, this->uiState.exportFileFormat, this->uiState.exportProfile);
+            }
         }
     }
 }
@@ -1181,6 +1185,11 @@ void Controller::ButtonPressExportCancel() {
 void Controller::OptionPressImageFormat(std::string format) {
     std::println("Export image format is {}", format);
     this->uiState.exportFileFormat = format;
+}
+
+void Controller::OptionPressExportProfile(std::string name) {
+    std::println("Export image profile is {}", name);
+    this->uiState.exportProfile = name;
 }
 
 // EVENT LISTENER

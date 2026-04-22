@@ -7,18 +7,18 @@
         <div class="" id="exportSettings">
                 <h2>Export Positive</h2>
                 <div class="selectButtons">
-                    <label for="imageFormat">Image format</label>
+                    <label for="imageFormat">Image Format</label>
                     <select name="imageFormat" id="imageFormat">
-                        <option value="tiff">tiff</option>
                         <option value="jpeg">jpeg</option>
+                        <option value="tiff">tiff</option>
                     </select>
                 </div>
 
                 <div class="selectButtons">
                     <label for="colorProfile">Color Profile</label>
                     <select name="colorProfile" id="colorProfile">
-                        <option value="adobeRGB">adobeRGB</option>
                         <option value="sRGB">sRGB</option>
+                        <option value="adobeRGB">adobeRGB</option>
                     </select>
                 </div>
 

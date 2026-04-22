@@ -217,7 +217,7 @@ PREVIEW
 
 #preview {
     cursor: crosshair;
-    background-color: #0e0e0e00;
+    background-color: #0e0e0e;
     height: 100%;
     margin: 20px;
 }

@@ -140,6 +140,7 @@ private:
     void ButtonPressExportAll();
     void ButtonPressExportCancel();
     void OptionPressImageFormat(std::string name);
+    void OptionPressExportProfile(std::string name);
 
     // EVENT LISTENER
     void ProcessEvent(Rml::Event& event) override;

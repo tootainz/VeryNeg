@@ -720,20 +720,23 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         profileBlob = this->profiler->getAdobeRGB();
     }
 
+    // Use OIIO::ImageBuf for ease of transforming the pixel data type
+    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    // Embed ICC profile and Orientation
+    originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
+    originalSpec.attribute("Orientation", this->getOrientation());
+
+    // Prints handy knowledge about the image
+    std::println("This image has the following data");
+    std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
+    std::println("{}", metadata);
+
+    // Actually rotate the pixels
+    OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
+    OIIO::ImageBufAlgo::reorient(originalBuf, originalBuf);
+
     if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
-
-        // Use OIIO::ImageBuf for ease of transforming the pixel data type
-        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-        // Embed ICC profile
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
-
-        // Prints handy knowledge about the image
-        std::println("This image has the following data");
-        std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
-        std::println("{}", metadata);
-
-        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
 
         // Save 8bit for jpeg
         if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
@@ -743,20 +746,9 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         std::println("Saved positive successfully");
         return true;
     }
+
     else if (imageFormat == "tiff") {
         std::string filePath = std::format("{}.tiff", imagePath.string());
-
-        // Use OIIO::ImageBuf for ease of transforming the pixel data type
-        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-        // Embed ICC profile
-        originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
-
-        // Prints handy knowledge about the image
-        std::println("This image has the following data");
-        std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
-        std::println("{}", metadata);
-
-        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
 
         // For now we want to save images as 16bit
         if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
@@ -765,9 +757,6 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         }
         std::println("Saved positive successfully");
         return true;
-    }
-    else {
-        return false;
     }
 }
 
