@@ -7,15 +7,19 @@
 
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
-#include "multiply.hpp"
 #include "gamma.hpp"
+#include "crop.hpp"
+#include "../Negative/ImageArea.hpp"
 
 
-inline std::tuple<float, float, float> grayWorld(std::vector<float>& image) {
+inline std::tuple<float, float, float> grayWorld(std::vector<float>& image, int width, int height, ImageArea area) {
 
     std::println("Starting Gray World algorithm");
 
-    int pixelAmount = image.size()/3;
+    // Generate a copy of only the pixels indicated by the area
+    auto [croppedImage, croppedWidth, croppedHeight] = crop(image, width, height, area);
+
+    int pixelAmount = croppedImage.size()/3;
 
     std::println("Total amount of pixels per channel: {}", pixelAmount);
 
@@ -29,7 +33,7 @@ inline std::tuple<float, float, float> grayWorld(std::vector<float>& image) {
         bSum += blue;
     };
 
-    iterateImageImmutableSingleThread(image, countSums);
+    iterateImageImmutableSingleThread(croppedImage, countSums);
 
     float rAverage = rSum/pixelAmount;
     float gAverage = gSum/pixelAmount; 

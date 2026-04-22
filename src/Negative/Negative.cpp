@@ -14,7 +14,6 @@
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/grayWorld.hpp"
 #include "../imageAlgorithms/neutralPatch.hpp"
-#include "../imageAlgorithms/multiply.hpp"
 #include "../imageAlgorithms/curveExposure.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
 #include "../imageAlgorithms/boxFilter.hpp"
@@ -38,7 +37,7 @@ static float exponentDampenerFixer(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 int Negative::nextId = 0;
-const std::string Negative::NEGATIVEDATA_VERSION = "0.5.0";
+const std::string Negative::NEGATIVEDATA_VERSION = "0.5.1";
 const std::string Negative::PRESETDATA_VERSION = "0.3.0";
 const float Negative::DRAGGING_SCALE = 0.4f;
 
@@ -447,7 +446,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->numberOfChannels = spec.nchannels;
 
     int orientation = 1;
-    // Try to get orientation form the exif data, if not working, deault to 1
+    // Try to get orientation form the exif data, if not working, default to 1
     if (spec.get_int_attribute("Orientation", 1) != 1) {
         orientation = spec.get_int_attribute("Orientation", 1);
     }
@@ -545,8 +544,13 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
 
-    // Set the orientation that was read earlier
-    this->setOrientation(orientation);
+    // Set the orientation
+    if (this->negativeData["general"].contains("orientation") &&
+        !this->negativeData["general"]["orientation"].is_null()) {
+        
+        std::println("There is a custom orientation in the .neg file");
+        orientation = this->negativeData["general"]["orientation"].get<int>();
+    }
 
     // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
@@ -793,6 +797,7 @@ void Negative::setCropArea(ImageArea area, float scale) {
 */
 void Negative::setOrientation(int value) {
     this->negativeData["general"]["orientation"] = value;
+    this->writeNegativeData();
 }
 
 void Negative::rotateClockwise() {
@@ -921,33 +926,60 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         std::println("preset exists");
         nlohmann::json presetData = *presetDataPointer;
 
-        float density = presetData["density"];
-        float contrast = presetData["contrast"];
-        float whites = presetData["whites"];
-        float highlights = presetData["highlights"];
-        float shadows = presetData["shadows"];
-        float blacks = presetData["blacks"];
-        bool autoWB = presetData["hasAutoWB"];
-        float rBalance = presetData["rBalance"];
-        float gBalance = presetData["gBalance"];
-        float bBalance = presetData["bBalance"];
-        float saturation = presetData["saturation"];
-        float sharpeningAmount = presetData["sharpeningAmount"];
-        float sharpeningDiameter = presetData["sharpeningDiameter"];
+        // The way this !null check is done is a little fragile
+        auto density = presetData["density"].get_ptr<nlohmann::json::number_float_t*>();
+        auto contrast = presetData["contrast"].get_ptr<nlohmann::json::number_float_t*>();
+        auto whites = presetData["whites"].get_ptr<nlohmann::json::number_float_t*>();
+        auto highlights = presetData["highlights"].get_ptr<nlohmann::json::number_float_t*>();
+        auto shadows = presetData["shadows"].get_ptr<nlohmann::json::number_float_t*>();
+        auto blacks = presetData["blacks"].get_ptr<nlohmann::json::number_float_t*>();
+        auto autoWB = presetData["hasAutoWB"].get_ptr<bool*>();
+        auto rBalance = presetData["rBalance"].get_ptr<nlohmann::json::number_float_t*>();
+        auto gBalance = presetData["gBalance"].get_ptr<nlohmann::json::number_float_t*>();
+        auto bBalance = presetData["bBalance"].get_ptr<nlohmann::json::number_float_t*>();
+        auto saturation = presetData["saturation"].get_ptr<nlohmann::json::number_float_t*>();
+        auto sharpeningAmount = presetData["sharpeningAmount"].get_ptr<nlohmann::json::number_float_t*>();
+        auto sharpeningDiameter = presetData["sharpeningDiameter"].get_ptr<nlohmann::json::number_unsigned_t*>();
 
-        this->setDensity(density);
-        this->setContrast(contrast);
-        this->setWhites(whites);
-        this->setHighlights(highlights);
-        this->setShadows(shadows);
-        this->setBlacks(blacks);
-        this->setHasAutoWB(autoWB);
-        this->setRBalance(rBalance);
-        this->setGBalance(gBalance);
-        this->setBBalance(bBalance);
-        this->setSaturation(saturation);
-        this->setSharpeningAmount(sharpeningAmount);
-        this->setSharpeningDiameter(sharpeningDiameter);
+        if (density) {
+        this->setDensity(*density);
+        }
+        if (contrast) {
+        this->setContrast(*contrast);
+        }
+        if (whites) {
+        this->setWhites(*whites);
+        }
+        if (highlights) {
+        this->setHighlights(*highlights);
+        }
+        if (shadows) {
+        this->setShadows(*shadows);
+        }
+        if (blacks) {
+        this->setBlacks(*blacks);
+        }
+        if (autoWB) {
+        this->setHasAutoWB(*autoWB);
+        }
+        if (rBalance) {
+        this->setRBalance(*rBalance);
+        }
+        if (gBalance) {
+        this->setGBalance(*gBalance);
+        }
+        if (bBalance) {
+        this->setBBalance(*bBalance);
+        }
+        if (saturation) {
+        this->setSaturation(*saturation);
+        }
+        if (sharpeningAmount) {
+        this->setSharpeningAmount(*sharpeningAmount);
+        }
+        if (sharpeningDiameter) {
+        this->setSharpeningDiameter(*sharpeningDiameter);
+        }
     }
 }
 
@@ -987,8 +1019,8 @@ void Negative::setHasAutoWB(bool has) {
 }
 
 void Negative::autoWB() {
-    auto [rScaling, gScaling, bScaling] = grayWorld(this->convertedPixels);
-    // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
+    auto [rScaling, gScaling, bScaling] = grayWorld(this->convertedPixels, this->workingWidth, this->workingHeight, this->getScanArea(this->workingScale));
+    // Need to scale the scaling values since we are adjusting color balance curves, not linear scaling of channels
     this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
     this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
     this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);
@@ -996,7 +1028,7 @@ void Negative::autoWB() {
 
 void Negative::setNeutral(float r, float g, float b) {
     auto [rScaling, gScaling, bScaling] = neutralPatch(r, g, b);
-    // TODO need to make sure that the scaling factors asctually are in the proper range or stuff
+    // Need to scale the scaling values since wea re adjusting color balance curves, not linear scaling of channels
     this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
     this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
     this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);

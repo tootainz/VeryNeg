@@ -9,10 +9,10 @@
     "blacks": -0.1,
     "whites": 0.0,
     "hasAutoWB": true,
-    "rBalance": 0.0,
-    "gBalance": 0.0,
-    "bBalance": 0.0,
-    "saturation": 0.0,
+    "rBalance": null,
+    "gBalance": null,
+    "bBalance": null,
+    "saturation": null,
     "sharpeningAmount": 2.5,
     "sharpeningDiameter": 7
 }
