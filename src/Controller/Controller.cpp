@@ -102,7 +102,9 @@ void Controller::updateSharpnessPreview() {
 void Controller::updateEditSettings(Negative& negative) {
     this->uiState.disableCallbacks = true;
 
+    std::println("gettingt orientation");
     int orientation = negative.getOrientation();
+    std::println("got orientation");
 
     float scanGamma = negative.getScanGamma();
     ImageArea scanArea = negative.getScanArea(negative.getWorkingScale());

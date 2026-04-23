@@ -552,6 +552,8 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
         orientation = this->negativeData["general"]["orientation"].get<int>();
     }
 
+    this->setOrientation(orientation);
+
     // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
         this->setScanArea({0, 0, this->width, this->height}, 1.0f);
@@ -926,7 +928,7 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
         std::println("preset exists");
         nlohmann::json presetData = *presetDataPointer;
 
-        // The way this !null check is done is a little fragile
+        // The way this !null check is done is fragile
         auto density = presetData["density"].get_ptr<nlohmann::json::number_float_t*>();
         auto contrast = presetData["contrast"].get_ptr<nlohmann::json::number_float_t*>();
         auto whites = presetData["whites"].get_ptr<nlohmann::json::number_float_t*>();
