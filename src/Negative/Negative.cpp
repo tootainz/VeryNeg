@@ -922,67 +922,65 @@ void Negative::resetConversion() {
 
 void Negative::applyPreset(std::filesystem::path presetPath) {
     std::println("applying preset");
+
     std::unique_ptr<nlohmann::json> presetDataPointer = std::move(this->readPresetdata(presetPath));
 
-    if (presetDataPointer) {
-        std::println("preset exists");
-        nlohmann::json presetData = *presetDataPointer;
+    if (!presetDataPointer) return;
 
-        // The way this !null check is done is fragile
-        auto density = presetData["density"].get_ptr<nlohmann::json::number_float_t*>();
-        auto contrast = presetData["contrast"].get_ptr<nlohmann::json::number_float_t*>();
-        auto whites = presetData["whites"].get_ptr<nlohmann::json::number_float_t*>();
-        auto highlights = presetData["highlights"].get_ptr<nlohmann::json::number_float_t*>();
-        auto shadows = presetData["shadows"].get_ptr<nlohmann::json::number_float_t*>();
-        auto blacks = presetData["blacks"].get_ptr<nlohmann::json::number_float_t*>();
-        auto autoWB = presetData["hasAutoWB"].get_ptr<bool*>();
-        auto rBalance = presetData["rBalance"].get_ptr<nlohmann::json::number_float_t*>();
-        auto gBalance = presetData["gBalance"].get_ptr<nlohmann::json::number_float_t*>();
-        auto bBalance = presetData["bBalance"].get_ptr<nlohmann::json::number_float_t*>();
-        auto saturation = presetData["saturation"].get_ptr<nlohmann::json::number_float_t*>();
-        auto sharpeningAmount = presetData["sharpeningAmount"].get_ptr<nlohmann::json::number_float_t*>();
-        auto sharpeningDiameter = presetData["sharpeningDiameter"].get_ptr<nlohmann::json::number_unsigned_t*>();
+    std::println("preset exists");
+    const auto& presetData = *presetDataPointer;
 
-        if (density) {
-        this->setDensity(*density);
-        }
-        if (contrast) {
-        this->setContrast(*contrast);
-        }
-        if (whites) {
-        this->setWhites(*whites);
-        }
-        if (highlights) {
-        this->setHighlights(*highlights);
-        }
-        if (shadows) {
-        this->setShadows(*shadows);
-        }
-        if (blacks) {
-        this->setBlacks(*blacks);
-        }
-        if (autoWB) {
-        this->setHasAutoWB(*autoWB);
-        }
-        if (rBalance) {
-        this->setRBalance(*rBalance);
-        }
-        if (gBalance) {
-        this->setGBalance(*gBalance);
-        }
-        if (bBalance) {
-        this->setBBalance(*bBalance);
-        }
-        if (saturation) {
-        this->setSaturation(*saturation);
-        }
-        if (sharpeningAmount) {
-        this->setSharpeningAmount(*sharpeningAmount);
-        }
-        if (sharpeningDiameter) {
-        this->setSharpeningDiameter(*sharpeningDiameter);
-        }
-    }
+    auto it = presetData.find("density");
+    if (it != presetData.end() && !it->is_null())
+        this->setDensity(it->get<float>());
+
+    it = presetData.find("contrast");
+    if (it != presetData.end() && !it->is_null())
+        this->setContrast(it->get<float>());
+
+    it = presetData.find("whites");
+    if (it != presetData.end() && !it->is_null())
+        this->setWhites(it->get<float>());
+
+    it = presetData.find("highlights");
+    if (it != presetData.end() && !it->is_null())
+        this->setHighlights(it->get<float>());
+
+    it = presetData.find("shadows");
+    if (it != presetData.end() && !it->is_null())
+        this->setShadows(it->get<float>());
+
+    it = presetData.find("blacks");
+    if (it != presetData.end() && !it->is_null())
+        this->setBlacks(it->get<float>());
+
+    it = presetData.find("hasAutoWB");
+    if (it != presetData.end() && !it->is_null())
+        this->setHasAutoWB(it->get<bool>());
+
+    it = presetData.find("rBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setRBalance(it->get<float>());
+
+    it = presetData.find("gBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setGBalance(it->get<float>());
+
+    it = presetData.find("bBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setBBalance(it->get<float>());
+
+    it = presetData.find("saturation");
+    if (it != presetData.end() && !it->is_null())
+        this->setSaturation(it->get<float>());
+
+    it = presetData.find("sharpeningAmount");
+    if (it != presetData.end() && !it->is_null())
+        this->setSharpeningAmount(it->get<float>());
+
+    it = presetData.find("sharpeningDiameter");
+    if (it != presetData.end() && !it->is_null())
+        this->setSharpeningDiameter(it->get<int>());
 }
 
 float Negative::setDensity(float value) {
