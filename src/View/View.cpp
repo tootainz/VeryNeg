@@ -21,6 +21,7 @@ View::View(sf::RenderWindow& window) :
     thumbnails()
 {
     Rml::LoadFontFace("./resources/fonts/oceert_smooth.otf");
+    Rml::LoadFontFace("./resources/fonts/sanyo.woff");
     Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegUi.rml");
     Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegPopups.rml");
     this->rmlDocumentUi = uiDocument;
@@ -150,6 +151,9 @@ void View::updatePreviewElementSize() {
 void View::updatePreviewSpriteTransform() {
 
     sf::Sprite& sprite = previewSprite;
+
+    // sprite.setTextureRect({{10,10},{200,200}});
+
     const float spriteWidth = sprite.getLocalBounds().size.x;
     const float spriteHeight = sprite.getLocalBounds().size.y;
 

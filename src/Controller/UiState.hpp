@@ -5,6 +5,9 @@
 // Container for storing the applications ui state for the controller
 struct UiState {
 
+    // Orientation & Crop
+    bool heldOrientCrop = false;
+
     // Pre convert
     bool heldConvert = false;
     bool hasBorder = false;
@@ -46,10 +49,11 @@ struct UiState {
     // Helper for held settings
     bool somethingIsHolding() {
         return
-            this->heldConvert   ||
-            this->heldEdits  ||
-            this->heldColor     ||
-            this->heldIntensity ||
+            this->heldOrientCrop    ||
+            this->heldConvert       ||
+            this->heldEdits         ||
+            this->heldColor         ||
+            this->heldIntensity     ||
             this->heldSharpening;
     }
 
@@ -66,7 +70,6 @@ struct UiState {
         this->selectingTop = false;
         this->selectingRight = false;
         this->selectingBottom = false;
-        this->selectingCrop = false;
         this->selectingWhole = false;
     }
 

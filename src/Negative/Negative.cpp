@@ -24,6 +24,7 @@
 #include "../imageAlgorithms/curveBlacksShadows.hpp"
 #include "../imageAlgorithms/curveWhitesHighlights.hpp"
 #include "../imageAlgorithms/unsharpMask.hpp"
+#include "../imageAlgorithms/saturation.hpp"
 
 
 // STATIC HELPER FUNCTIONS
@@ -216,6 +217,8 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
     float highlights = this->negativeData["edits"]["highlights"];
     float whites = this->negativeData["edits"]["whites"];
 
+    float saturation = exponentDampenerFixer(this->negativeData["edits"]["saturation"]);
+
     auto applyEdits = [&](float& r, float& g, float& b) {
         // Note the order is important here if we want to allow blacks and whites to be able to recover detail after density
 
@@ -259,6 +262,12 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
         r = highlightsFunction(r, highlights);
         g = highlightsFunction(g, highlights);
         b = highlightsFunction(b, highlights);
+
+        auto [sr, sg, sb] = saturationFunction(r, g, b, saturation);
+
+        r = sr;
+        g = sg;
+        b = sb;
 
     };
 
@@ -382,13 +391,31 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
     float darkestGDensity = scanToDensity(transparentsG);
     float darkestBDensity = scanToDensity(transparentsB);
 
+    // Logging for debugging
+    std::println("-------------------------------");
+    std::println("Transparents:");
+    std::println("  R: {}, G: {}, B: {}", transparentsR, transparentsG, transparentsB);
+
+    std::println("Opaquests:");
+    std::println("  R: {}, G: {}, B: {}", opaquestsR, opaquestsG, opaquestsB);
+
+    std::println("-------------------------------");
+
+    std::println("Darkest Density:");
+    std::println("  R: {}, G: {}, B: {}", darkestRDensity, darkestGDensity, darkestBDensity);
+
+    std::println("Brightest Density:");
+    std::println("  R: {}, G: {}, B: {}", brightestRDensity, brightestGDensity, brightestBDensity);
+        
+    std::println("-------------------------------");
+
     // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
 
     // Balance the black point and white point densities to all match the red channel
     // This makes sure that the film border is actually white and the densest is actually black
-    levelsR(pixels, opaquestsR, transparentsR, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsG(pixels, opaquestsG, transparentsG, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsB(pixels, opaquestsB, transparentsB, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsR(pixels, opaquestsR, transparentsR, opaquestsR, transparentsR);
+    levelsG(pixels, opaquestsG, transparentsG, opaquestsR, transparentsR);
+    levelsB(pixels, opaquestsB, transparentsB, opaquestsR, transparentsR);
 
     // 4. INVERT
 
@@ -494,14 +521,14 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
             return false;
         }
     }
-    // GRAY
-    else if (this->numberOfChannels == 1) {
-        bool iccConverted = this->profiler->toGrayGamma22(this->originalPixels, this->iccProfile);
-        if (!iccConverted) {
-            // The profile conversion failed
-            return false;
-        }
-    }
+    // // GRAY
+    // else if (this->numberOfChannels == 1) {
+    //     bool iccConverted = this->profiler->toGrayGamma22(this->originalPixels, this->iccProfile);
+    //     if (!iccConverted) {
+    //         // The profile conversion failed
+    //         return false;
+    //     }
+    // }
 
     // 2. Generate the working image
 
@@ -557,6 +584,11 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
         this->setScanArea({0, 0, this->width, this->height}, 1.0f);
+    }
+
+    // set the crop to be everything if not defined by the negativeData
+    if(!this->negativeData["general"]["isCropped"]) {
+        this->setCropArea({0, 0, this->width, this->height}, 1.0f);
     }
 
     // Convert the image or read from cache if it is supposed to be converted
@@ -763,6 +795,9 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         }
         std::println("Saved positive successfully");
         return true;
+    }
+    else {
+        return false;
     }
 }
 

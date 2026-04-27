@@ -30,11 +30,11 @@ ColorProfiler::ColorProfiler() {
     // Initialize everything to null
     this->sRGB = nullptr;
     this->adobeRGB = nullptr;
-    this->grayGamma22 = nullptr;
+    //this->grayGamma22 = nullptr;
     this->displayProfile = nullptr;
     this->adobeToDisplayTransform = nullptr;
     this->adobeToSRGBTransform = nullptr;
-    this->gray22ToDisplayTransform = nullptr;
+    //this->gray22ToDisplayTransform = nullptr;
 
     // Get the profiles and open them
 
@@ -47,14 +47,14 @@ ColorProfiler::ColorProfiler() {
         return;
     }
 
-    // Gray Gamma 2.2 profile
-    this->grayGamma22 = cmsOpenProfileFromFile("./resources/iccProfiles/GenericGrayGamma2.2Profile.icc", "r");
-    if (!grayGamma22) {
-        std::println("failed to open generic gray gamma 2.2 profile");
-        // failed to open the ggray gamma 2.2 profile
-        this->wasConstructed = false;
-        return;
-    }
+    // // Gray Gamma 2.2 profile
+    // this->grayGamma22 = cmsOpenProfileFromFile("./resources/iccProfiles/GenericGrayGamma2.2Profile.icc", "r");
+    // if (!grayGamma22) {
+    //     std::println("failed to open generic gray gamma 2.2 profile");
+    //     // failed to open the ggray gamma 2.2 profile
+    //     this->wasConstructed = false;
+    //     return;
+    // }
 
     // sRGB profile
     this->sRGB = cmsCreate_sRGBProfile();
@@ -135,7 +135,7 @@ ColorProfiler::~ColorProfiler() {
     // Free profiles
     cmsCloseProfile(this->adobeRGB);
     cmsCloseProfile(this->sRGB);
-    cmsCloseProfile(this->grayGamma22);
+    //cmsCloseProfile(this->grayGamma22);
     if (this->hasDisplayProfile) {
         cmsCloseProfile(this->displayProfile);
     }
@@ -143,7 +143,7 @@ ColorProfiler::~ColorProfiler() {
     // Free transforms
     cmsDeleteTransform(this->adobeToDisplayTransform);
     cmsDeleteTransform(this->adobeToSRGBTransform);
-    cmsDeleteTransform(this->gray22ToDisplayTransform);
+    //cmsDeleteTransform(this->gray22ToDisplayTransform);
 }
 
 // Converts from the provided icc blob to AdobeRGB
@@ -249,61 +249,61 @@ void ColorProfiler::adobeToDisplay(std::vector<uint8_t> &image){
     );
 }
 
-bool ColorProfiler::toGrayGamma22(std::vector<float> &image, const std::optional<std::vector<uint8_t>> &iccProfile) {
+// bool ColorProfiler::toGrayGamma22(std::vector<float> &image, const std::optional<std::vector<uint8_t>> &iccProfile) {
 
-    std::println("converting from input profile to gray gamma 2.2");
+//     std::println("converting from input profile to gray gamma 2.2");
 
-    cmsHPROFILE hInProfile = nullptr;
+//     cmsHPROFILE hInProfile = nullptr;
 
-    // check if the iccProfile actually contains a profile
-    if (iccProfile) {
-        // Open the profile from the stored blob
-        hInProfile = cmsOpenProfileFromMem(iccProfile->data(), iccProfile->size());
-        if (!hInProfile) {
-            // failed to open the embedded profile
-            // Assume that the profile is sRGB
-            std::println("failed to open embedded profile, assuming the image is in gray gamma 2.2");
-            return true;
-        }
-    }
-    else {
-        // There is no embedded profile, default to sRGB
-        std::println("there is no embedded profile, assuming the image is in gray gamma 2.2");
-        return true;
-    }
+//     // check if the iccProfile actually contains a profile
+//     if (iccProfile) {
+//         // Open the profile from the stored blob
+//         hInProfile = cmsOpenProfileFromMem(iccProfile->data(), iccProfile->size());
+//         if (!hInProfile) {
+//             // failed to open the embedded profile
+//             // Assume that the profile is sRGB
+//             std::println("failed to open embedded profile, assuming the image is in gray gamma 2.2");
+//             return true;
+//         }
+//     }
+//     else {
+//         // There is no embedded profile, default to sRGB
+//         std::println("there is no embedded profile, assuming the image is in gray gamma 2.2");
+//         return true;
+//     }
 
-    // Create the actual profile transform
-    cmsHTRANSFORM hTransform = nullptr;
-    hTransform = cmsCreateTransform(
-        hInProfile,
-        TYPE_GRAY_FLT,
-        this->grayGamma22,
-        TYPE_GRAY_FLT,
-        INTENT_RELATIVE_COLORIMETRIC,
-        0
-    );
+//     // Create the actual profile transform
+//     cmsHTRANSFORM hTransform = nullptr;
+//     hTransform = cmsCreateTransform(
+//         hInProfile,
+//         TYPE_GRAY_FLT,
+//         this->grayGamma22,
+//         TYPE_GRAY_FLT,
+//         INTENT_RELATIVE_COLORIMETRIC,
+//         0
+//     );
 
-    cmsCloseProfile(hInProfile);
+//     cmsCloseProfile(hInProfile);
 
-    if (!hTransform) {
-        // Something went wrong
-        std::println("Something went wrong in the transformation");
-        return false;
-    }
+//     if (!hTransform) {
+//         // Something went wrong
+//         std::println("Something went wrong in the transformation");
+//         return false;
+//     }
 
-    std::println("transforming icc profiles");
-    // Perform the actual transformation
-    cmsDoTransform(
-        hTransform,
-        image.data(),
-        image.data(),
-        image.size()
-    );
+//     std::println("transforming icc profiles");
+//     // Perform the actual transformation
+//     cmsDoTransform(
+//         hTransform,
+//         image.data(),
+//         image.data(),
+//         image.size()
+//     );
 
-    // Free the transform
-    cmsDeleteTransform(hTransform);
-    return true;
-}
+//     // Free the transform
+//     cmsDeleteTransform(hTransform);
+//     return true;
+// }
 
 std::vector<uint8_t> ColorProfiler::getSRGB() {
     cmsUInt32Number size = 0;

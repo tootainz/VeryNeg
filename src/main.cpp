@@ -16,7 +16,7 @@
 #include "Model/Model.hpp"
 
 
-/**
+/*
 
 VeryNeg v0.4.0
 By Joonatan Koponen
@@ -27,7 +27,7 @@ to beautiful positive digital photographs.
 VeryNeg performs a fully automatic conversion but also allows manual setting of some parameters
 You can also apply edits to the image after the conversion to edit color balance, density, sharpness etc.
 
-Currently the only supported files are 16bit tiff file scans from a flatbed scanner
+Currently the only supported files are RGB 16bit tiff file scans from a flatbed scanner
 
 */ 
 

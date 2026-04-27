@@ -87,6 +87,9 @@ private:
     void ButtonPressRotateCounterClock();
     void ButtonPressFlipHorizontal();
     void ButtonPressFlipVertical();
+
+    // CROP
+    void ButtonPressSetCrop();
     
     // PRE-CONVERT
     void CheckboxPressHoldConvert(bool checked);
@@ -111,7 +114,7 @@ private:
     // Intensity
     void CheckboxPressHoldIntensity(bool checked);
     void ButtonPressResetIntensity();
-    void SliderChangeSetDensity(float value);
+    void SliderChangeSetDensity(float value, bool dragging);
     void SliderChangeSetContrast(float value);
     void SliderChangeSetWhites(float value);
     void SliderChangeSetHighlights(float value);
@@ -127,6 +130,7 @@ private:
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
+    void SliderChangeSetSaturation(float value);
 
     // Sharpening
     void CheckboxPressHoldSharpening(bool checked);

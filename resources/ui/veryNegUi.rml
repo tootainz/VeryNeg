@@ -34,6 +34,7 @@
                         <button class="iconButton" id="rotateCounterClock">&lt;--</button>
                         <button class="iconButton" id="flipHorizontal">&lt;-&gt;</button>
                         <button class="iconButton" id="flipVertical">^-V</button>
+                        <input type="checkbox" class="iconButton" id="crop">Crop</input>
                     </div>
 
                 </div>

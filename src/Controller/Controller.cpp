@@ -107,7 +107,7 @@ void Controller::updateEditSettings(Negative& negative) {
     std::println("got orientation");
 
     float scanGamma = negative.getScanGamma();
-    ImageArea scanArea = negative.getScanArea(negative.getWorkingScale());
+    ImageArea selectionArea = negative.getScanArea(negative.getWorkingScale());
     bool hasScanArea = negative.getHasScanArea();
     bool hasDensest = negative.getHasDensest();
     bool hasBorder = negative.getHasBorder();
@@ -131,10 +131,10 @@ void Controller::updateEditSettings(Negative& negative) {
     this->view.setPreviewOrientation(orientation);
     
     this->view.setSliderValue("scanGamma", scanGamma);
-    this->view.setSelection(scanArea);
-    this->view.setCheckboxValue("scanArea", hasScanArea);
+    this->view.setSelection(selectionArea);
+    this->view.setCheckboxValue("selectionArea", hasScanArea);
     this->uiState.hasScanArea = hasScanArea;
-    this->uiState.selectionArea = scanArea;
+    this->uiState.selectionArea = selectionArea;
     this->view.setCheckboxValue("border", hasBorder);
     this->uiState.hasBorder = hasBorder;
     this->view.setCheckboxValue("densest", hasDensest);
@@ -472,6 +472,18 @@ void Controller::ButtonPressFlipVertical() {
     }
 }
 
+void Controller::ButtonPressSetCrop() {
+    std::println("Set Crop pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        this->uiState.selectionArea = negative->getCropArea(negative->getWorkingScale());
+        this->uiState.selectingCrop = !this->uiState.selectingCrop;
+        this->uiState.readyToSelect = !this->uiState.readyToSelect;
+        this->view.setSelection(this->uiState.selectionArea);
+        this->view.displaySelection = !this->view.displaySelection;
+    }
+}
+
 // GUI EVENTS PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -683,16 +695,20 @@ void Controller::CheckboxPressScanArea(bool checked) {
 
 void Controller::ButtonPressSetScanArea() {
     std::println("set scan area pressed");
-    if (!this->uiState.hasScanArea) {
-        // Update the view to mach UiState since this didn't come directly from scanArea checkbox
-        this->view.setCheckboxValue("scanArea", true);
-        // Update the UiState and model
-        this->CheckboxPressScanArea(true);
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+        if (!this->uiState.hasScanArea) {
+            // Update the view to mach UiState since this didn't come directly from selectionArea checkbox
+            this->view.setCheckboxValue("scanArea", true);
+            // Update the UiState and model
+            this->CheckboxPressScanArea(true);
+        }
+            this->uiState.selectionArea = negative->getScanArea(negative->getWorkingScale());
+            this->uiState.selectingScanArea = !this->uiState.selectingScanArea;
+            this->uiState.readyToSelect = !this->uiState.readyToSelect;
+            this->view.setSelection(this->uiState.selectionArea);
+            this->view.displaySelection = !this->view.displaySelection;
     }
-    this->uiState.selectingScanArea = !this->uiState.selectingScanArea;
-    this->uiState.readyToSelect = !this->uiState.readyToSelect;
-    this->view.setSelection(this->uiState.selectionArea);
-    this->view.displaySelection = !this->view.displaySelection;
 }
 
 void Controller::ButtonPressSetScanAreaNumber() {
@@ -842,23 +858,29 @@ void Controller::CheckboxPressHoldIntensity(bool checked) {
     );
 }
 
-void Controller::ButtonPressResetIntensity()
-{
+void Controller::ButtonPressResetIntensity() {
 }
 
-void Controller::SliderChangeSetDensity(float value)
-{
+void Controller::SliderChangeSetDensity(float value, bool dragging) {
     std::println("Slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
-        auto setter = [negative](float v) -> float { return negative->setDensity(v); };
-        auto getter = [negative]() -> float { return negative->getDensity(); };
+        if (dragging) {
+            std::println("we are dragging");
+            negative->setDensity(value);
+            negative->renderDraggingEdits();
+            this->updatePreview(this->uiState.isDragging);
+        }
+        else {
+            auto setter = [negative](float v) -> float { return negative->setDensity(v); };
+            auto getter = [negative]() -> float { return negative->getDensity(); };
 
-        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
-        negative->renderDraggingEdits();
-        this->updatePreview(this->uiState.isDragging);
+            this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+            negative->renderDraggingEdits();
+            this->updatePreview(this->uiState.isDragging);
+        }
     }
 }
 
@@ -1077,6 +1099,21 @@ void Controller::SliderChangeSetBBalance(float value) {
     }
 }
 
+void Controller::SliderChangeSetSaturation(float value) {
+    std::println("saturation slider value was changed to {}", value);
+
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        auto setter = [negative](float v) -> float { return negative->setSaturation(v); };
+        auto getter = [negative]() -> float { return negative->getSaturation(); };
+
+        this->history.addCommand(std::make_unique<Command_SetValue>(this->model, value, setter, getter));
+        negative->renderDraggingEdits();
+        this->updatePreview(this->uiState.isDragging);
+    }
+}
+
 void Controller::CheckboxPressHoldSharpening(bool checked) {
     std::println("hold sharpening pressed");
     bool previousChecked = !checked;
@@ -1201,9 +1238,12 @@ void Controller::ProcessEvent(Rml::Event& event) {
     if (!this->uiState.disableCallbacks) {
         Rml::Element* element = event.GetTargetElement();
         const std::string id = element->GetId();
+        std::println("an event happened to element {}", id);
 
         // BUTTONS & CHECKBOXES (Click)
         if (event.GetId() == Rml::EventId::Click) {
+
+            std::println("event is click");
 
             auto checkedAttribute = element->GetAttribute("checked");
             bool checked = false;
@@ -1254,7 +1294,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 this->ButtonPressPreviousNegative();
             }
 
-            // ORIENTATION
+            // ORIENTATION & CROP
             else if (id == "rotateClock") {
                 this->ButtonPressRotateClock();
             }
@@ -1266,6 +1306,9 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
             else if (id == "flipVertical") {
                 this->ButtonPressFlipVertical();
+            }
+            else if (id == "crop") {
+                this->ButtonPressSetCrop();
             }
 
             // PRE-CONVERT
@@ -1290,7 +1333,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
             else if (id == "sampleDensest") {
                 this->ButtonPressSetDensest();
             }
-            else if (id == "scanArea") {
+            else if (id == "selectionArea") {
                 this->CheckboxPressScanArea(checked);
             }
             else if (id == "setScanArea") {
@@ -1333,19 +1376,10 @@ void Controller::ProcessEvent(Rml::Event& event) {
             }
         }
 
-        // SLIDERS (double click)
-        // THIS IS BROKEN ATM
-        if (event.GetId() == Rml::EventId::Dblclick) {
-            std::println("double click");
-            // Reset sliders
-            if (element->GetTagName() == "input" && element->GetAttribute("type")->Get("") == "range") {
-                std::println("slider double click");
-                this->SliderReset(id);
-            }
-        }
-
         // CHANGE
         else if (event.GetId() == Rml::EventId::Change) {
+
+            std::println("event is change");
 
             Rml::Variant* valueVar = element->GetAttribute("value");
             if (!valueVar) return;
@@ -1372,7 +1406,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 this->uiState.isDragging = true;
 
                 if (id == "density") {
-                    this->SliderChangeSetDensity(value);
+                    this->SliderChangeSetDensity(value, true);
                 }
                 else if (id == "contrast") {
                     this->SliderChangeSetContrast(value);
@@ -1397,6 +1431,9 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 }
                 else if (id == "y-b") {
                     this->SliderChangeSetBBalance(value);
+                }
+                else if (id == "saturation") {
+                    this->SliderChangeSetSaturation(value);
                 }
                 else if (id == "sharpeningAmount") {
                     this->SliderChangeSetSharpeningAmount(value);
@@ -1547,39 +1584,44 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
 
         auto [correctedMouseX, correctedMouseY] = this->view.previewCoordsToTextureCoords(mouseMoved->position.x, mouseMoved->position.y);
 
-            if (this->uiState.selectingScanArea) {
-                ImageArea& scanArea = this->uiState.selectionArea;
+            if (this->uiState.selectingScanArea || this->uiState.selectingCrop) {
+                ImageArea& selectionArea = this->uiState.selectionArea;
                 int safetyPadding = 1;
 
                 if (this->uiState.selectingTop) {
-                    scanArea.top = std::max(0, std::min(scanArea.bottom-safetyPadding, correctedMouseY));
+                    selectionArea.top = std::max(0, std::min(selectionArea.bottom-safetyPadding, correctedMouseY));
                 }
                 else if (this->uiState.selectingBottom) {
-                    scanArea.bottom = std::max(scanArea.top+safetyPadding, std::min(previewHeight, correctedMouseY));
+                    selectionArea.bottom = std::max(selectionArea.top+safetyPadding, std::min(previewHeight, correctedMouseY));
                 }
                 else if (this->uiState.selectingLeft) {
-                    scanArea.left = std::max(0, std::min(scanArea.right-safetyPadding, correctedMouseX));
+                    selectionArea.left = std::max(0, std::min(selectionArea.right-safetyPadding, correctedMouseX));
                 }
                 else if (this->uiState.selectingRight) {
-                    scanArea.right = std::max(scanArea.left+safetyPadding, std::min(previewWidth, correctedMouseX));
+                    selectionArea.right = std::max(selectionArea.left+safetyPadding, std::min(previewWidth, correctedMouseX));
                 }
                 else if (this->uiState.selectingWhole) {
                     int left   = std::min(this->uiState.selectionStart.x, correctedMouseX);
                     int top    = std::min(this->uiState.selectionStart.y, correctedMouseY);
                     int right  = std::max(this->uiState.selectionStart.x, correctedMouseX);
                     int bottom = std::max(this->uiState.selectionStart.y, correctedMouseY);
-                    scanArea.left = std::max(0, std::min(left, previewWidth));
-                    scanArea.top = std::max(0, std::min(top, previewHeight));
-                    scanArea.right = std::max(0, std::min(right, previewWidth));
-                    scanArea.bottom = std::max(0, std::min(bottom, previewHeight));
+                    selectionArea.left = std::max(0, std::min(left, previewWidth));
+                    selectionArea.top = std::max(0, std::min(top, previewHeight));
+                    selectionArea.right = std::max(0, std::min(right, previewWidth));
+                    selectionArea.bottom = std::max(0, std::min(bottom, previewHeight));
                 }
-                this->view.setSelection(scanArea);
+                this->view.setSelection(selectionArea);
                 Negative* negative = this->model.getCurrentNegative();
                 if (negative) {
-                    std::println("setting scanArea to left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
+                    std::println("setting selection Area to left {}, top {}, right {}, bottom {}", selectionArea.left, selectionArea.top, selectionArea.right, selectionArea.bottom);
                     float scale = negative->getWorkingScale();
-                    std::println("setScanArea scale = {}", scale);
-                    negative->setScanArea(scanArea, scale);
+                    std::println("selection Area scale = {}", scale);
+                    if (this->uiState.selectingScanArea) {
+                        negative->setScanArea(selectionArea, scale);
+                    }
+                    else if (this->uiState.selectingCrop) {
+                        negative->setCropArea(selectionArea, scale);
+                    }
                 }
             }
         }
@@ -1600,6 +1642,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             this->uiState.resetGeneralSelectionState();
         }
         if (this->uiState.isDragging) {
+            std::println("dragging released");
             this->uiState.isDragging = false;
             Negative* negative = this->model.getCurrentNegative();
             if (negative) {
@@ -1615,6 +1658,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             this->updateSharpnessPreview();
         }
 
+        std::println("handing mouseUp to rmlui");
         // Hand the event over to the RmlUi context.
         RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
         RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);
