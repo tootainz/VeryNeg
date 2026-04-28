@@ -61,6 +61,7 @@ public:
 
     // HELD SETTINGS
     void holdSettings(bool hold);
+    void applyHoldOrientationCrop();
     void applyHoldPreConvert();
     void applyHoldPostConvert();
     void applyHoldColor();

@@ -476,7 +476,31 @@ void Controller::ButtonPressFlipVertical() {
     }
 }
 
-void Controller::ButtonPressSetCrop() {
+void Controller::CheckboxPressCrop(bool checked) {
+    std::println("Crop pressed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        bool previousHasCrop = negative->getHasCrop();
+
+        auto execute = [this, negative, checked]() {
+            this->uiState.hasCrop = checked;
+            negative->setHasCrop(checked);
+        };
+
+        auto undo = [this, negative, previousHasCrop]() {
+            this->uiState.hasCrop = previousHasCrop;
+            negative->setHasCrop(previousHasCrop);
+        };
+
+        this->history.addCommand(
+            std::make_unique<Command_Lambda>(execute, undo)
+        );
+    }
+}
+
+void Controller::ButtonPressSetCrop()
+{
     std::println("Set Crop pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1313,7 +1337,16 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 this->ButtonPressFlipVertical();
             }
             else if (id == "crop") {
+                this->CheckboxPressCrop(checked);
+            }
+            else if (id == "setCrop") {
                 this->ButtonPressSetCrop();
+            }
+            else if (id == "resetOrientationCrop") {
+                // this->ButtonPressResetOrientationCrop();
+            }
+            else if (id == "holdOrientationCrop") {
+                // this->CheckboxPressHoldOrientationCrop(checked);
             }
 
             // PRE-CONVERT

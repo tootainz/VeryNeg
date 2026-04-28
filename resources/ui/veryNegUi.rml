@@ -25,8 +25,8 @@
                     
                     <div class="settingHeader">
                         <h2>Orientation</h2>
-                        <button id="resetConversion">Reset</button>
-                        <input type="checkbox" class="holdBox" id="holdOrientation">Hold</input>
+                        <button id="resetOrientationCrop">Reset</button>
+                        <input type="checkbox" class="holdBox" id="holdOrientationCrop">Hold</input>
                     </div>
 
                     <div class="horizontalFlex">
@@ -34,7 +34,8 @@
                         <button class="iconButton" id="rotateCounterClock">&lt;--</button>
                         <button class="iconButton" id="flipHorizontal">&lt;-&gt;</button>
                         <button class="iconButton" id="flipVertical">^-V</button>
-                        <input type="checkbox" class="iconButton" id="crop">Crop</input>
+                        <input type="checkbox" class="iconButton" id="setCrop">#</input>
+                        <input type="checkbox" id="crop">Crop</input>
                     </div>
 
                 </div>

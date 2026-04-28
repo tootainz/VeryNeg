@@ -749,9 +749,22 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     // Render final
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
 
+    std::vector<float> croppedPixels;
+    int cropWidth, cropHeight;
+
     // Crop
-    std::println("Cropping");
-    auto [croppedPixels, cropWidth, cropHeight] = crop(*finalPixels, this->width, this->height, this->getCropArea(1.0f));
+    if (this->getHasCrop()) {
+        std::println("Cropping");
+        auto cropResults = crop(*finalPixels, this->width, this->height, this->getCropArea(1.0f));
+        croppedPixels = std::get<0>(cropResults);
+        cropWidth = std::get<1>(cropResults);
+        cropHeight = std::get<2>(cropResults);
+    }
+    else {
+        croppedPixels = *finalPixels;
+        cropWidth = this->width;
+        cropHeight = this->height;
+    }
     
     std::vector<uint8_t> profileBlob;
 

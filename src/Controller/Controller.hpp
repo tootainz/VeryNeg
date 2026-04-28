@@ -89,6 +89,7 @@ private:
     void ButtonPressFlipVertical();
 
     // CROP
+    void CheckboxPressCrop(bool checked);
     void ButtonPressSetCrop();
     
     // PRE-CONVERT

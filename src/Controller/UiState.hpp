@@ -7,6 +7,7 @@ struct UiState {
 
     // Orientation & Crop
     bool heldOrientCrop = false;
+    bool hasCrop = false;
 
     // Pre convert
     bool heldConvert = false;

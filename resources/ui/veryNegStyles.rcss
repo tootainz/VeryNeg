@@ -383,7 +383,7 @@ PRE-CONVERT
     width: 100%;
     display: block;
     color: #ffffff;
-    background-color: #2a2928;
+    background-color: #292826;
     border-radius: 3px;
     padding: 10px;
     margin: 0px;
@@ -406,7 +406,7 @@ PRE-CONVERT
     height: 40px;
     width: 100%;
     border-radius: 3px;
-    decorator: image( "./graphics/cmy_gradient_2_rounded.png" fill );
+    decorator: image( "./graphics/convertGradientNotFull.png" fill );
 }
 
 #convertBG:hover {
@@ -416,7 +416,7 @@ PRE-CONVERT
     height: 40px;
     width: 100%;
     border-radius: 3px;
-    decorator: image( "./graphics/cmy_gradient.png" fill );
+    decorator: image( "./graphics/convertGradientFull.png" fill );
 }
 
 /*

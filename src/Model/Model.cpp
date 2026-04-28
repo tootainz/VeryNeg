@@ -117,6 +117,26 @@ void Model::holdSettings(bool hold) {
     }
 }
 
+void Model::applyHoldOrientationCrop() {
+    Negative* negative = this->getCurrentNegative();
+    if (negative && this->heldNegative) {
+
+        std::println("applying held orientation and crop settings");
+
+        // Get held settings
+        int orientation = this->heldNegative->getOrientation();
+        bool hasCrop = this->heldNegative->getHasCrop();
+        ImageArea cropArea = this->heldNegative->getCropArea(this->heldNegative->getWorkingScale());
+
+        // Apply held settings
+        negative->setOrientation(orientation);
+        negative->setHasCrop(hasCrop);
+        if (hasCrop) {
+            negative->setCropArea(cropArea, this->heldNegative->getWorkingScale());
+        }
+    }
+}
+
 void Model::applyHoldPreConvert() {
 
     Negative* negative = this->getCurrentNegative();
