@@ -746,12 +746,17 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 
     std::println("Saving positive");
 
+    // Render final
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
+
+    // Crop
+    std::println("Cropping");
+    auto [croppedPixels, cropWidth, cropHeight] = crop(*finalPixels, this->width, this->height, this->getCropArea(1.0f));
     
     std::vector<uint8_t> profileBlob;
 
     if (iccProfile == "sRGB") {
-        this->profiler->adobeToSRGB(*finalPixels);
+        this->profiler->adobeToSRGB(croppedPixels);
         profileBlob = this->profiler->getSRGB();
     }
     else if (iccProfile == "AdobeRGB") {
@@ -759,7 +764,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     }
 
     // Use OIIO::ImageBuf for ease of transforming the pixel data type
-    OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    OIIO::ImageSpec originalSpec(cropWidth, cropHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
     // Embed ICC profile and Orientation
     originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
     originalSpec.attribute("Orientation", this->getOrientation());
@@ -770,7 +775,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     std::println("{}", metadata);
 
     // Actually rotate the pixels
-    OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
+    OIIO::ImageBuf originalBuf(originalSpec, croppedPixels.data());
     OIIO::ImageBufAlgo::reorient(originalBuf, originalBuf);
 
     if (imageFormat == "jpeg") {

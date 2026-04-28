@@ -18,6 +18,7 @@ struct UiState {
     // Selection
     sf::Vector2i selectionStart;  
     ImageArea selectionArea = {0,0,0,0};
+    ImageArea oldSelectionArea = {0,0,0,0};
     bool readyToSelect = false;
 
     void resetSelectionArea() {

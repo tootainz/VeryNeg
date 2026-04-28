@@ -244,33 +244,37 @@ void Controller::SliderReset(std::string name) {
 void Controller::ButtonPressAddNegative() {
     std::println("button pressed choose negative");
 
-    auto execute = [this]() -> void {
+    pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"}, pfd::opt::multiselect);
+    std::vector<std::string> paths = fileOpener.result();
 
-        pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"}, pfd::opt::multiselect);
-        std::vector<std::string> paths = fileOpener.result();
+    if (paths.size() == 0) {
+        std::println("didn't choose a file");
+        return;
+    }
 
-        if (paths.size() == 0) {
-            std::println("didn't choose a file");
-            return;
-        }
-        else {
-            std::println("opened {} paths", paths.size());
-            for (std::filesystem::path path : paths) {
-                std::println("Trying to open negative at: {}", path.string());
+    auto idList = std::make_shared<std::vector<int>>();
 
-                Negative* negative = model.addNegative(path);
-                if (negative) {
-                    int id = negative->getId();
-                    ImageData thumbnail = negative->getThumbnail();
-                    this->view.addThumbnail(createPreviewtexture(thumbnail), id);
-                    this->updateEditSettings(*negative);
-                }
+    auto execute = [this, idList, paths]() -> void {
+        std::println("opened {} paths", paths.size());
+        for (std::filesystem::path path : paths) {
+            std::println("Trying to open negative at: {}", path.string());
+
+            Negative* negative = model.addNegative(path);
+            if (negative) {
+                int id = negative->getId();
+                ImageData thumbnail = negative->getThumbnail();
+                this->view.addThumbnail(createPreviewtexture(thumbnail), id);
+                this->updateEditSettings(*negative);
+                idList->push_back(id);
             }
-            return;
         }
     };
 
-    auto undo = [this]() -> void {
+    auto undo = [this, idList]() -> void {
+        for (auto id : *idList) {
+            this->model.removeNegativeById(id);
+            this->view.removeThumbnail(id);
+        }
     };
 
     this->history.addCommand(std::make_unique<Command_Lambda>(execute, undo));
@@ -570,8 +574,9 @@ void Controller::CheckboxPressBorder(bool checked) {
 
 void Controller::ButtonPressSetBorder() {
     std::println("Set Border pressed");
+    // Turn on border if not already
     if (!this->uiState.hasBorder) {
-        // Update the view to mach UiState since this didn't come directly from the main checkbox
+        // Update the view to match UiState since this didn't come directly from the main checkbox
         this->view.setCheckboxValue("border", true);
         // Update the UiState and model
         this->CheckboxPressBorder(true);
@@ -1528,6 +1533,8 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             }
             // Selecting a selection
             else {
+                // Store the old selection area
+                this->uiState.oldSelectionArea = this->uiState.selectionArea;
                 ImageArea& selectionArea = this->uiState.selectionArea;
                 int selectionHandleBuffer = 10;
                 // We are clicking on the top of the selection
@@ -1637,10 +1644,51 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
 
         // Process mouse after RmlUi
         std::println("mouse Released at ({},{})", mouseReleased->position.x,  mouseReleased->position.y);
+
+        // SELECTING
         if (this->uiState.selecting) {
+
+            // Add the selection as a proper command
+            Negative* negative = this->model.getCurrentNegative();
+            if (negative) {
+                    float scale = negative->getWorkingScale();
+                    ImageArea currentArea = this->uiState.selectionArea;
+                    ImageArea previousArea = this->uiState.oldSelectionArea;
+                    if (this->uiState.selectingScanArea) {
+                        auto execute = [negative, scale, currentArea]() {
+                            negative->setScanArea(currentArea, scale);
+                        };
+
+                        auto undo = [negative, scale, previousArea]() {
+                            negative->setScanArea(previousArea, scale);
+                        };
+
+                        this->history.addCommand(
+                            std::make_unique<Command_Lambda>(execute, undo)
+                        );
+
+                    }
+                    else if (this->uiState.selectingCrop) {
+                        auto execute = [negative, scale, currentArea]() {
+                            negative->setCropArea(currentArea, scale);
+                        };
+
+                        auto undo = [negative, scale, previousArea]() {
+                            negative->setCropArea(previousArea, scale);
+                        };
+
+                        this->history.addCommand(
+                            std::make_unique<Command_Lambda>(execute, undo)
+                        );
+                        
+                    }
+            }
+
             std::println("Finished dragging");
             this->uiState.resetGeneralSelectionState();
         }
+
+        // DRAGGING
         if (this->uiState.isDragging) {
             std::println("dragging released");
             this->uiState.isDragging = false;
