@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "getDisplayProfile.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // Helper written by AI to check if a profile is AdobeRGB
@@ -39,7 +40,7 @@ ColorProfiler::ColorProfiler() {
     // Get the profiles and open them
 
     // AdobeRGB profile
-    this->adobeRGB = cmsOpenProfileFromFile("./resources/iccProfiles/AdobeRGB1998.icc", "r");
+    this->adobeRGB = cmsOpenProfileFromFile(getResourcesPath("iccProfiles/AdobeRGB1998.icc").c_str(), "r");
     if (!adobeRGB) {
         std::println("failed to open AdobeRGB profile");
         // failed to open the adobeRGB profile

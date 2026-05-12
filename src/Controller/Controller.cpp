@@ -12,6 +12,7 @@
 
 #include "commands.hpp"
 #include "../Negative/ImageArea.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // STATIC HELPERS
@@ -837,13 +838,22 @@ void Controller::CheckboxPressHoldEdits(bool checked) {
     );
 }
 
-void Controller::ButtonPressResetEdits()
-{
+void Controller::ButtonPressResetEdits() {
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        this->updateEditSettings(*negative);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
+    }
 }
 
 void Controller::OptionPressSetPreset(std::string name) {
     Negative* negative = this->model.getCurrentNegative();
-    std::filesystem::path path = std::format("./resources/presets/{}.json", name);
+    std::string resourcesPath = getResourcesPath("");
+    std::filesystem::path path = std::format("{}presets/{}.json", resourcesPath, name);
     if (negative) {
         negative->applyPreset(path);
         this->updateEditSettings(*negative);
@@ -885,6 +895,17 @@ void Controller::CheckboxPressHoldIntensity(bool checked) {
     this->history.addCommand(
         std::make_unique<Command_Lambda>(execute, undo)
     );
+}
+
+static void resetIntensity(Negative* negative) {
+    if (negative) {
+        negative->setDensity(0.0f);
+        negative->setContrast(0.0f);
+        negative->setBlacks(0.0f);
+        negative->setWhites(0.0f);
+        negative->setShadows(0.0f);
+        negative->setHighlights(0.0f);
+    }
 }
 
 void Controller::ButtonPressResetIntensity() {
@@ -1021,8 +1042,27 @@ void Controller::CheckboxPressHoldColor(bool checked) {
     );
 }
 
-void Controller::ButtonPressResetColor()
-{
+static void resetColor(Negative* negative) {
+    if (negative) {
+        negative->setRBalance(0.0f);
+        negative->setGBalance(0.0f);
+        negative->setBBalance(0.0f);
+        negative->setSaturation(0.0f);
+    }
+}
+
+void Controller::ButtonPressResetColor() {
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        resetColor(negative);
+
+        this->updateEditSettings(*negative);
+        negative->renderWorkingEdits();
+        negative->renderSharpnessPreviewEdits();
+        this->updatePreview(false);
+        this->updateSharpnessPreview();
+    }
 }
 
 void Controller::CheckboxPressAutoWhiteBalance(bool checked)
@@ -1371,7 +1411,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
             else if (id == "sampleDensest") {
                 this->ButtonPressSetDensest();
             }
-            else if (id == "selectionArea") {
+            else if (id == "scanArea") {
                 this->CheckboxPressScanArea(checked);
             }
             else if (id == "setScanArea") {

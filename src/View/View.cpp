@@ -4,6 +4,7 @@
 #include <format>
 
 #include "../RmlUi_Backend/RmlUi_Backend.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // CONSTRUCTOR
@@ -20,10 +21,9 @@ View::View(sf::RenderWindow& window) :
     selection({0.0f, 0.0f}),
     thumbnails()
 {
-    Rml::LoadFontFace("./resources/fonts/oceert_smooth.otf");
-    Rml::LoadFontFace("./resources/fonts/sanyo.woff");
-    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegUi.rml");
-    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument("./resources/ui/veryNegPopups.rml");
+    Rml::LoadFontFace(getResourcesPath("fonts/oceert_smooth.otf"));
+    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml"));
+    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml"));
     this->rmlDocumentUi = uiDocument;
     this->rmlDocumentPopups = popupsDocument;
     if (this->rmlDocumentUi) {

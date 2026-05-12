@@ -25,6 +25,7 @@
 #include "../imageAlgorithms/curveWhitesHighlights.hpp"
 #include "../imageAlgorithms/unsharpMask.hpp"
 #include "../imageAlgorithms/saturation.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // STATIC HELPER FUNCTIONS
@@ -87,7 +88,7 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
-    std::string defaultDataPath = "./resources/data_templates/negativeDataTemplate.neg";
+    std::string defaultDataPath = getResourcesPath("/data_templates/negativeDataTemplate.neg");
     std::string dataName = std::filesystem::path(this->path)
         .replace_extension(".neg")
         .string();
@@ -789,13 +790,14 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 
     // Actually rotate the pixels
     OIIO::ImageBuf originalBuf(originalSpec, croppedPixels.data());
-    OIIO::ImageBufAlgo::reorient(originalBuf, originalBuf);
+    OIIO::ImageBuf orientedBuf;
+    OIIO::ImageBufAlgo::reorient(orientedBuf, originalBuf);
 
     if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
 
         // Save 8bit for jpeg
-        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
+        if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
             std::println("Failed to save image");
             return false;
         }
@@ -807,7 +809,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
         std::string filePath = std::format("{}.tiff", imagePath.string());
 
         // For now we want to save images as 16bit
-        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
+        if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
             std::println("Failed to save image");
             return false;
         }

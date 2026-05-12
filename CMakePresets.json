@@ -2,7 +2,7 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "default debug",
+            "name": "default_debug",
             "description": "default debug preset",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
@@ -10,11 +10,13 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_APPLOCAL_DEPS": "ON"
             }
         },
         {
-            "name": "default release",
+            "name": "default_release",
             "description": "default release preset",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
@@ -22,7 +24,9 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_APPLOCAL_DEPS": "ON"
             }
         }
     ]

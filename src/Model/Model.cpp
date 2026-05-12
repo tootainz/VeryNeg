@@ -4,12 +4,15 @@
 #include <filesystem>
 #include <print>
 
+#include "getCacheDir.hpp"
+
 
 // CONSTRUCTOR
 // ----------------------------------------------------------------------------------------------------------------
 
 Model::Model() {
-    std::filesystem::create_directories("./cache");
+    auto cacheDir = getCacheDir();
+    std::filesystem::create_directories(cacheDir);
     if (!this->profiler.getWasConstructed()) {
         this->wasConstructed = false;
     }
