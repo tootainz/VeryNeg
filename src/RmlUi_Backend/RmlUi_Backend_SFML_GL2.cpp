@@ -72,7 +72,7 @@ public:
 		}
 
 		sf::Texture* texture = new sf::Texture();
-		texture->setSmooth(true);
+		texture->setSmooth(false);
 
 		if (!texture->loadFromImage(image))
 		{
@@ -98,7 +98,7 @@ public:
 			return false;
 		}
 #endif
-		texture->setSmooth(true);
+		texture->setSmooth(false);
 		texture->update(source.data(), SFML_COORDINATE(source_dimensions.x, source_dimensions.y), SFML_COORDINATE(0, 0));
 		return (Rml::TextureHandle)texture;
 	}

@@ -37,6 +37,7 @@ Controller::Controller(sf::RenderWindow& window, View& view, Model& model) :
     model(model),
     window(window),
     history(200)
+
 {
     this->window.setKeyRepeatEnabled(false);
     Rml::Context* rmlContextUi = this->view.getRmlContextUi();
@@ -609,6 +610,12 @@ void Controller::ButtonPressSetBorder() {
     std::println("Setting Border");
     this->uiState.selectingBorder = !this->uiState.selectingBorder;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
+    if (this->uiState.selectingBorder) {
+        this->view.setCursorSampleBorder();
+    }
+    else {
+        this->view.setCursorDefault();
+    }
 }
 
 void Controller::SetBorder(int x, int y) {
@@ -670,6 +677,12 @@ void Controller::ButtonPressSetDensest() {
     }
     this->uiState.selectingDensest = !this->uiState.selectingDensest;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
+    if (this->uiState.selectingDensest) {
+        this->view.setCursorSampleDensest();
+    }
+    else {
+        this->view.setCursorDefault();
+    }
 }
 
 void Controller::SetDensest(int x, int y) {
@@ -1098,6 +1111,12 @@ void Controller::CheckboxPressAutoWhiteBalance(bool checked)
 void Controller::ButtonPressSetNeutralSample() {
     this->uiState.selectingNeutral = !this->uiState.selectingNeutral;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
+    if (this->uiState.selectingNeutral) {
+        this->view.setCursorSampleNeutral();
+    }
+    else {
+        this->view.setCursorDefault();
+    }
 }
 
 void Controller::SetNeutralSample(int x, int y) {

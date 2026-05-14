@@ -44,6 +44,11 @@ private:
     float previewScaleY;
     int previewOrientation = 1;
 
+    // Cursors
+    std::optional<sf::Cursor> cursorSampleBorder;
+    std::optional<sf::Cursor> cursorSampleDensest;
+    std::optional<sf::Cursor> cursorSampleNeutral;
+
     // Sharpness preview
     std::unique_ptr<sf::Texture> sharpeningPreviewTexture;
     sf::Sprite sharpeningPreviewSprite;
@@ -95,6 +100,10 @@ public:
     void updateSettingsRenderArea();
     
     // SETTERS
+    void setCursorSampleDensest();
+    void setCursorSampleBorder();
+    void setCursorSampleNeutral();
+    void setCursorDefault();
     void setSliderValue(std::string name, float value);
     void setCheckboxValue(std::string name, bool value);
     void setNumbericValue(std::string name, float value);

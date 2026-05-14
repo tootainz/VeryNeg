@@ -21,7 +21,32 @@ View::View(sf::RenderWindow& window) :
     selection({0.0f, 0.0f}),
     thumbnails()
 {
-    Rml::LoadFontFace(getResourcesPath("fonts/oceert_smooth.otf"));
+    // Create cursors
+    std::string resourcesPath = getResourcesPath("");
+
+    // Densest
+    std::filesystem::path densestPath = std::format("{}ui/graphics/cursor_densest.png", resourcesPath);
+    sf::Image densestImage(densestPath);
+    this->cursorSampleDensest = sf::Cursor::createFromPixels(densestImage.getPixelsPtr(), densestImage.getSize(), {0, 21});
+
+    // Border
+    std::filesystem::path borderPath = std::format("{}ui/graphics/cursor_border.png", resourcesPath);
+    sf::Image borderImage(borderPath);
+    this->cursorSampleBorder = sf::Cursor::createFromPixels(borderImage.getPixelsPtr(), borderImage.getSize(), {0, 21});
+
+    // Border
+    std::filesystem::path neutralPath = std::format("{}ui/graphics/cursor_neutral.png", resourcesPath);
+    sf::Image neutralImage(neutralPath);
+    this->cursorSampleNeutral = sf::Cursor::createFromPixels(neutralImage.getPixelsPtr(), neutralImage.getSize(), {0, 21});
+
+    // Set the context ui ratios
+    float dp_ratio = 2.0f;
+    this->rmlContextUi->SetDensityIndependentPixelRatio(dp_ratio);
+    this->rmlContextPopups->SetDensityIndependentPixelRatio(dp_ratio);
+
+    // Rest of the constructor
+    Rml::LoadFontFace(getResourcesPath("fonts/oceert_pixel.otf"));
+    Rml::LoadFontFace(getResourcesPath("fonts/Px437_Acer710_CGA-2y.ttf"));
     Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml"));
     Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml"));
     this->rmlDocumentUi = uiDocument;
@@ -405,8 +430,33 @@ void View::updateSettingsRenderArea() {
     this->settingsRenderArea= {left, top, left+width, top+height};
 }
 
+void View::setCursorSampleDensest() {
+    if (this->cursorSampleDensest) {
+        this->window.setMouseCursor(*this->cursorSampleDensest);
+    }
+}
+
+void View::setCursorSampleBorder() {
+    if (this->cursorSampleBorder) {
+        this->window.setMouseCursor(*this->cursorSampleBorder);
+    }
+}
+
+void View::setCursorSampleNeutral() {
+    if (this->cursorSampleNeutral) {
+        this->window.setMouseCursor(*this->cursorSampleNeutral);
+    }
+}
+
+void View::setCursorDefault() {
+    sf::Cursor arrow = *sf::Cursor::createFromSystem(sf::Cursor::Type::Arrow);
+    this->window.setMouseCursor(arrow);
+}
+
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------
+
+
 
 void View::setSliderValue(std::string name, float value) {
     Rml::Element* slider = this->rmlDocumentUi->GetElementById(name);

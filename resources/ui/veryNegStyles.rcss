@@ -4,14 +4,15 @@ GENERAL
 */
 
 body {
-    font-family: "Oceert";
+    font-family: "Px437 Acer710 CGA-2y";
     width: 100%;
     height: 100%;
-    font-size: 11px;
+    color: #c1bfbc;
+    font-size: 12dp;
     display: flex;
     justify-content: space-between;
     box-sizing: border-box;
-    padding: 5px;
+    padding: 5dp;
 }
 
 p {
@@ -19,7 +20,7 @@ p {
 }
 
 h2 {
-    font-size: 14px;
+    font-size: 14dp;
 }
 
 /*
@@ -30,9 +31,10 @@ INPUTS
 /* Sliders */
 
 input.range {
-    height: 30px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    height: 30dp;
+    margin-top: 5dp;
+    margin-bottom: 5dp;
+    width: 100%;
 }
 
 input.range:hover {
@@ -41,8 +43,8 @@ input.range:hover {
 
 input.range slidertrack {
     background-color: #000000;
-    height: 3px;
-    margin-top: 12.5px;
+    height: 3dp;
+    margin-top: 12.5dp;
 }
 
 input.range:active slidertrack {
@@ -51,12 +53,12 @@ input.range:active slidertrack {
 
 input.range sliderbar {
     background-color: #b3ada9;
-    height: 12px;
-    width: 12px;
+    height: 12dp;
+    width: 12dp;
     border-color: #00000000;
-    border-width: 1px;
-    border-radius: 6px;
-    margin-top: 8px;
+    border-width: 1dp;
+    border-radius: 6dp;
+    margin-top: 8dp;
 }
 
 input.range:active sliderbar {
@@ -67,13 +69,14 @@ input.range:active sliderbar {
 /* Text */
 
 input.text {
-    background-color: #212020;
-    border-color: #212020;
+    background-color: #161515;
+    border: 1dp #161515;
+    border-top: #0d0d0d;
+    border-bottom: #2e2e2d;
 }
 
 input.text:hover {
     border-color: #8a8682;
-    border-width: 1px;
 }
 
 input.text:active {
@@ -85,27 +88,38 @@ input.text:active {
 input.checkbox {
     box-sizing: border-box;
     display: block;
-    background-color: #212020;
-    border-color: #212020;
-    border-width: 1px;
-    border-radius: 3px;
+    color: #353433;
+    background-color: #161515;
+    border: 1dp #161515;
+    border-top: #0d0d0d;
+    border-bottom: #2e2e2d;
+    border-radius: 3dp;
     flex-grow: 1;
-    padding: 5px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    padding: 5dp;
+    margin-top: 5dp;
+    margin-bottom: 5dp;
 }
 
 input.checkbox:checked {
+    color: #ffffff;
     background-color: #52504e;
+    border-top: #666461;
+    border-bottom: #3e3d3c;
 }
  
 input.checkbox:hover {
+    color: #8a8682;
     border-color: #8a8682;
-    border-width: 1px;
+    border-width: 1dp;
 }
 
 input.checkbox:active {
     background-color: #52504e;
+}
+
+.holdBox {
+    color: #605e5c;
+    background-color: #1e1d1d;
 }
 
 .holdBox:active {
@@ -118,15 +132,31 @@ input.checkbox:active {
     decorator: image( "./graphics/button1.png" fill );
 }
 
+input.checkbox.iconButton {
+    overflow: hidden;
+    height: 25dp;
+    width: 25dp;
+    padding: 2dp;
+    margin: 5dp;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+input.checkbox.iconButton:checked {
+    overflow: hidden;
+    background-color: #161515;
+    border: #ffffff;
+}
+
 /* Drop down */
 
 select, option{
-    background-color: #212020;
-    border-radius: 3px;
-    padding: 5px;
-    margin: 5px;
+    background-color: #161515;
+    border-radius: 3dp;
+    padding: 5dp;
+    margin: 5dp;
     border-color: rgba(255, 255, 255, 0);
-    border-width: 1px;
+    border-width: 1dp;
 }
 
 select:hover, option:hover {
@@ -141,24 +171,28 @@ button {
     display: block;
     color: #000000;
     background-color: #b3ada9;
-    border-radius: 3px;
-    padding: 5px;
-    margin: 5px;
+    border-radius: 3dp;
+    border: 1dp #b3ada9;
+    border-top: #d4cfcb;
+    border-bottom: #807e7c;
+    padding: 5dp;
+    margin: 5dp;
 }
 
 button:hover {
-    background-color: #a09a96;
+    background-color: #8e8986;
 }
 
 button:active {
     background-color: #8a8682;
 }
 
-input.checkbox.iconButton {
+.iconButton {
     overflow: hidden;
-    height: 25px;
-    width: 25px;
-    margin: 5px;
+    height: 25dp;
+    width: 25dp;
+    padding: 2dp;
+    margin: 5dp;
     flex-grow: 0;
     flex-shrink: 0;
 }
@@ -171,14 +205,14 @@ LAYOUT
 #left {
     height: 100%;
     width: 100%;
-    min-width: 500px;
+    min-width: 500dp;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
 }
 
 #right {
-    width: 400px;
+    width: 400dp;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -203,11 +237,12 @@ LAYOUT
 }
 
 .verticalDivider {
-    width: 1.5px;
-    height: 80px;
-    margin-right: 5px;
-    margin-left: 5px;
-    background-color: #212121;
+    width: 1dp;
+    height: 70dp;
+    margin-right: 10dp;
+    margin-left: 10dp;
+    background-color: #171716;
+    flex-shrink: 0;
 }
 
 
@@ -219,12 +254,12 @@ WELCOME
 
 #welcome {
     color: #000000;
-    font-size: 16px;
-    padding: 20px;
+    font-size: 16dp;
+    padding: 20dp;
     width: 40%;
     height: 30%;
     background-color: #b6b1ad;
-    border-radius: 3px;
+    border-radius: 3dp;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -245,11 +280,11 @@ PREVIEW
     cursor: crosshair;
     background-color: #0e0e0e;
     height: 100%;
-    margin: 20px;
+    margin: 20dp;
 }
 
 #releaseVersion {
-    font-size: 20px;
+    font-size: 20dp;
     color: #232222;
     display: flex;
     flex-direction: column;
@@ -266,19 +301,19 @@ FILM ROLL
 */
 
 #bottom {
-    height: 80px;
+    height: 80dp;
     display: flex;
     justify-content: space-between;
-    background-color: #343332;
+    background-color: #232221;
     border-color: #777370;
-    border-width: 2px;
+    border-width: 2dp;
     box-sizing: border-box;
     flex-shrink: 0;
 }
 
 #filmRoll {
     display: flex;
-    gap: 5px;
+    gap: 5dp;
     height: 100%;
     width: 100%;
     align-items: center;
@@ -290,23 +325,31 @@ scrollbarhorizontal {
 }
 
 .thumbnail {
-    width: 70px;
-    height: 70px;
-    border-width: 1px;
+    width: 70dp;
+    height: 70dp;
+    border-width: 1dp;
     border-color: rgba(0, 0, 0, 0);
     flex-shrink: 0;    
 }
 
 .thumbnail:hover {
     border-color: white;
-    border-width: 1px;
+    border-width: 1dp;
 }
 
 #bottom button {
-    padding-top: 23px;
+    padding-top: 23dp;
     box-sizing: border-box;
     text-align: center;
-    width: 20px;
+    width: 20dp;
+}
+
+#previous {
+    decorator: image( "./graphics/left.png" contain) content-box;
+}
+
+#next {
+    decorator: image( "./graphics/right.png" contain) content-box;
 }
 
 
@@ -316,9 +359,9 @@ EXPORT-IMPORT-DELETE
 */
 
 #importExport {
-    margin-top: 5px;
+    margin-top: 5dp;
     box-sizing: border-box;
-    height: 80px;
+    height: 80dp;
     display: flex;
     background-color: #777370;
     flex-shrink: 0;
@@ -329,9 +372,9 @@ EXPORT-IMPORT-DELETE
     color: #000000;
     width: 100%;
     box-sizing: border-box;
-    padding-top: 28px;
+    padding-top: 28dp;
     text-align: center;
-    margin: 5px;
+    margin: 5dp;
 }
 
 #importExport button:hover {
@@ -346,26 +389,41 @@ SETTINGS
 */
 
 .settingHeader {
+    box-sizing: border-box;
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #393836;
+    background-color: #2d2c2b;
+    border: 1dp #2d2c2b;
+    border-top: #393836;
+    border-bottom: #1f1e1d;
+    border-radius: 3dp;
+    padding-right: 5dp;
+    padding-left: 5dp;
+}
+
+.settingContent {
+    box-sizing: border-box;
+    padding-right: 5dp;
+    padding-left: 5dp;
 }
 
 .selectButtons {
     display: flex;
     width: 100%;
-    gap: 5px;
-    margin-bottom: 5px;
+    gap: 5dp;
+    margin-bottom: 5dp;
 }
 
 .settingsTab {
     position: relative;
-    background-color: #2d2c2b;
-    border-radius: 3px;
-    margin-bottom: 5px;
-    padding: 10px;
+    background-color: #232221;
+    border: 1dp #232221;
+    border-top: #2c2b2a;
+    border-bottom: #171616;
+    border-radius: 3dp;
+    margin-bottom: 5dp;
 }
 
 #settings {
@@ -383,11 +441,45 @@ scrollbarvertical {
 
 .settingDivider {
     border-color: #363433;
-    margin-top: 15px;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom-width: 3px;
+    margin-top: 15dp;
+    margin-bottom: 10dp;
+    padding-bottom: 5dp;
+    border-bottom-width: 3dp;
 }
+
+.resetButton {
+    color: #605e5c;
+    background-color: #333231;
+    border: 1dp #333231;
+    border-top: #464543;
+    border-bottom: #242321;
+}
+
+/*
+ORIENTATION AND CROP
+--------
+*/
+
+#rotateClock {
+    decorator: image( "./graphics/clock.png" contain) content-box;
+}
+
+#rotateCounterClock {
+    decorator: image( "./graphics/counter_clock.png" contain) content-box;
+}
+
+#flipHorizontal {
+    decorator: image( "./graphics/mirror_horiz.png" contain) content-box;
+}
+
+#flipVertical {
+    decorator: image( "./graphics/mirror_vert.png" contain) content-box;
+}
+
+#setCrop {
+    decorator: image( "./graphics/area.png" contain) content-box;
+}
+
 
 
 /*
@@ -402,20 +494,21 @@ PRE-CONVERT
 
 #convert {
     text-align: center;
-    height: 40px;
-    font-size: 20px;
+    height: 40dp;
+    font-size: 20dp;
     width: 100%;
     display: block;
     color: #ffffff;
-    background-color: #292826;
-    border-radius: 3px;
-    padding: 10px;
-    margin: 0px;
+    background-color: #353331;
+    border: 0dp 0;
+    border-radius: 3dp;
+    padding: 10dp;
+    margin: 0dp;
 }
 
 #convert:hover {
     color: #ffffff;
-    background-color: #2b2a29;
+    background-color: #353331;
 }
 
 #convert:active {
@@ -424,23 +517,43 @@ PRE-CONVERT
 
 #convertBG {
     transition: margin-top margin-bottom padding 0.2s;
-    margin-top: 1px;
-    margin-bottom: 1px;
-    padding: 1px;
-    height: 40px;
+    margin-top: 1dp;
+    margin-bottom: 1dp;
+    padding: 1dp;
+    height: 40dp;
     width: 100%;
-    border-radius: 3px;
-    decorator: image( "./graphics/convertGradientNotFull.png" fill );
+    border-radius: 3dp;
+    decorator: image( "./graphics/convert_gradient.png" fill );
 }
 
 #convertBG:hover {
     margin-top: 0;
     margin-bottom: 0;
-    padding: 2px;
-    height: 40px;
+    padding: 2dp;
+    height: 40dp;
     width: 100%;
-    border-radius: 3px;
-    decorator: image( "./graphics/convertGradientFull.png" fill );
+    border-radius: 3dp;
+    decorator: image( "./graphics/convert_gradient_hover.png" fill );
+}
+
+#sampleBorder {
+    decorator: image( "./graphics/border.png" contain) content-box;
+}
+
+#sampleBorder:checked {
+    decorator: 0;
+}
+
+#sampleDensest {
+    decorator: image( "./graphics/densest.png" contain) content-box;
+}
+
+#sampleDensest:checked {
+    decorator: 0;
+}
+
+#setScanArea {
+    decorator: image( "./graphics/area.png" contain) content-box;
 }
 
 /*
@@ -454,15 +567,15 @@ POST-CONVERT
 }
 
 input.range#c-r:active slidertrack {
-    decorator: horizontal-gradient( #00ffff #ff0000 );
+    decorator: image( "./graphics/c_r_gradient.png" fill );
 }
 
 input.range#m-g:active slidertrack {
-    decorator: horizontal-gradient( #ff00ff #00ff00 );
+    decorator: image( "./graphics/m_g_gradient.png" fill );
 }
 
 input.range#y-b:active slidertrack {
-    decorator: horizontal-gradient( #ffff00 #0000ff );
+    decorator: image( "./graphics/y_b_gradient.png" fill );
 }
 
 
@@ -490,6 +603,14 @@ input.range#y-b:active slidertrack {
     background-color: #ffdd00;
 }
 
+#sampleNeutral {
+    decorator: image( "./graphics/color_balance.png" contain) content-box;
+}
+
+#sampleNeutral:checked {
+    decorator: 0;
+}
+
 
 /*
 SHARPEN
@@ -501,14 +622,14 @@ SHARPEN
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin-top: 5px;
-    margin-bottom: 10px;
+    margin-top: 5dp;
+    margin-bottom: 10dp;
 }
 
 #sharpeningPreview {
     background-color: #0e0e0e;
-    width: 200px;
-    height: 200px;
+    width: 200dp;
+    height: 200dp;
 }
 
 /*
@@ -521,10 +642,10 @@ EXPORT SETTINGS
     position: absolute;
     top: 50%;
     left: 80%;
-    padding: 5px;
+    padding: 5dp;
     color: #000000;
     background-color: #777370;
-    width: 300px;
+    width: 300dp;
     height: auto;
     z-index: 2;
     box-sizing: border-box;
@@ -539,7 +660,7 @@ EXPORT SETTINGS
     background-color: #b3ada9;
     color: #000000;
     box-sizing: border-box;
-    padding-top: 28px;
+    padding-top: 28dp;
     text-align: center;
 }
 

@@ -3,7 +3,7 @@
     "configurePresets": [
         {
             "name": "default_debug",
-            "description": "default debug preset",
+            "description": "Default Debug",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
@@ -17,10 +17,42 @@
         },
         {
             "name": "default_release",
-            "description": "default release preset",
+            "description": "Default Release",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/clang",
+                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_APPLOCAL_DEPS": "ON"
+            }
+        },
+        {
+            "name": "mac_arm_release",
+            "description": "Mac arm Release",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "VCPKG_TARGET_TRIPLET": "arm64-osx",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/clang",
+                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_APPLOCAL_DEPS": "ON"
+            }
+        },
+        {
+            "name": "mac_intel_release",
+            "description": "Mac intel Release",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_OSX_ARCHITECTURES": "x86_64",
+                "VCPKG_TARGET_TRIPLET": "x64-osx",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",

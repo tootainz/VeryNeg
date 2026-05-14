@@ -59,15 +59,30 @@ find_package(OpenImageIO CONFIG REQUIRED)
 # Lcms
 find_package(lcms2 CONFIG REQUIRED)
 
+# Json
+find_package(nlohmann_json CONFIG REQUIRED)
+
 # RmlUi
 set(RMLUI_BACKEND "SFML_GL2" CACHE STRING "" FORCE)
 find_package(RmlUi CONFIG REQUIRED)
 
-# SFML
-find_package(SFML COMPONENTS Graphics Window System CONFIG REQUIRED)
+# Add SFML from vcpkg if no need to edit the source
+# find_package(SFML COMPONENTS Graphics Window System CONFIG REQUIRED)
 
-# Json
-find_package(nlohmann_json CONFIG REQUIRED)
+# Add SFML as a submodule for editing the source
+
+# SFML build options
+set(BUILD_SHARED_LIBS OFF)
+set(SFML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SFML_BUILD_DOC OFF CACHE BOOL "" FORCE)
+set(SFML_BUILD_TEST_SUITE OFF CACHE BOOL "" FORCE)
+
+set(SFML_BUILD_NETWORK OFF CACHE BOOL "" FORCE)
+set(SFML_BUILD_AUDIO OFF CACHE BOOL "" FORCE)
+
+set(SFML_USE_SYSTEM_DEPS ON CACHE BOOL "" FORCE)
+
+add_subdirectory(libraries/SFML-3.1.0)
 
 # RmlUi_sfml_backend
 add_library(rmlui_sfml STATIC
