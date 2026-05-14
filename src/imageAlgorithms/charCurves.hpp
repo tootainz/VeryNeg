@@ -36,6 +36,7 @@ and transmittance is what we get as the pixel value from the scan
 
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
+#include "normalize.hpp"
 
 enum class FilmStock {
     Gold_200,
@@ -113,26 +114,27 @@ inline float charCurveInverse(float density, FilmStock filmStock, EditChannel ch
     return 0.5f * (lo + hi);
 }
 
-inline void charCurveInvert(std::vector<float>& image, float maxDensity, float minDensity, EditChannel channel) {
+inline void charCurveInvert(std::vector<float>& image, float maxTransmission, float minTransmission) {
     std::println("inverting the image with the char curves");
-    const float maxExposure = logToExposure(maxLogExposure);
-    const float minExposure = logToExposure(minLogExposure);
+
+    const float maxExposure = logToExposure(charCurveInverse(scanToDensity(maxTransmission), FilmStock::Gold_200, EditChannel::B));
+    const float minExposure = logToExposure(charCurveInverse(scanToDensity(minTransmission), FilmStock::Gold_200, EditChannel::R));
+
     auto applyCharCurve = [&](float& red, float& green, float& blue) {
-        if (channel == EditChannel::RGB) {
-            const float redIntensity = logToExposure(charCurveInverse(scanToDensity(red), FilmStock::Gold_200, EditChannel::R));
-            const float greenIntensity = logToExposure(charCurveInverse(scanToDensity(green), FilmStock::Gold_200, EditChannel::G));
-            const float blueIntensity = logToExposure(charCurveInverse(scanToDensity(blue), FilmStock::Gold_200, EditChannel::B));
-            red = (redIntensity - minExposure) / (maxExposure - minExposure);;
-            green = (greenIntensity - minExposure) / (maxExposure - minExposure);;
-            blue = (blueIntensity - minExposure) / (maxExposure - minExposure);;
-        } else if (channel == EditChannel::R) {
-            return 0;
-        } else if (channel == EditChannel::G) {
-            return 0;
-        } else {
-            return 0;
-        }
+        const float convertedRed = logToExposure(charCurveInverse(scanToDensity(red), FilmStock::Gold_200, EditChannel::R));
+        const float convertedGreen = logToExposure(charCurveInverse(scanToDensity(green), FilmStock::Gold_200, EditChannel::G));
+        const float convertedBlue = logToExposure(charCurveInverse(scanToDensity(blue), FilmStock::Gold_200, EditChannel::B));
+
+        // Normalize to 0-1 or not quite fully, leaving a small margin
+        float normalizedRed = normalize(convertedRed, minExposure, maxExposure, 0.001f, 0.999f);
+        float normalizedGreen = normalize(convertedGreen, minExposure, maxExposure, 0.001f, 0.999f);
+        float normalizedBlue = normalize(convertedBlue, minExposure, maxExposure, 0.001f, 0.999f);
+
+        red = normalizedRed;
+        green = normalizedGreen;
+        blue = normalizedBlue;
     };
+
     iterateImageMutableMultiThread(image, applyCharCurve);
     return;
 }

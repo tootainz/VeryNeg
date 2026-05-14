@@ -45,8 +45,7 @@ View::View(sf::RenderWindow& window) :
     this->rmlContextPopups->SetDensityIndependentPixelRatio(dp_ratio);
 
     // Rest of the constructor
-    Rml::LoadFontFace(getResourcesPath("fonts/oceert_pixel.otf"));
-    Rml::LoadFontFace(getResourcesPath("fonts/Px437_Acer710_CGA-2y.ttf"));
+    Rml::LoadFontFace(getResourcesPath("fonts/Px437_SanyoMBC775-2y.ttf"));
     Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml"));
     Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml"));
     this->rmlDocumentUi = uiDocument;
@@ -408,6 +407,17 @@ void View::updateFilmRollRenderArea() {
     this->filmRollRenderArea = {left, top, left+width, top+height};
 }
 
+// POPUP MANAGEMENT
+
+void View::updatePopupElementSize() {
+    Rml::Element* popupElement = this->rmlDocumentPopups->GetElementById("exportSettings");
+    this->popupElementWidth = popupElement->GetOffsetWidth();
+    this->popupElementHeight = popupElement->GetOffsetHeight();
+
+    this->popupElementTop = popupElement->GetAbsoluteTop();
+    this->popupElementLeft = popupElement->GetAbsoluteLeft();
+}
+
 // SHARPENING MANAGEMENT
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -508,17 +518,20 @@ void View::setPopUp(std::string name, bool value) {
         Rml::Element* popUpElement = this->rmlDocumentPopups->GetElementById(name);
         if (popUpElement) {
             if (value) {
+                this->popupVisible = true;
                 this->rmlDocumentPopups->Show();
                 std::println("popup shown");
                 popUpElement->SetClass("hidden", false);
             }
             else {
+                this->popupVisible = false;
                 this->rmlDocumentPopups->Hide();
                 std::println("popup hidden");
                 popUpElement->SetClass("hidden", true);
             }
         }
     }
+    this->updatePopupElementSize();
 }
 
 // GETTERS
@@ -560,21 +573,74 @@ void View::render() {
     // -------------------------------------------------------
     // RENDERING
     this->window.clear();
-    
     // Clears all OpenGlstates as well
 	window.resetGLStates();
+
+    //RmlUi
 
     // Render the RmlUi main ui
     RmlBackend::BeginFrame();
     this->rmlContextUi->Render();
 
+    // Render the RmlUi popups ui
+    this->rmlContextPopups->Render();
+    RmlBackend::PresentFrame();
+
+
     // Draw the non RmlUi stuff
 
-    // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
+    // Needed for mixing SFML and RmlUi rendering apparently, I have no idea what it does
     window.pushGLStates();
 
+    // Stencil mask fof popup rendering. This is needed since for reasons I don't understand,
+    // RmlUi always wants to render as one layer in relation to SFML
+    glEnable(GL_STENCIL_TEST);
+
+    // Clear stencil buffer
+    glClearStencil(0);
+    glClear(GL_STENCIL_BUFFER_BIT);
+
+    // Write the "hole" into stencil buffer if popup is visible
+
+    if (this->popupVisible) {
+
+        // Disable color writes
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        // Always pass stencil test
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        // Replace stencil values with 1
+        glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+        // Draw rectangle into stencil buffer
+        float left   = this->popupElementLeft;
+        float top    = this->popupElementTop;
+        float width  = this->popupElementWidth;
+        float height = this->popupElementHeight;
+
+        // Convert SFML top-left coords -> OpenGL bottom-left coords
+        float winH = static_cast<float>(this->window.getSize().y);
+
+        glBegin(GL_QUADS);
+            glVertex2f(left, top);
+            glVertex2f(left + width, top);
+            glVertex2f(left + width, top + height);
+            glVertex2f(left, top + height);
+        glEnd();
+
+    }
+
+    // Re-enable rendering
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    // Only render where stencil != 1
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    // Keep stencil values unchanged
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    
     // Preview
     this->window.draw(previewSprite);
+
+    // Disable stencil mask
+    glDisable(GL_STENCIL_TEST);
 
     // Sharpness preview
     glEnable(GL_SCISSOR_TEST);    // This is some weird opengl stuff that i dont have experience with for maskign parts of the sprite
@@ -611,10 +677,6 @@ void View::render() {
 
     // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
     window.popGLStates();
-
-    // Render the RmlUi popups ui
-    this->rmlContextPopups->Render();
-    RmlBackend::PresentFrame();
 
     this->window.display();
     // -------------------------------------------------------

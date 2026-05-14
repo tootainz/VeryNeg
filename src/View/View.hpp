@@ -65,6 +65,13 @@ private:
     Rml::Context* rmlContextPopups; // This is for rendering stuff that should be on top of sfml sprites
     Rml::ElementDocument* rmlDocumentPopups;
 
+    // Popup
+    bool popupVisible = false;
+    int popupElementWidth = 800;
+    int popupElementHeight = 800;
+    int popupElementLeft = 0;
+    int popupElementTop = 0;
+
     // Selection
     sf::RectangleShape selection;
 
@@ -94,6 +101,9 @@ public:
     std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
     std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);
     void updateFilmRollRenderArea();
+
+    // POPUP MANAGEMENT
+    void updatePopupElementSize();
 
     // SHARPENING MANAGEMENT
     void updateSharpeningPreviewPos();

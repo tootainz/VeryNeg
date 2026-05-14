@@ -1824,6 +1824,7 @@ void Controller::eventLoop() {
             this->view.updatePreviewSpriteTransform();
             this->view.updateFilmRollRenderArea();
             this->view.updateSettingsRenderArea();
+            this->view.updatePopupElementSize();
             this->updatePreview(false);
         }
 
