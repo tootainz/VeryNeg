@@ -1078,23 +1078,16 @@ void Controller::ButtonPressResetColor() {
     }
 }
 
-void Controller::CheckboxPressAutoWhiteBalance(bool checked)
-{
+void Controller::ButtonPressAutoWhiteBalance() {
     std::println("AutoWB pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
-        bool previousAutoWB = negative->getAutoWB();
-
-        auto execute = [this, negative, checked]() {
-            this->uiState.autoWB = checked;
-            negative->setHasAutoWB(checked);
+        auto execute = [this, negative]() {
             negative->autoWB();
         };
 
-        auto undo = [this, negative, previousAutoWB]() {
-            this->uiState.autoWB = previousAutoWB;
-            negative->setHasAutoWB(previousAutoWB);
+        auto undo = [this, negative]() {
         };
 
         this->history.addCommand(
@@ -1452,7 +1445,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
                 this->ButtonPressResetColor();
             }
             else if (id == "autoWB") {
-                this->CheckboxPressAutoWhiteBalance(checked);
+                this->ButtonPressAutoWhiteBalance();
             }
             else if (id == "sampleNeutral") {
                 this->ButtonPressSetNeutralSample();

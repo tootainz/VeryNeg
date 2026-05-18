@@ -21,6 +21,7 @@
         
         <div id="right">
             <div id="settings">
+
                 <div id="orientationSettings" class="settingsTab">
                     
                     <div class="settingHeader">
@@ -33,10 +34,9 @@
                     </div>
 
                     <div class="settingContent">
-
                         <div class="horizontalFlexBetween">
 
-                            <div class="horizontalFlex">
+                            <div class="horizontalFlexStart">
                                 <button class="iconButton" id="rotateCounterClock"></button>
                                 <button class="iconButton" id="rotateClock"></button>
                                 <button class="iconButton" id="flipHorizontal"></button>
@@ -47,12 +47,13 @@
                                 <input type="checkbox" class="iconButton" id="setCrop"></input>
                                 <input type="checkbox" id="crop">Crop</input>
                             </div>
+                            
                         </div>
-
                     </div>
 
                 </div>
 
+                
                 <div id="preConvertSettings" class="settingsTab">
                     
                     <div class="settingHeader">
@@ -66,7 +67,7 @@
 
                     <div class="settingContent">
 
-                        <div class="selectButtons">
+                        <div class="horizontalFlexStart">
                             <label for="scanGamma">Scan Gamma</label>
                             <select name="scanGamma" id="scanGamma">
                                 <option value="2.2">2.2</option>
@@ -78,11 +79,11 @@
                         <div class="horizontalFlexBetween">
                             
                             <div class="verticalFlex">
-                                <div class="selectButtons">
+                                <div class="horizontalFlexStart">
                                     <input type="checkbox" class="iconButton" id="sampleBorder"></input>
                                     <input type="checkbox" id="border">Border</input>
                                 </div>
-                                <div class="selectButtons">
+                                <div class="horizontalFlexStart">
                                     <input type="checkbox" class="iconButton" id="sampleDensest"></input>    
                                     <input type="checkbox" id="densest">Densest</input>
                                 </div>
@@ -90,9 +91,9 @@
 
                             <div class="verticalDivider"></div>
 
-                            <div class="verticalFlex">
+                            <div class="verticalFlexStart">
                                 <input type="checkbox" id="scanArea">Scan Area</input>
-                                <div class="selectButtons">
+                                <div class="horizontalFlexStart">
                                     <input type="checkbox" class="iconButton" id="setScanArea"></input>   
                                     <input type="text" value="0" id="setScanBorder"></input>
                                 </div>
@@ -100,7 +101,7 @@
 
                         </div>
 
-                        <div class="selectButtons" id="convertContainer">
+                        <div id="convertContainer">
                             <div id="convertBG">
                                 <button id="convert">CONVERT</button>
                             </div>
@@ -108,6 +109,7 @@
                     </div>
 
                 </div>
+
 
                 <div id="postConvertSettings" class="settingsTab">
 
@@ -139,11 +141,12 @@
 
                     <div class="settingContent">
 
-                        <div class="selectButtons">
-                            <input type="checkbox" class="iconButton" id="sampleNeutral" name="sampleNeutral"></input>
-                            <label for="sampleNeutral">Sample neutral</label>
-
-                            <input type="checkbox" id="autoWB">Auto white balance</input>
+                        <div id="wbContainer" class="horizontalFlexBetween">
+                            <div class="horizontalFlexStart">
+                                <input type="checkbox" class="iconButton" id="sampleNeutral" name="sampleNeutral"></input>
+                                <label for="sampleNeutral">Sample neutral</label>
+                            </div>
+                            <button id="autoWB">Auto balance</button>
                         </div>
 
                         <label class="cyan" for="c-r">Cyan-Red</label>

@@ -125,7 +125,7 @@ private:
     // Color
     void CheckboxPressHoldColor(bool checked);
     void ButtonPressResetColor();
-    void CheckboxPressAutoWhiteBalance(bool checked);
+    void ButtonPressAutoWhiteBalance();
     void ButtonPressSetNeutralSample();
     void SetNeutralSample(int x, int y);
     void SliderChangeSetRBalance(float value);

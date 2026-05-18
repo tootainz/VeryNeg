@@ -86,8 +86,8 @@ void View::addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
 
     // little help from chatgpt in getting the correct size since i was lazy and need to get this done
     const Rml::Box& box = thumbnailElementPointer->GetBox();
-    Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Border);
-    Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+    Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Padding);
+    Rml::Vector2f size = box.GetSize(Rml::BoxArea::Padding);
     std::println("got dimensions");
 
     thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
@@ -136,8 +136,8 @@ void View::updateThumbnailsPos() {
         Rml::Element* thumbnailElement = this->rmlDocumentUi->GetElementById(thumbnailName);
 
         const Rml::Box& box = thumbnailElement->GetBox();
-        Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Border);
-        Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+        Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Padding);
+        Rml::Vector2f size = box.GetSize(Rml::BoxArea::Padding);
 
         thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
         thumbnail->sprite.setScale(sf::Vector2f(size.x / thumbnail->texture->getSize().x, size.y / thumbnail->texture->getSize().y));
@@ -426,6 +426,7 @@ void View::updateSharpeningPreviewPos() {
     float x = previewElement->GetAbsoluteLeft();
     float y = previewElement->GetAbsoluteTop();
     this->sharpeningPreviewSprite.setPosition({x, y});
+    this->sharpeningPreviewSprite.setScale({2.0f, 2.0f});
 }
 
 void View::updateSettingsRenderArea() {

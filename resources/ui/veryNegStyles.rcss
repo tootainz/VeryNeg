@@ -96,8 +96,6 @@ input.checkbox {
     border-radius: 3dp;
     flex-grow: 1;
     padding: 5dp;
-    margin-top: 5dp;
-    margin-bottom: 5dp;
 }
 
 input.checkbox:checked {
@@ -113,21 +111,32 @@ input.checkbox:hover {
     border-width: 1dp;
 }
 
+input.checkbox:checked:hover {
+    color: #ffffff;
+    border-color: #ffffff;
+    background-color: #52504e;
+}
+
 input.checkbox:active {
     background-color: #52504e;
 }
 
-.holdBox {
-    color: #605e5c;
-    background-color: #1e1d1d;
+input.checkbox:checked:active {
+    background-color: #787573;
 }
 
-.holdBox:active {
+input.checkbox.holdBox {
+    color: #605e5c;
+    background-color: #1e1d1d;
+    max-width: 35dp;
+}
+
+input.checkbox.holdBox:active {
     color: #000000;
     decorator: image( "./graphics/button2.png" fill );
 }
 
-.holdBox:checked {
+input.checkbox.holdBox:checked {
     color: #000000;
     decorator: image( "./graphics/button1.png" fill );
 }
@@ -137,7 +146,6 @@ input.checkbox.iconButton {
     height: 25dp;
     width: 25dp;
     padding: 2dp;
-    margin: 5dp;
     flex-grow: 0;
     flex-shrink: 0;
 }
@@ -151,16 +159,20 @@ input.checkbox.iconButton:checked {
 /* Drop down */
 
 select, option{
+    box-sizing: border-box;
     background-color: #161515;
     border-radius: 3dp;
-    padding: 5dp;
-    margin: 5dp;
+    padding: 6.5dp;
     border-color: rgba(255, 255, 255, 0);
     border-width: 1dp;
 }
 
 select:hover, option:hover {
     border-color: #8a8682;
+}
+
+select:active, option:active {
+    background-color: #222121;
 }
 
 
@@ -176,15 +188,15 @@ button {
     border-top: #d4cfcb;
     border-bottom: #807e7c;
     padding: 5dp;
-    margin: 5dp;
+    flex-shrink: 0;
 }
 
 button:hover {
-    background-color: #8e8986;
+    background-color: #a49f9b;
 }
 
 button:active {
-    background-color: #8a8682;
+    background-color: #e5dfdc;
 }
 
 .iconButton {
@@ -192,7 +204,6 @@ button:active {
     height: 25dp;
     width: 25dp;
     padding: 2dp;
-    margin: 5dp;
     flex-grow: 0;
     flex-shrink: 0;
 }
@@ -221,31 +232,56 @@ LAYOUT
 }
 
 .horizontalFlex {
+    box-sizing: border-box;
     display: flex;
-    flex-direction: row;
+    width: 100%;
+    gap: 5dp;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.horizontalFlexStart {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    gap: 5dp;
+    align-items: center;
+}
+
+.horizontalFlexBetween {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .verticalFlex {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
 
-.horizontalFlexBetween {
+.verticalFlexStart {
+    box-sizing: border-box;
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+    flex-direction: column;
 }
 
 .verticalDivider {
     width: 1dp;
-    height: 70dp;
+    height: 60dp;
     margin-right: 10dp;
     margin-left: 10dp;
     background-color: #171716;
     flex-shrink: 0;
 }
 
-
+#hardStuff {
+    padding: 5dp;
+    background-color: #00ff00;
+    color: #a0efa0;
+}
 
 /*
 WELCOME
@@ -277,7 +313,6 @@ PREVIEW
 */
 
 #preview {
-    cursor: crosshair;
     background-color: #0e0e0e;
     height: 100%;
     margin: 20dp;
@@ -307,8 +342,12 @@ FILM ROLL
     background-color: #232221;
     border-color: #777370;
     border-width: 2dp;
+    border-radius: 3dp;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
     box-sizing: border-box;
     flex-shrink: 0;
+    padding: 5dp;
 }
 
 #filmRoll {
@@ -318,6 +357,8 @@ FILM ROLL
     width: 100%;
     align-items: center;
     overflow-x: auto;
+    padding-left: 5dp;
+    padding-right: 5dp;
 }
 
 scrollbarhorizontal {
@@ -325,8 +366,8 @@ scrollbarhorizontal {
 }
 
 .thumbnail {
-    width: 70dp;
-    height: 70dp;
+    width: 64dp;
+    height: 64dp;
     border-width: 1dp;
     border-color: rgba(0, 0, 0, 0);
     flex-shrink: 0;    
@@ -338,10 +379,9 @@ scrollbarhorizontal {
 }
 
 #bottom button {
-    padding-top: 23dp;
     box-sizing: border-box;
-    text-align: center;
-    width: 20dp;
+    width: 24dp;
+    padding: 0;
 }
 
 #previous {
@@ -368,20 +408,13 @@ EXPORT-IMPORT-DELETE
 }
 
 #importExport button {
-    background-color: #b3ada9;
-    color: #000000;
     width: 100%;
     box-sizing: border-box;
     padding-top: 28dp;
     text-align: center;
     margin: 5dp;
+    flex-shrink: 1;
 }
-
-#importExport button:hover {
-    background-color: #a09a96;
-    color: #000000;
-}
-
 
 /*
 SETTINGS
@@ -399,35 +432,42 @@ SETTINGS
     border-top: #393836;
     border-bottom: #1f1e1d;
     border-radius: 3dp;
-    padding-right: 5dp;
-    padding-left: 5dp;
+    padding: 5dp;
+}
+
+.settingHeader h2 {
+    flex-shrink: 0;
+}
+
+.settingHeader input.checkbox {
+    height: 100%;
+}
+
+.settingHeader select {
+    width: 105dp;
+    padding-bottom: 10dp;
 }
 
 .settingContent {
     box-sizing: border-box;
-    padding-right: 5dp;
-    padding-left: 5dp;
-}
-
-.selectButtons {
-    display: flex;
-    width: 100%;
-    gap: 5dp;
-    margin-bottom: 5dp;
+    padding: 10dp;
 }
 
 .settingsTab {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
     position: relative;
     background-color: #232221;
     border: 1dp #232221;
     border-top: #2c2b2a;
     border-bottom: #171616;
     border-radius: 3dp;
-    margin-bottom: 5dp;
 }
 
 #settings {
-    gap: 0;
+    box-sizing: border-box;
+    gap: 5dp;
     width: auto;
     display: flex;
     flex-direction: column;
@@ -455,6 +495,19 @@ scrollbarvertical {
     border-bottom: #242321;
 }
 
+.resetButton:hover {
+    color: #000000;
+    background-color: #8e8986;
+    border-radius: 3dp;
+    border: 1dp #b3ada9;
+    border-top: #d4cfcb;
+    border-bottom: #807e7c;
+}
+
+.resetButton:active {
+    background-color: #e5dfdc;
+}
+
 /*
 ORIENTATION AND CROP
 --------
@@ -480,16 +533,22 @@ ORIENTATION AND CROP
     decorator: image( "./graphics/area.png" contain) content-box;
 }
 
-
+#crop {
+    max-width: 35dp;
+    height: 100%;
+}
 
 /*
 PRE-CONVERT
 --------
 */
 
-#preConvertSettings {
+#convertContainer {
+    box-sizing: border-box;
     display: flex;
-    flex-direction: column;
+    width: 100%;
+    gap: 5dp;
+    align-items: center;
 }
 
 #convert {
@@ -556,15 +615,38 @@ PRE-CONVERT
     decorator: image( "./graphics/area.png" contain) content-box;
 }
 
+#scanArea {
+    margin-bottom: 10dp;
+}
+
+#preConvertSettings input.checkbox {
+    height: 25dp;
+    padding: 5dp;
+}
+
+#preConvertSettings input.text {
+    box-sizing: border-box;
+    height: 25dp;
+    padding: 4dp;
+}
+
+#preConvertSettings .horizontalFlexStart {
+    margin-bottom: 10dp;
+    align-items: center;
+}
+
+#preConvertSettings .horizontalFlexBetween .horizontalFlexStart {
+    align-items: flex-start;
+}
+
+#preConvertSettings .horizontalFlexBetween {
+    align-items: flex-start;
+}
+
 /*
 POST-CONVERT
 --------
 */
-
-#postConvertSettings {
-    display: flex;
-    flex-direction: column;
-}
 
 input.range#c-r:active slidertrack {
     decorator: image( "./graphics/c_r_gradient.png" fill );
@@ -609,6 +691,10 @@ input.range#y-b:active slidertrack {
 
 #sampleNeutral:checked {
     decorator: 0;
+}
+
+#wbContainer {
+    margin-bottom: 10dp;
 }
 
 
@@ -671,15 +757,9 @@ EXPORT SETTINGS
 }
 
 #exportSettings button {
-    background-color: #b3ada9;
-    color: #000000;
     box-sizing: border-box;
     padding-top: 24dp;
+    margin: 5dp;
     padding-bottom: 24dp;
     text-align: center;
-}
-
-#exportSettings button:hover {
-    background-color: #a09a96;
-    color: #000000;
 }
