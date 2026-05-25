@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
 
 # create project
-project("VeryNeg" VERSION 0.4.0)
+project("VeryNeg" VERSION 0.5.0)
 
 set(CMAKE_CXX_STANDARD 23)
 
+# # Uncomment this for just making an executable and not app bundle
 # # add executable
 # add_executable(VeryNeg
 #     src/main.cpp
@@ -31,10 +32,14 @@ set_target_properties(VeryNeg PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist
 )
 
+# target for which os is supported
+# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.3" CACHE STRING "" FORCE)
+
 
 # RESOURCES
 # ------------------------------------------------
 
+# # Uncomment to use this with a raw executable and not .app bundle
 # # Create a target that copies the resources folder
 # add_custom_target(CopyResources ALL
 #     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -69,14 +74,13 @@ find_package(RmlUi CONFIG REQUIRED)
 # Add SFML from vcpkg if no need to edit the source
 # find_package(SFML COMPONENTS Graphics Window System CONFIG REQUIRED)
 
-# Add SFML as a submodule for editing the source
+# Add SFML as a submodule for editing the source for high DPI
 
 # SFML build options
 set(BUILD_SHARED_LIBS OFF)
 set(SFML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_DOC OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_TEST_SUITE OFF CACHE BOOL "" FORCE)
-
 set(SFML_BUILD_NETWORK OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_AUDIO OFF CACHE BOOL "" FORCE)
 
@@ -131,4 +135,5 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources/"
     DESTINATION VeryNeg.app/Contents/Resources
 )
 
+# Use this command for installing the app bundle
 # cmake --install out/build/default_release --prefix out/install

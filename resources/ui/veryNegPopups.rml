@@ -6,7 +6,7 @@
 	<body>
         <div class="" id="exportSettings">
                 <h2>Export Positive</h2>
-                <div class="selectButtons">
+                <div class="horizontalFlex">
                     <label for="imageFormat">Image Format</label>
                     <select name="imageFormat" id="imageFormat">
                         <option value="jpeg">jpeg</option>
@@ -14,7 +14,7 @@
                     </select>
                 </div>
 
-                <div class="selectButtons">
+                <div class="horizontalFlex">
                     <label for="colorProfile">Color Profile</label>
                     <select name="colorProfile" id="colorProfile">
                         <option value="sRGB">sRGB</option>

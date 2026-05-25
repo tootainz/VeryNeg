@@ -148,11 +148,17 @@ input.checkbox.iconButton {
     padding: 2dp;
     flex-grow: 0;
     flex-shrink: 0;
+    background-color: #232221;;
+    border-color: #00000000;
+}
+
+input.checkbox.iconButton:hover {
+    border-color: #8a8682;
 }
 
 input.checkbox.iconButton:checked {
     overflow: hidden;
-    background-color: #161515;
+    background-color: #232221;;
     border: #ffffff;
 }
 
@@ -529,10 +535,6 @@ ORIENTATION AND CROP
     decorator: image( "./graphics/mirror_vert.png" contain) content-box;
 }
 
-#setCrop {
-    decorator: image( "./graphics/area.png" contain) content-box;
-}
-
 #crop {
     max-width: 35dp;
     height: 100%;
@@ -611,10 +613,6 @@ PRE-CONVERT
     decorator: 0;
 }
 
-#setScanArea {
-    decorator: image( "./graphics/area.png" contain) content-box;
-}
-
 #scanArea {
     margin-bottom: 10dp;
 }
@@ -624,8 +622,52 @@ PRE-CONVERT
     padding: 5dp;
 }
 
+#preConvertSettings input.checkbox.iconButton {
+    height: 25dp;
+    padding: 2dp;
+}
+
+#preConvertSettings select {
+    box-sizing: border-box;
+    border-radius: 3dp;
+    height: 25dp;
+    padding: 4dp;
+}
+
+#preConvertSettings input.checkbox.iconButton {
+    height: 25dp;
+    padding: 2dp;
+}
+
+input.checkbox.areaBox {
+    decorator: image( "./graphics/area_disabled.png" contain) content-box;
+    background-color: #161515;
+    border: 1dp #161515;
+    border-top: #0d0d0d;
+    border-bottom: #2e2e2d;
+}
+
+input.checkbox.areaBox:checked {
+    decorator: image( "./graphics/area.png" contain) content-box;
+    background-color: #161515;
+    border-color: #ffffff;
+}
+
+input.checkbox.areaBox:hover {
+    decorator: image( "./graphics/area_hover.png" contain) content-box;
+    color: #8a8682;
+    border-color: #8a8682;
+}
+
+input.checkbox.areaBox:checked:hover {
+    decorator: image( "./graphics/area.png" contain) content-box;
+    background-color: #282626;
+    border-color: #ffffff;
+}
+
 #preConvertSettings input.text {
     box-sizing: border-box;
+    border-radius: 3dp;
     height: 25dp;
     padding: 4dp;
 }
@@ -748,6 +790,7 @@ EXPORT SETTINGS
     border-radius: 3dp;
     padding: 5dp;
     margin: 5dp;
+    height: 25dp;
     border-color: rgba(255, 255, 255, 0);
     border-width: 1dp;
 }
