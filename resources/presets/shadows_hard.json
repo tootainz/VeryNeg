@@ -1,0 +1,18 @@
+{
+    "version": "0.3.0",
+    "name": "shadows hard",
+
+    "density": 0.0,
+    "contrast": 1.5,
+    "highlights": 0.0,
+    "shadows": -0.7,
+    "blacks": -0.1,
+    "whites": 0.0,
+    "hasAutoWB": true,
+    "rBalance": null,
+    "gBalance": null,
+    "bBalance": null,
+    "saturation": 0.0,
+    "sharpeningAmount": 2.5,
+    "sharpeningDiameter": 7
+}

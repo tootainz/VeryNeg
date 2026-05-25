@@ -32,13 +32,22 @@ private:
     // Preview
     std::unique_ptr<sf::Texture> previewTexture;
     sf::Sprite previewSprite;
-    float previewScale;
-    int previewWidth = 800;
-    int previewHeight = 800;
-    float previewX = 0;
-    float previewY = 0;
-    float previewCenterOffsetX = 0;
-    float previewCenterOffsetY = 0;
+    int previewElementWidth = 800;
+    int previewElementHeight = 800;
+    int previewElementLeft = 0;
+    int previewElementTop = 0;
+    float previewOffsetX = 0.0f;
+    float previewOffsetY = 0.0f;
+    float previewX = 0.0f;
+    float previewY = 0.0f;
+    float previewScaleX;
+    float previewScaleY;
+    int previewOrientation = 1;
+
+    // Cursors
+    std::optional<sf::Cursor> cursorSampleBorder;
+    std::optional<sf::Cursor> cursorSampleDensest;
+    std::optional<sf::Cursor> cursorSampleNeutral;
 
     // Sharpness preview
     std::unique_ptr<sf::Texture> sharpeningPreviewTexture;
@@ -51,8 +60,17 @@ private:
     sf::RenderWindow& window;
     
     // RmlUI stuff
-    Rml::Context* rmlContext;
-    Rml::ElementDocument* rmlDocument;
+    Rml::Context* rmlContextUi;
+    Rml::ElementDocument* rmlDocumentUi;
+    Rml::Context* rmlContextPopups; // This is for rendering stuff that should be on top of sfml sprites
+    Rml::ElementDocument* rmlDocumentPopups;
+
+    // Popup
+    bool popupVisible = false;
+    int popupElementWidth = 800;
+    int popupElementHeight = 800;
+    int popupElementLeft = 0;
+    int popupElementTop = 0;
 
     // Selection
     sf::RectangleShape selection;
@@ -77,18 +95,25 @@ public:
     void updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id);
 
     // PREVIEW MANAGEMENT
-    void updatePreviewSize();
-    void updatePreviewScale();
-    void updatePreviewPos();
+    void updatePreviewElementSize();
+    void updatePreviewSpriteTransform();
+    void setPreviewOrientation(int value);
     std::tuple<int, int> previewCoordsToTextureCoords(int x, int y);
     std::tuple<int, int> textureCoordsToPreviewCoords(int x, int y);
     void updateFilmRollRenderArea();
+
+    // POPUP MANAGEMENT
+    void updatePopupElementSize();
 
     // SHARPENING MANAGEMENT
     void updateSharpeningPreviewPos();
     void updateSettingsRenderArea();
     
     // SETTERS
+    void setCursorSampleDensest();
+    void setCursorSampleBorder();
+    void setCursorSampleNeutral();
+    void setCursorDefault();
     void setSliderValue(std::string name, float value);
     void setCheckboxValue(std::string name, bool value);
     void setNumbericValue(std::string name, float value);
@@ -99,7 +124,8 @@ public:
     void setPopUp(std::string name, bool value);
 
     // GETTERS
-    Rml::Context* getRmlContext();
+    Rml::Context* getRmlContextUi();
+    Rml::Context* getRmlContextPopups();
     ImageArea getPreviewArea();
 
     // RENDERING

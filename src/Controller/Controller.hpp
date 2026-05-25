@@ -49,6 +49,7 @@ public:
 
     // MAIN LOOP
     void mainLoop();
+    void cleanup();
 
 
 private:
@@ -66,49 +67,75 @@ private:
 
     // GUI EVENTS
 
+    // Apply held settings
+    void applyHeld();
+
+    // Reset sliders
+    void SliderReset(std::string name);
+
     // NEGATIVE NAVIGATION
     void ButtonPressAddNegative();
     void ButtonPressRemoveNegative(int id);
     void ButtonPressNextNegative();
     void ButtonPressPreviousNegative();
     void ButtonPressThumbnail(int id);
+
+    // ORIENTATION
+    void CheckboxPressHoldOrientation(bool checked);
+    void ButtonPressResetOrientation();
+    void ButtonPressRotateClock();
+    void ButtonPressRotateCounterClock();
+    void ButtonPressFlipHorizontal();
+    void ButtonPressFlipVertical();
+
+    // CROP
+    void CheckboxPressCrop(bool checked);
+    void ButtonPressSetCrop();
     
     // PRE-CONVERT
+    void CheckboxPressHoldConvert(bool checked);
     void OptionPressSetScanGamma(float value);
-    void ButtonPressBorder(bool checked);
+    void CheckboxPressBorder(bool checked);
     void ButtonPressSetBorder();
     void SetBorder(int x, int y);
-    void ButtonPressDensest(bool checked);
+    void CheckboxPressDensest(bool checked);
     void ButtonPressSetDensest();
     void SetDensest(int x, int y);
-    void ButtonPressScanArea(bool checked);
+    void CheckboxPressScanArea(bool checked);
     void ButtonPressSetScanArea();
     void ButtonPressSetScanAreaNumber();
     void ButtonPressConvert();
     void ButtonPressResetConversion();
 
     // POST-CONVERT
+    void CheckboxPressHoldEdits(bool checked);
     void ButtonPressResetEdits();
     void OptionPressSetPreset(std::string name);
 
     // Intensity
-    void SliderChangeSetDensity(float value);
+    void CheckboxPressHoldIntensity(bool checked);
+    void ButtonPressResetIntensity();
+    void SliderChangeSetDensity(float value, bool dragging);
     void SliderChangeSetContrast(float value);
     void SliderChangeSetWhites(float value);
     void SliderChangeSetHighlights(float value);
     void SliderChangeSetShadows(float value);
     void SliderChangeSetBlacks(float value);
 
-    // White balance
-    void ButtonPressAutoWhiteBalance(bool checked);
-    void ButtonPressNeutralSample(bool checked);
+    // Color
+    void CheckboxPressHoldColor(bool checked);
+    void ButtonPressResetColor();
+    void ButtonPressAutoWhiteBalance();
     void ButtonPressSetNeutralSample();
     void SetNeutralSample(int x, int y);
     void SliderChangeSetRBalance(float value);
     void SliderChangeSetGBalance(float value);
     void SliderChangeSetBBalance(float value);
+    void SliderChangeSetSaturation(float value);
 
     // Sharpening
+    void CheckboxPressHoldSharpening(bool checked);
+    void ButtonPressResetSharpening();
     void SliderChangeSetSharpeningAmount(float value);
     void SliderChangeSetSharpeningDiameter(float value);
 
@@ -118,6 +145,7 @@ private:
     void ButtonPressExportAll();
     void ButtonPressExportCancel();
     void OptionPressImageFormat(std::string name);
+    void OptionPressExportProfile(std::string name);
 
     // EVENT LISTENER
     void ProcessEvent(Rml::Event& event) override;

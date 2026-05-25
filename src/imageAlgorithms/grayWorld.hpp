@@ -7,21 +7,25 @@
 
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
-#include "multiply.hpp"
 #include "gamma.hpp"
+#include "crop.hpp"
+#include "../Negative/ImageArea.hpp"
 
 
-inline void grayWorld(std::vector<float>& image) {
+inline std::tuple<float, float, float> grayWorld(std::vector<float>& image, int width, int height, ImageArea area) {
 
     std::println("Starting Gray World algorithm");
 
-    int pixelAmount = image.size()/3;
+    // Generate a copy of only the pixels indicated by the area
+    auto [croppedImage, croppedWidth, croppedHeight] = crop(image, width, height, area);
+
+    int pixelAmount = croppedImage.size()/3;
 
     std::println("Total amount of pixels per channel: {}", pixelAmount);
 
-    float rSum = 0;
-    float gSum = 0;
-    float bSum = 0;
+    double rSum = 0;
+    double gSum = 0;
+    double bSum = 0;
 
     auto countSums = [&](float red, float green, float blue) {
         rSum += red;
@@ -29,7 +33,7 @@ inline void grayWorld(std::vector<float>& image) {
         bSum += blue;
     };
 
-    iterateImageImmutableSingleThread(image, countSums);
+    iterateImageImmutableSingleThread(croppedImage, countSums);
 
     float rAverage = rSum/pixelAmount;
     float gAverage = gSum/pixelAmount; 
@@ -47,11 +51,16 @@ inline void grayWorld(std::vector<float>& image) {
     float gScaling = targetGray/gAverage;
     float bScaling = targetGray/bAverage;
 
+    // Set up my preferre neutral gray fro each channel by multiplying it
+    // My preference: Red stays as the reference point, Green is a little bit less or almost the same as red, blue is noticeably less
+
+    rScaling = rScaling;
+    gScaling = gScaling * 0.98;
+    bScaling = bScaling * 0.8;
+
     std::println("Scaling factor for r: {}", rScaling);
     std::println("Scaling factor for g: {}", gScaling);
     std::println("Scaling factor for b: {}", bScaling);
 
-    multiply(image, rScaling, EditChannel::R);
-    multiply(image, gScaling, EditChannel::G);
-    multiply(image, bScaling, EditChannel::B);
+    return {rScaling, gScaling, bScaling};
 }

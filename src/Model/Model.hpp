@@ -7,6 +7,7 @@
 
 #include "../Negative/Negative.hpp"
 #include "../Negative/ImageArea.hpp"
+#include "../ColorProfiler/ColorProfiler.hpp"
 
 
 /**
@@ -33,9 +34,13 @@ private:
     // Index of the negative that is currently selected and should be displayed
     int currentNegativeIndex;
 
-    // Place to store the held settings in the editor
-    nlohmann::json heldSettings;
+    // Pointer to the negative that the held settigns are taken from. If there are no negatives, returns nullptr
+    Negative* heldNegative = nullptr;
 
+    // Color profiler for color management
+    ColorProfiler profiler;
+
+    bool wasConstructed;
 
 public:
     // PUBLIC METHODS
@@ -49,14 +54,26 @@ public:
     void previousNegative();
     void nextNegative();
     
-
     // NEGATIVE IO
     Negative* addNegative(std::filesystem::path imagePath);
     Negative* addNegative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
     void removeNegativeById(int id);
+
+    // HELD SETTINGS
+    void holdSettings(bool hold);
+    void applyHoldOrientationCrop();
+    void applyHoldPreConvert();
+    void applyHoldPostConvert();
+    void applyHoldColor();
+    void applyHoldIntensity();
+    void applyHoldSharpening();
     
     // GETTERS
     Negative* getCurrentNegative();
     Negative* getNegativeById(int id);
     std::vector<Negative>& getAllNegatives();
+    bool getWasConstructed();
+
+    // CLEANUP
+    void cleanCache();
 };

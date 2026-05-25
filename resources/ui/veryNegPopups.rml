@@ -1,0 +1,30 @@
+<rml>
+	<head>
+		<title>VeryNegPopups</title>
+		<link type="text/rcss" href="./veryNegStyles.rcss"/>
+	</head>
+	<body>
+        <div class="" id="exportSettings">
+                <h2>Export Positive</h2>
+                <div class="horizontalFlex">
+                    <label for="imageFormat">Image Format</label>
+                    <select name="imageFormat" id="imageFormat">
+                        <option value="jpeg">jpeg</option>
+                        <option value="tiff">tiff</option>
+                    </select>
+                </div>
+
+                <div class="horizontalFlex">
+                    <label for="colorProfile">Color Profile</label>
+                    <select name="colorProfile" id="colorProfile">
+                        <option value="sRGB">sRGB</option>
+                        <option value="adobeRGB">adobeRGB</option>
+                    </select>
+                </div>
+
+                <button id="exportCancel">Cancel</button>
+                <button id="exportCurrent">Export Current</button>
+                <button id="exportAll">Export All</button>
+        </div>
+	</body>
+</rml>

@@ -13,7 +13,7 @@
 #include "../imageAlgorithms/levels.hpp"
 #include "../imageAlgorithms/gamma.hpp"
 #include "../imageAlgorithms/grayWorld.hpp"
-#include "../imageAlgorithms/multiply.hpp"
+#include "../imageAlgorithms/neutralPatch.hpp"
 #include "../imageAlgorithms/curveExposure.hpp"
 #include "../imageAlgorithms/compromiseInvert.hpp"
 #include "../imageAlgorithms/boxFilter.hpp"
@@ -24,6 +24,8 @@
 #include "../imageAlgorithms/curveBlacksShadows.hpp"
 #include "../imageAlgorithms/curveWhitesHighlights.hpp"
 #include "../imageAlgorithms/unsharpMask.hpp"
+#include "../imageAlgorithms/saturation.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // STATIC HELPER FUNCTIONS
@@ -37,8 +39,8 @@ static float exponentDampenerFixer(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 int Negative::nextId = 0;
-const std::string Negative::NEGATIVEDATA_VERSION = "0.3.0";
-const std::string Negative::PRESETDATA_VERSION = "0.2.0";
+const std::string Negative::NEGATIVEDATA_VERSION = "0.5.1";
+const std::string Negative::PRESETDATA_VERSION = "0.3.0";
 const float Negative::DRAGGING_SCALE = 0.4f;
 
 
@@ -46,8 +48,8 @@ const float Negative::DRAGGING_SCALE = 0.4f;
 // ----------------------------------------------------------------------------------------------------------------
 
 bool Negative::writeConversionCache() {
-    std::println("Saving cahched conversion");
-    std::string fileName = std::format("{}_chache.tif", this->name);
+    std::println("Saving cached conversion");
+    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -66,7 +68,7 @@ bool Negative::writeConversionCache() {
 bool Negative::readConversionCache() {
 
     std::println("trying to open cache");
-    std::string fileName = std::format("{}_chache.tif", this->name);
+    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
     auto input = OIIO::ImageInput::open(fileName);
 
     if (!input) {
@@ -86,7 +88,7 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
-    std::string defaultDataPath = "./resources/data_templates/negativeDataTemplate.neg";
+    std::string defaultDataPath = getResourcesPath("/data_templates/negativeDataTemplate.neg");
     std::string dataName = std::filesystem::path(this->path)
         .replace_extension(".neg")
         .string();
@@ -169,14 +171,20 @@ std::unique_ptr<nlohmann::json> Negative::readPresetdata(std::filesystem::path p
 // HELPERS
 // ----------------------------------------------------------------------------------------------------------------
 
-std::tuple<float, float, float> Negative::samplePixels(int x, int y) {
-    auto [r, g, b] = eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, x, y, this->EYEDROPPER_SIZE);
+std::tuple<float, float, float> Negative::sampleWorkingPixels(int workingX, int workingY) {
+    auto [r, g, b] = eyedropper(this->workingPixels, this->workingWidth, this->workingHeight, workingX, workingY, this->EYEDROPPER_SIZE);
     // Have to remove gamma from these pixels since the conversion expects gamma to be removed
     return {
         gammaFunction(r, this->getScanGamma()),
         gammaFunction(g, this->getScanGamma()),
         gammaFunction(b, this->getScanGamma())
     };
+}
+
+std::tuple<float, float, float> Negative::sampleConvertedWorkingPixels(int workingX, int workingY) {
+    auto [r, g, b] = eyedropper(this->convertedPixels, this->workingWidth, this->workingHeight, workingX, workingY, this->EYEDROPPER_SIZE);
+    // These already have the gamma removed
+    return {r,g,b};
 }
 
 std::unique_ptr<std::vector<float>> Negative::renderFinal() {
@@ -210,30 +218,42 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
     float highlights = this->negativeData["edits"]["highlights"];
     float whites = this->negativeData["edits"]["whites"];
 
+    float saturation = exponentDampenerFixer(this->negativeData["edits"]["saturation"]);
+
     auto applyEdits = [&](float& r, float& g, float& b) {
+        // Note the order is important here if we want to allow blacks and whites to be able to recover detail after density
+
+        
         // Color balance
         r = rationalCurveFunction(r, rBalance);
         g = rationalCurveFunction(g, gBalance);
         b = rationalCurveFunction(b, bBalance);
-
+        
+        // Display gamma
+        r = gammaFunction(r, 1.0f/2.2f);
+        g = gammaFunction(g, 1.0f/2.2f);
+        b = gammaFunction(b, 1.0f/2.2f);
+        
+        // blacks and whites
+        r = blacksFunction(r, blacks);
+        g = blacksFunction(g, blacks);
+        b = blacksFunction(b, blacks);
+        
+        r = whitesFunction(r, whites);
+        g = whitesFunction(g, whites);
+        b = whitesFunction(b, whites);
+        
         // Exposure
         r = curveExposureFunction(r, density);
         g = curveExposureFunction(g, density);
         b = curveExposureFunction(b, density);
 
+        
         // Contrast
         r = contrastFunction(r, contrast);
         g = contrastFunction(g, contrast);
         b = contrastFunction(b, contrast);
-
-        // blacks and whites
-        r = blacksFunction(r, blacks);
-        g = blacksFunction(g, blacks);
-        b = blacksFunction(b, blacks);
-
-        r = whitesFunction(r, whites);
-        g = whitesFunction(g, whites);
-        b = whitesFunction(b, whites);
+        
 
         // Shadows and highlights
         r = shadowsFunction(r, shadows);
@@ -244,10 +264,12 @@ void Negative::renderEdits(std::vector<float>& pixels, int channels) {
         g = highlightsFunction(g, highlights);
         b = highlightsFunction(b, highlights);
 
-        // Display gamma
-        r = gammaFunction(r, 1.0f/2.2f);
-        g = gammaFunction(g, 1.0f/2.2f);
-        b = gammaFunction(b, 1.0f/2.2f);
+        auto [sr, sg, sb] = saturationFunction(r, g, b, saturation);
+
+        r = sr;
+        g = sg;
+        b = sb;
+
     };
 
     iterateImageMutableMultiThread(pixels, applyEdits);
@@ -370,13 +392,31 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
     float darkestGDensity = scanToDensity(transparentsG);
     float darkestBDensity = scanToDensity(transparentsB);
 
+    // Logging for debugging
+    std::println("-------------------------------");
+    std::println("Transparents:");
+    std::println("  R: {}, G: {}, B: {}", transparentsR, transparentsG, transparentsB);
+
+    std::println("Opaquests:");
+    std::println("  R: {}, G: {}, B: {}", opaquestsR, opaquestsG, opaquestsB);
+
+    std::println("-------------------------------");
+
+    std::println("Darkest Density:");
+    std::println("  R: {}, G: {}, B: {}", darkestRDensity, darkestGDensity, darkestBDensity);
+
+    std::println("Brightest Density:");
+    std::println("  R: {}, G: {}, B: {}", brightestRDensity, brightestGDensity, brightestBDensity);
+        
+    std::println("-------------------------------");
+
     // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
 
     // Balance the black point and white point densities to all match the red channel
     // This makes sure that the film border is actually white and the densest is actually black
-    levelsR(pixels, opaquestsR, transparentsR, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsG(pixels, opaquestsG, transparentsG, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
-    levelsB(pixels, opaquestsB, transparentsB, densityToScan(brightestRDensity), densityToScan(darkestRDensity));
+    levelsR(pixels, opaquestsR, transparentsR, opaquestsR, transparentsR);
+    levelsG(pixels, opaquestsG, transparentsG, opaquestsR, transparentsR);
+    levelsB(pixels, opaquestsB, transparentsB, opaquestsR, transparentsR);
 
     // 4. INVERT
 
@@ -433,6 +473,28 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;
 
+    int orientation = 1;
+    // Try to get orientation form the exif data, if not working, default to 1
+    if (spec.get_int_attribute("Orientation", 1) != 1) {
+        orientation = spec.get_int_attribute("Orientation", 1);
+    }
+
+    // Get the ICC profile if it exists
+    // Stores a pointer to the attribute if it exists
+    const OIIO::ParamValue* attribute = spec.find_attribute("ICCProfile", OIIO::TypeDesc::UNKNOWN);
+    if (attribute) {
+        // Get the icc profile uint8_t data array from the attribute
+        std::span iccData = attribute->as_cspan<uint8_t>();
+        if (!iccData.empty()) {
+            // Store the profile if it exists
+            this->iccProfile = std::vector<uint8_t>(iccData.begin(), iccData.end());
+        }
+        else {
+            // The attribute does not have a profile
+            this->iccProfile = std::nullopt;
+        }
+    }
+
     // not RGB or Grayscale
     if (this->numberOfChannels != 3 && this->numberOfChannels != 1) {
         std::println("The image contains wrong amount of channels");
@@ -450,6 +512,24 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     std::println("{}", metadata);
     
     input->close();
+
+    // 1.5. Convert to working space if not already
+    // RGB
+    if (this->numberOfChannels == 3) {
+        bool iccConverted = this->profiler->toAdobeRGB(this->originalPixels, this->iccProfile);
+        if (!iccConverted) {
+            // The profile conversion failed
+            return false;
+        }
+    }
+    // // GRAY
+    // else if (this->numberOfChannels == 1) {
+    //     bool iccConverted = this->profiler->toGrayGamma22(this->originalPixels, this->iccProfile);
+    //     if (!iccConverted) {
+    //         // The profile conversion failed
+    //         return false;
+    //     }
+    // }
 
     // 2. Generate the working image
 
@@ -492,9 +572,24 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     // 3. Read saved NegativeData if exists
     this->readNegativeData();
 
+    // Set the orientation
+    if (this->negativeData["general"].contains("orientation") &&
+        !this->negativeData["general"]["orientation"].is_null()) {
+        
+        std::println("There is a custom orientation in the .neg file");
+        orientation = this->negativeData["general"]["orientation"].get<int>();
+    }
+
+    this->setOrientation(orientation);
+
     // set the scanArea to be everything if not defined by the negativeData
     if(!this->negativeData["conversion"]["hasScanArea"]) {
         this->setScanArea({0, 0, this->width, this->height}, 1.0f);
+    }
+
+    // set the crop to be everything if not defined by the negativeData
+    if(!this->negativeData["general"]["isCropped"]) {
+        this->setCropArea({0, 0, this->width, this->height}, 1.0f);
     }
 
     // Convert the image or read from cache if it is supposed to be converted
@@ -521,14 +616,18 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 // CONSTRUCTORS
 // ----------------------------------------------------------------------------------------------------------------
 
-Negative::Negative(std::filesystem::path imagePath) {
+Negative::Negative(std::filesystem::path imagePath, ColorProfiler* profiler) :
+    profiler(profiler)
+{
     this->id = this->nextId;
     this->nextId++;
     this->successfullyCreated = this->initializeNegative(imagePath);
     return;
 }
 
-Negative::Negative(std::filesystem::path imagePath, int id) {
+Negative::Negative(std::filesystem::path imagePath, ColorProfiler* profiler, int id) :
+    profiler(profiler)
+{
     this->id = id;
     this->successfullyCreated = this->initializeNegative(imagePath);
     return;
@@ -550,8 +649,7 @@ ImageData Negative::getPreview(bool dragging) {
     int previewWidth = dragging ? this->workingWidth*this->DRAGGING_SCALE : this->workingWidth;
     int previewHeight = dragging ? this->workingHeight*this->DRAGGING_SCALE : this->workingHeight;
 
-    const std::vector<float>& previewPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
-
+    std::vector<float>& previewPixels = dragging ? this->editedDraggingPixels : this->editedPixels;
     std::vector<uint8_t> previewData(previewWidth * previewHeight * 4); // always RGBA
 
     for (int i = 0; i < previewWidth * previewHeight; ++i) {
@@ -568,6 +666,9 @@ ImageData Negative::getPreview(bool dragging) {
     }
 
     std::println("generated preview data");
+
+    // Transform from working space to display space
+    this->profiler->adobeToDisplay(previewData);
 
     return {
         previewData,
@@ -642,41 +743,169 @@ std::filesystem::path Negative::getPath() {
 // EXPORTING
 // ----------------------------------------------------------------------------------------------------------------
 
-bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat) {
+bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat, std::string iccProfile) {
 
     std::println("Saving positive");
 
+    // Render final
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
+
+    std::vector<float> croppedPixels;
+    int cropWidth, cropHeight;
+
+    // Crop
+    if (this->getHasCrop()) {
+        std::println("Cropping");
+        auto cropResults = crop(*finalPixels, this->width, this->height, this->getCropArea(1.0f));
+        croppedPixels = std::get<0>(cropResults);
+        cropWidth = std::get<1>(cropResults);
+        cropHeight = std::get<2>(cropResults);
+    }
+    else {
+        croppedPixels = *finalPixels;
+        cropWidth = this->width;
+        cropHeight = this->height;
+    }
+    
+    std::vector<uint8_t> profileBlob;
+
+    if (iccProfile == "sRGB") {
+        this->profiler->adobeToSRGB(croppedPixels);
+        profileBlob = this->profiler->getSRGB();
+    }
+    else if (iccProfile == "AdobeRGB") {
+        profileBlob = this->profiler->getAdobeRGB();
+    }
+
+    // Use OIIO::ImageBuf for ease of transforming the pixel data type
+    OIIO::ImageSpec originalSpec(cropWidth, cropHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
+    // Embed ICC profile and Orientation
+    originalSpec.attribute("ICCProfile", OIIO::TypeDesc(OIIO::TypeDesc::UINT8, profileBlob.size()), OIIO::cspan(profileBlob.data(), profileBlob.size()));
+    originalSpec.attribute("Orientation", this->getOrientation());
+
+    // Prints handy knowledge about the image
+    std::println("This image has the following data");
+    std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
+    std::println("{}", metadata);
+
+    // Actually rotate the pixels
+    OIIO::ImageBuf originalBuf(originalSpec, croppedPixels.data());
+    OIIO::ImageBuf orientedBuf;
+    OIIO::ImageBufAlgo::reorient(orientedBuf, originalBuf);
 
     if (imageFormat == "jpeg") {
         std::string filePath = std::format("{}.jpeg", imagePath.string());
 
-        // Use OIIO::ImageBuf for ease of transforming the pixel data type
-        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
-
         // Save 8bit for jpeg
-        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
+        if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
             std::println("Failed to save image");
             return false;
         }
         std::println("Saved positive successfully");
         return true;
     }
+
     else if (imageFormat == "tiff") {
         std::string filePath = std::format("{}.tiff", imagePath.string());
 
-        // Use OIIO::ImageBuf for ease of transforming the pixel data type
-        OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
-        OIIO::ImageBuf originalBuf(originalSpec, finalPixels->data());
-
         // For now we want to save images as 16bit
-        if (!originalBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
+        if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
             std::println("Failed to save image");
             return false;
         }
         std::println("Saved positive successfully");
         return true;
+    }
+    else {
+        return false;
+    }
+}
+
+// SETTING EDIT SETTIGNS CROP
+// ----------------------------------------------------------------------------------------------------------------
+
+void Negative::setHasCrop(bool has) {
+    this->negativeData["general"]["isCropped"] = has;
+}
+
+void Negative::setCropArea(ImageArea area, float scale) {
+    std::println("setCropArea called");
+    std::println("scale = {}", scale);
+    std::println("incoming cropArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
+    this->negativeData["general"]["crop"]["left"] = area.left * (1.0f/scale);
+    this->negativeData["general"]["crop"]["top"] = area.top * (1.0f/scale);
+    this->negativeData["general"]["crop"]["right"] = area.right * (1.0f/scale);
+    this->negativeData["general"]["crop"]["bottom"] = area.bottom * (1.0f/scale);
+}
+
+// SETTING EDIT SETTIGNS ROTATION
+// ----------------------------------------------------------------------------------------------------------------
+
+// Set the exif oriantation tag
+/*
+1 = Normal (no rotation)
+2 = Flipped horizontally
+3 = Rotated 180°
+4 = Flipped vertically
+5 = Transposed (flip + rotate 90°)
+6 = Rotated 90° clockwise
+7 = Transverse (flip + rotate 270°)
+8 = Rotated 270° clockwise
+*/
+void Negative::setOrientation(int value) {
+    this->negativeData["general"]["orientation"] = value;
+    this->writeNegativeData();
+}
+
+void Negative::rotateClockwise() {
+    switch (getOrientation()) {
+        case 1: setOrientation(6); break;
+        case 2: setOrientation(7); break;
+        case 3: setOrientation(8); break;
+        case 4: setOrientation(5); break;
+        case 5: setOrientation(2); break;
+        case 6: setOrientation(3); break;
+        case 7: setOrientation(4); break;
+        case 8: setOrientation(1); break;
+    }
+}
+
+void Negative::rotateCounterClockwise() {
+    switch (getOrientation()) {
+        case 1: setOrientation(8); break;
+        case 2: setOrientation(5); break;
+        case 3: setOrientation(6); break;
+        case 4: setOrientation(7); break;
+        case 5: setOrientation(4); break;
+        case 6: setOrientation(1); break;
+        case 7: setOrientation(2); break;
+        case 8: setOrientation(3); break;
+    }
+}
+
+void Negative::flipHorizontal() {
+    switch (getOrientation()) {
+        case 1: setOrientation(2); break;
+        case 2: setOrientation(1); break;
+        case 3: setOrientation(4); break;
+        case 4: setOrientation(3); break;
+        case 5: setOrientation(6); break;
+        case 6: setOrientation(5); break;
+        case 7: setOrientation(8); break;
+        case 8: setOrientation(7); break;
+    }
+}
+
+void Negative::flipVertical() {
+    switch (getOrientation()) {
+        case 1: setOrientation(4); break;
+        case 2: setOrientation(3); break;
+        case 3: setOrientation(2); break;
+        case 4: setOrientation(1); break;
+        case 5: setOrientation(8); break;
+        case 6: setOrientation(7); break;
+        case 7: setOrientation(6); break;
+        case 8: setOrientation(5); break;
     }
 }
 
@@ -714,7 +943,7 @@ void Negative::setBorder(float r, float g, float b) {
 }
 
 void Negative::setBorderByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleWorkingPixels(x, y);
     this->setBorder(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
@@ -729,7 +958,7 @@ void Negative::setDensest(float r, float g, float b) {
 }
 
 void Negative::setDensestByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleWorkingPixels(x, y);
     this->setDensest(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
@@ -748,40 +977,65 @@ void Negative::resetConversion() {
 
 void Negative::applyPreset(std::filesystem::path presetPath) {
     std::println("applying preset");
+
     std::unique_ptr<nlohmann::json> presetDataPointer = std::move(this->readPresetdata(presetPath));
 
-    if (presetDataPointer) {
-        std::println("preset exists");
-        nlohmann::json presetData = *presetDataPointer;
+    if (!presetDataPointer) return;
 
-        float density = presetData["density"];
-        float contrast = presetData["contrast"];
-        float whites = presetData["whites"];
-        float highlights = presetData["highlights"];
-        float shadows = presetData["shadows"];
-        float blacks = presetData["blacks"];
-        bool autoWB = presetData["autoWB"];
-        float rBalance = presetData["rBalance"];
-        float gBalance = presetData["gBalance"];
-        float bBalance = presetData["bBalance"];
-        float saturation = presetData["saturation"];
-        float sharpeningAmount = presetData["sharpeningAmount"];
-        float sharpeningDiameter = presetData["sharpeningDiameter"];
+    std::println("preset exists");
+    const auto& presetData = *presetDataPointer;
 
-        this->setDensity(density);
-        this->setContrast(contrast);
-        this->setWhites(whites);
-        this->setHighlights(highlights);
-        this->setShadows(shadows);
-        this->setBlacks(blacks);
-        this->setAutoWB(autoWB);
-        this->setRBalance(rBalance);
-        this->setGBalance(gBalance);
-        this->setBBalance(bBalance);
-        this->setSaturation(saturation);
-        this->setSharpeningAmount(sharpeningAmount);
-        this->setSharpeningDiameter(sharpeningDiameter);
-    }
+    auto it = presetData.find("density");
+    if (it != presetData.end() && !it->is_null())
+        this->setDensity(it->get<float>());
+
+    it = presetData.find("contrast");
+    if (it != presetData.end() && !it->is_null())
+        this->setContrast(it->get<float>());
+
+    it = presetData.find("whites");
+    if (it != presetData.end() && !it->is_null())
+        this->setWhites(it->get<float>());
+
+    it = presetData.find("highlights");
+    if (it != presetData.end() && !it->is_null())
+        this->setHighlights(it->get<float>());
+
+    it = presetData.find("shadows");
+    if (it != presetData.end() && !it->is_null())
+        this->setShadows(it->get<float>());
+
+    it = presetData.find("blacks");
+    if (it != presetData.end() && !it->is_null())
+        this->setBlacks(it->get<float>());
+
+    it = presetData.find("hasAutoWB");
+    if (it != presetData.end() && !it->is_null())
+        this->setHasAutoWB(it->get<bool>());
+
+    it = presetData.find("rBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setRBalance(it->get<float>());
+
+    it = presetData.find("gBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setGBalance(it->get<float>());
+
+    it = presetData.find("bBalance");
+    if (it != presetData.end() && !it->is_null())
+        this->setBBalance(it->get<float>());
+
+    it = presetData.find("saturation");
+    if (it != presetData.end() && !it->is_null())
+        this->setSaturation(it->get<float>());
+
+    it = presetData.find("sharpeningAmount");
+    if (it != presetData.end() && !it->is_null())
+        this->setSharpeningAmount(it->get<float>());
+
+    it = presetData.find("sharpeningDiameter");
+    if (it != presetData.end() && !it->is_null())
+        this->setSharpeningDiameter(it->get<int>());
 }
 
 float Negative::setDensity(float value) {
@@ -815,38 +1069,46 @@ float Negative::setBlacks(float value) {
     return this->getBlacks();
 }
 
-void Negative::setAutoWB(bool has) {
-    this->negativeData["edits"]["autoWB"] = has;
+void Negative::setHasAutoWB(bool has) {
+    this->negativeData["edits"]["hasAutoWB"] = has;
 }
 
-void Negative::setHasNeutral(bool has)
-{
-    this->negativeData["edits"]["hasNeutralPoint"] = has;
+void Negative::autoWB() {
+    auto [rScaling, gScaling, bScaling] = grayWorld(this->convertedPixels, this->workingWidth, this->workingHeight, this->getScanArea(this->workingScale));
+    // Need to scale the scaling values since we are adjusting color balance curves, not linear scaling of channels
+    this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);
 }
 
 void Negative::setNeutral(float r, float g, float b) {
-    this->negativeData["edits"]["neutralPoint"]["r"] = r;
-    this->negativeData["edits"]["neutralPoint"]["g"] = g;
-    this->negativeData["edits"]["neutralPoint"]["b"] = b;
+    auto [rScaling, gScaling, bScaling] = neutralPatch(r, g, b);
+    // Need to scale the scaling values since wea re adjusting color balance curves, not linear scaling of channels
+    this->negativeData["edits"]["rBalance"] = -5.0f * std::log(rScaling);
+    this->negativeData["edits"]["gBalance"] = -5.0f * std::log(gScaling);
+    this->negativeData["edits"]["bBalance"] = -5.0f * std::log(bScaling);
 }
 
 void Negative::setNeutralByCoords(int x, int y) {
-    std::tuple<float, float, float> sample = this->samplePixels(x, y);
+    std::tuple<float, float, float> sample = this->sampleConvertedWorkingPixels(x, y);
     this->setNeutral(std::get<0>(sample), std::get<1>(sample), std::get<2>(sample));
 }
 
 float Negative::setRBalance(float value) {
     this->negativeData["edits"]["rBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getRBalance();
 }
 
 float Negative::setGBalance(float value) {
     this->negativeData["edits"]["gBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getGBalance();
 }
 
 float Negative::setBBalance(float value) {
     this->negativeData["edits"]["bBalance"] = value;
+    this->negativeData["edits"]["hasAutoWB"] = false;
     return this->getBBalance();
 }
 
@@ -870,6 +1132,34 @@ float Negative::setSharpeningDiameter(float value) {
 // GETTING EDIT SETTINGS FROM NEGATIVEDATA PRE-CONVERT
 // ----------------------------------------------------------------------------------------------------------------
 
+nlohmann::json Negative::getNegativeData() {
+    return this->negativeData;
+}
+
+bool Negative::getHasCrop() {
+    return this->negativeData["general"]["isCropped"];
+}
+
+ImageArea Negative::getCropArea(float scale) {
+    std::println("getCropArea called");
+    std::println("scale = {}", scale);
+    ImageArea cropArea;
+    float left = this->negativeData["general"]["crop"]["left"];
+    float top = this->negativeData["general"]["crop"]["top"];
+    float right = this->negativeData["general"]["crop"]["right"];
+    float bottom = this->negativeData["general"]["crop"]["bottom"];
+    cropArea.left = left * scale;
+    cropArea.top = top * scale;
+    cropArea.right = right * scale;
+    cropArea.bottom = bottom * scale;
+    std::println("reading cropArea from negative has left {}, top {}, right {}, bottom {}", cropArea.left, cropArea.top, cropArea.right, cropArea.bottom);
+    return cropArea;
+}
+
+int Negative::getOrientation() {
+    return this->negativeData["general"]["orientation"];
+}
+
 float Negative::getScanGamma() {
     return this->negativeData["conversion"]["scanGamma"];
 }
@@ -892,6 +1182,10 @@ ImageArea Negative::getScanArea(float scale) {
     scanArea.bottom = bottom * scale;
     std::println("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
     return scanArea;
+}
+
+bool Negative::getIsConverted() {
+    return this->negativeData["general"]["isConverted"];
 }
 
 std::tuple<float, float, float> Negative::getBorder() {
@@ -944,19 +1238,7 @@ float Negative::getBlacks() {
 }
 
 bool Negative::getAutoWB() {
-    return this->negativeData["edits"]["autoWB"];
-}
-
-bool Negative::getHasNeutral() {
-    return this->negativeData["edits"]["hasNeutralPoint"];
-}
-
-std::tuple<float, float, float> Negative::getNeutral()
-{
-    float r = this->negativeData["edits"]["neutralPoint"]["r"];
-    float g = this->negativeData["edits"]["neutralPoint"]["g"];
-    float b = this->negativeData["edits"]["neutralPoint"]["b"];
-    return { r, g, b };
+    return this->negativeData["edits"]["hasAutoWB"];
 }
 
 float Negative::getRBalance() {

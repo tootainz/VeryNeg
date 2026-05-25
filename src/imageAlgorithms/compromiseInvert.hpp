@@ -40,7 +40,7 @@ inline void compromiseInvert(std::vector<float>& image, float minDensity, float 
     const float maxExposure = logToExposure(charCurve(maxDensity, 1.0f, 0.0f, 1.0f));
     const float minExposure = logToExposure(charCurve(minDensity, 1.0f, 0.0f, 1.0f));
     
-    // Lamda function that will be perfomed on each pixel of the image
+    // Lambda function that will be perfomed on each pixel of the image
     auto applyCompromiseInvert = [&](float& red, float& green, float& blue) {
 
         // Convert the current pixels using the characteristic curves
@@ -48,7 +48,7 @@ inline void compromiseInvert(std::vector<float>& image, float minDensity, float 
         float convertedGreen = logToExposure(charCurve(scanToDensity(green), 1.0f, 0.0f, 1.0f));
         float convertedBlue = logToExposure(charCurve(scanToDensity(blue), 1.0f, 0.0f, 1.0f));
 
-        // Normalize to 0-1
+        // Normalize to 0-1 or not quite fully, leaving a small margin
         float normalizedRed = normalize(convertedRed, minExposure, maxExposure, 0.001f, 0.999f);
         float normalizedGreen = normalize(convertedGreen, minExposure, maxExposure, 0.001f, 0.999f);
         float normalizedBlue = normalize(convertedBlue, minExposure, maxExposure, 0.001f, 0.999f);

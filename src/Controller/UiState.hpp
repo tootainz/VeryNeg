@@ -5,7 +5,12 @@
 // Container for storing the applications ui state for the controller
 struct UiState {
 
+    // Orientation & Crop
+    bool heldOrientCrop = false;
+    bool hasCrop = false;
+
     // Pre convert
+    bool heldConvert = false;
     bool hasBorder = false;
     bool hasDensest = false;
     bool hasScanArea = false;
@@ -14,6 +19,7 @@ struct UiState {
     // Selection
     sf::Vector2i selectionStart;  
     ImageArea selectionArea = {0,0,0,0};
+    ImageArea oldSelectionArea = {0,0,0,0};
     bool readyToSelect = false;
 
     void resetSelectionArea() {
@@ -35,12 +41,27 @@ struct UiState {
     bool selectingNeutral = false;
 
     // Post-convert
+    bool heldEdits = false;
     bool isDragging = false;
     bool autoWB = true;
-    bool hasNeutral = false;
+    bool heldColor = false;
+    bool heldIntensity = false;
+    bool heldSharpening = false;
+
+    // Helper for held settings
+    bool somethingIsHolding() {
+        return
+            this->heldOrientCrop    ||
+            this->heldConvert       ||
+            this->heldEdits         ||
+            this->heldColor         ||
+            this->heldIntensity     ||
+            this->heldSharpening;
+    }
 
     // Export
-    std::string exportFileFormat = "tiff";
+    std::string exportFileFormat = "jpeg";
+    std::string exportProfile = "sRGB";
 
     // General
     bool disableCallbacks = false;
@@ -51,7 +72,6 @@ struct UiState {
         this->selectingTop = false;
         this->selectingRight = false;
         this->selectingBottom = false;
-        this->selectingCrop = false;
         this->selectingWhole = false;
     }
 

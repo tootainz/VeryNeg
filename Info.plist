@@ -16,5 +16,8 @@
     <key>NSHighResolutionCapable</key>
     <true/>
 
+    <key>CFBundleIconFile</key>
+    <string>VeryNeg_light</string>
+
 </dict>
 </plist>

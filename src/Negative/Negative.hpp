@@ -3,11 +3,14 @@
 #include <vector>
 #include <fstream>
 #include <tuple>
+#include <optional>
 
 #include <nlohmann/json.hpp>
+#include <lcms2.h>
 
 #include "ImageData.hpp"
 #include "ImageArea.hpp"
+#include "../ColorProfiler/ColorProfiler.hpp"
 
 
 /**
@@ -52,9 +55,11 @@ private:
     // All pixel data is stored in a one dimensional array, where pixels are stored sequentially with their channels as well in the order of RGB.
     // For example: [1R, 1G, 1B, 2R, 2G, 2B, 3R, 3G, 3B, ...]
     std::vector<float> originalPixels;
+    // The number of channels can currently be either 1 or 3, meaning a BW or a color negative
     int numberOfChannels;
     int width;
     int height;
+    std::optional<std::vector<uint8_t>> iccProfile = std::nullopt;
     
     // Working image is a smaller version of the original in order to speed up the live editing process
     std::vector<float> workingPixels;
@@ -77,6 +82,8 @@ private:
     // Edit settings that are saved for future sessions
     nlohmann::json negativeData;
 
+    // Reference to the color profiler for transforms
+    ColorProfiler* profiler;
 
 private:
     // PRIVATE METHODS
@@ -94,7 +101,8 @@ private:
     std::unique_ptr<nlohmann::json> readPresetdata(std::filesystem::path path);
 
     // HELPERS
-    std::tuple<float,float,float> samplePixels(int workingX, int workingY);
+    std::tuple<float,float,float> sampleWorkingPixels(int workingX, int workingY);
+    std::tuple<float,float,float> sampleConvertedWorkingPixels(int workingX, int workingY);
 
     // Internal rendering methods
     std::unique_ptr<std::vector<float>> renderFinal();
@@ -113,8 +121,8 @@ public:
     // ------------------------------------------------------------------------------------------------------------------------------------
 
     // CONSTRUCTORS
-    Negative(std::filesystem::path imagePath);
-    Negative(std::filesystem::path imagePath, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
+    Negative(std::filesystem::path imagePath, ColorProfiler* profiler);
+    Negative(std::filesystem::path imagePath, ColorProfiler* profiler, int id); // IMPORTANT! Call this only when undoing a removeNegativeById
     bool wasCreated(); // Tells whether intialization was succesful
 
     // GETTERS FOR THE UI
@@ -128,9 +136,20 @@ public:
     std::filesystem::path getPath();
 
     // EXPORTING
-    bool exportPositive(std::filesystem::path imagePath, std::string imageFormat);
+    bool exportPositive(std::filesystem::path imagePath, std::string imageFormat, std::string iccProfile);
 
     // SETTING EDIT SETTINGS
+
+    // CROP
+    void setHasCrop(bool has);
+    void setCropArea(ImageArea area, float scale);
+
+    // ROTATION
+    void setOrientation(int value);
+    void rotateClockwise();
+    void rotateCounterClockwise();
+    void flipHorizontal();
+    void flipVertical();
 
     // PRE-CONVERT
     float setScanGamma(float value);
@@ -157,8 +176,8 @@ public:
     float setBlacks(float value);
 
     // White balance
-    void setAutoWB(bool has);
-    void setHasNeutral(bool has);
+    void setHasAutoWB(bool has);
+    void autoWB();
     void setNeutral(float r, float g, float b);
     void setNeutralByCoords(int x, int y);
     float setRBalance(float value);
@@ -172,6 +191,15 @@ public:
 
     // GETTING EDIT SETTINGS FROM NEGATIVEDATA
 
+    nlohmann::json getNegativeData();
+
+    // CROP
+    bool getHasCrop();
+    ImageArea getCropArea(float scale);
+
+    // ROTATION
+    int getOrientation();
+
     // PRE-CONVERT
     float getScanGamma();
     bool getHasBorder();
@@ -180,6 +208,7 @@ public:
     std::tuple<float, float, float> getDensest();
     bool getHasScanArea();
     ImageArea getScanArea(float scale);
+    bool getIsConverted();
 
     // POST-CONVERT
     // Intensity
@@ -192,8 +221,6 @@ public:
 
     // White balance
     bool getAutoWB();
-    bool getHasNeutral();
-    std::tuple<float, float, float> getNeutral();
     float getRBalance();
     float getGBalance();
     float getBBalance();

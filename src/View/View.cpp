@@ -4,6 +4,7 @@
 #include <format>
 
 #include "../RmlUi_Backend/RmlUi_Backend.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // CONSTRUCTOR
@@ -15,19 +16,45 @@ View::View(sf::RenderWindow& window) :
     previewSprite(*this->previewTexture),
     sharpeningPreviewTexture(std::make_unique<sf::Texture>()),
     sharpeningPreviewSprite(*this->sharpeningPreviewTexture),
-    rmlContext(Rml::CreateContext("default", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
+    rmlContextUi(Rml::CreateContext("ui", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
+    rmlContextPopups(Rml::CreateContext("popups", Rml::Vector2i(this->window.getSize().x, this->window.getSize().y))),
     selection({0.0f, 0.0f}),
     thumbnails()
 {
-    Rml::LoadFontFace("./resources/fonts/oceert_smooth.otf");
-    Rml::ElementDocument* document = this->rmlContext->LoadDocument("./resources/ui/veryNegConvert.rml");
-    this->rmlDocument = document;
-    if (document) {
-        document->Show();
+    // Create cursors
+    std::string resourcesPath = getResourcesPath("");
+
+    // Densest
+    std::filesystem::path densestPath = std::format("{}ui/graphics/cursor_densest.png", resourcesPath);
+    sf::Image densestImage(densestPath);
+    this->cursorSampleDensest = sf::Cursor::createFromPixels(densestImage.getPixelsPtr(), densestImage.getSize(), {0, 21});
+
+    // Border
+    std::filesystem::path borderPath = std::format("{}ui/graphics/cursor_border.png", resourcesPath);
+    sf::Image borderImage(borderPath);
+    this->cursorSampleBorder = sf::Cursor::createFromPixels(borderImage.getPixelsPtr(), borderImage.getSize(), {0, 21});
+
+    // Border
+    std::filesystem::path neutralPath = std::format("{}ui/graphics/cursor_neutral.png", resourcesPath);
+    sf::Image neutralImage(neutralPath);
+    this->cursorSampleNeutral = sf::Cursor::createFromPixels(neutralImage.getPixelsPtr(), neutralImage.getSize(), {0, 21});
+
+    // Set the context ui ratios
+    float dp_ratio = 2.0f;
+    this->rmlContextUi->SetDensityIndependentPixelRatio(dp_ratio);
+    this->rmlContextPopups->SetDensityIndependentPixelRatio(dp_ratio);
+
+    // Rest of the constructor
+    Rml::LoadFontFace(getResourcesPath("fonts/Px437_SanyoMBC775-2y.ttf"));
+    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml"));
+    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml"));
+    this->rmlDocumentUi = uiDocument;
+    this->rmlDocumentPopups = popupsDocument;
+    if (this->rmlDocumentUi) {
+        this->rmlDocumentUi->Show();
     }
-    this->updatePreviewSize();
-    this->updatePreviewScale();
-    this->updatePreviewPos();
+    this->updatePreviewElementSize();
+    this->updatePreviewSpriteTransform();
 
     this->updateFilmRollRenderArea();
     this->updateSettingsRenderArea();
@@ -42,25 +69,25 @@ View::View(sf::RenderWindow& window) :
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
-    Rml::Element* filmRoll = this->rmlDocument->GetElementById("filmRoll");
-    Rml::ElementPtr thumbnailElement = this->rmlDocument->CreateElement("div");
+    Rml::Element* filmRoll = this->rmlDocumentUi->GetElementById("filmRoll");
+    Rml::ElementPtr thumbnailElement = this->rmlDocumentUi->CreateElement("div");
     std::string name = std::format("thumbnail_{}", id);
     thumbnailElement->SetId(name);
     thumbnailElement->SetClass("thumbnail", true);
     filmRoll->AppendChild(std::move(thumbnailElement));
     std::println("added thumbnailElement");
 
-    this->rmlContext->Update();
+    this->rmlContextUi->Update();
 
-    Rml::Element* thumbnailElementPointer = this->rmlDocument->GetElementById(name);
+    Rml::Element* thumbnailElementPointer = this->rmlDocumentUi->GetElementById(name);
 
     auto thumbnail = std::make_unique<Thumbnail>(id, std::move(thumbnailTexture));
     std::println("created thumbnail struct");
 
     // little help from chatgpt in getting the correct size since i was lazy and need to get this done
     const Rml::Box& box = thumbnailElementPointer->GetBox();
-    Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Border);
-    Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+    Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Padding);
+    Rml::Vector2f size = box.GetSize(Rml::BoxArea::Padding);
     std::println("got dimensions");
 
     thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
@@ -90,7 +117,7 @@ void View::removeThumbnail(int id) {
 
     // Also remove from the RML document
     std::string name = std::format("thumbnail_{}", id);
-    Rml::Element* element = this->rmlDocument->GetElementById(name);
+    Rml::Element* element = this->rmlDocumentUi->GetElementById(name);
 
     if (element && element->GetParentNode()) {
         element->GetParentNode()->RemoveChild(element);
@@ -106,11 +133,11 @@ void View::LoadThumbnails() {
 void View::updateThumbnailsPos() {
     for (const auto& thumbnail : this->thumbnails) {
         std::string thumbnailName = std::format("thumbnail_{}", thumbnail->id);
-        Rml::Element* thumbnailElement = this->rmlDocument->GetElementById(thumbnailName);
+        Rml::Element* thumbnailElement = this->rmlDocumentUi->GetElementById(thumbnailName);
 
         const Rml::Box& box = thumbnailElement->GetBox();
-        Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Border);
-        Rml::Vector2f size = box.GetSize(Rml::BoxArea::Border);
+        Rml::Vector2f pos = thumbnailElement->GetAbsoluteOffset(Rml::BoxArea::Padding);
+        Rml::Vector2f size = box.GetSize(Rml::BoxArea::Padding);
 
         thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
         thumbnail->sprite.setScale(sf::Vector2f(size.x / thumbnail->texture->getSize().x, size.y / thumbnail->texture->getSize().y));
@@ -136,73 +163,240 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
 // PREVIEW MANAGEMENT
 // ----------------------------------------------------------------------------------------------------------------
 
-void View::updatePreviewSize() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
-    this->previewWidth = previewElement->GetOffsetWidth();
-    this->previewHeight = previewElement->GetOffsetHeight();
-    std::println("preveiw size is {} * {}", this->previewWidth, this->previewHeight);
+void View::updatePreviewElementSize() {
+    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("preview");
+    this->previewElementWidth = previewElement->GetOffsetWidth();
+    this->previewElementHeight = previewElement->GetOffsetHeight();
+
+    this->previewElementTop = previewElement->GetAbsoluteTop();
+    this->previewElementLeft = previewElement->GetAbsoluteLeft();
 }
 
-void View::updatePreviewScale() {
-    sf::Vector2u textureSize = this->previewTexture->getSize();
+void View::updatePreviewSpriteTransform() {
 
-    // Calculate scale factors to fit the target size
-    float scaleX = this->previewWidth / (1.0f * textureSize.x);
-    float scaleY = this->previewHeight / (1.0f * textureSize.y);
-    this->previewScale = std::min(scaleX, scaleY);
+    sf::Sprite& sprite = previewSprite;
 
-    std::println("sprite scales are x:{} y: {}", scaleX, scaleY);
+    // sprite.setTextureRect({{10,10},{200,200}});
 
-    // Apply the scale to the sprite
-    this->previewSprite.setScale({this->previewScale, this->previewScale});
-}
+    const float spriteWidth = sprite.getLocalBounds().size.x;
+    const float spriteHeight = sprite.getLocalBounds().size.y;
 
-void View::updatePreviewPos() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("preview");
+    std::println("original sprite w {}, h {}", spriteWidth, spriteHeight);
 
-    float spriteWidth = this->previewSprite.getGlobalBounds().size.x;
-    float spriteHeight = this->previewSprite.getGlobalBounds().size.y;
+    // 0. Reset everything
+    // ---------------------------------------------------------
+    sprite.setRotation(sf::degrees(0.0f));
+    sprite.setScale({1.0f, 1.0f});
+    sprite.setPosition({0.0f, 0.0f});
+
+    // 1. Set origin to center
+    // ---------------------------------------------------------
+    sprite.setOrigin({spriteWidth/2.0f, spriteHeight/2.0f});
+
+    std::println("set sprite origin {}, h {}", spriteWidth/2.0f, spriteHeight/2.0f);
+
+    // 2. Apply rotation to the sprite
+    // ---------------------------------------------------------
+    switch (this->previewOrientation) {
+    // These come from what exif orientation data means
+    case 1: // normal
+        break;
+    case 3: // rotate 180
+        this->previewSprite.setRotation(sf::degrees(180.0f));
+        break;
+    case 5: // transpose (flip + rotate 90)
+        this->previewSprite.setRotation(sf::degrees(90.0f));
+        // the flipping is done when setting the scale later
+        break;
+    case 6: // rotate 90 CW
+        this->previewSprite.setRotation(sf::degrees(90.0f));
+        break;
+    case 7: // transverse
+        this->previewSprite.setRotation(sf::degrees(270.0f));
+        // the flipping is done when setting the scale later
+        break;
+    case 8: // rotate 270 CW
+        this->previewSprite.setRotation(sf::degrees(270.0f));
+        break;
+    }
     
-    std::println("spritewidth: {}, previewWidth: {}", spriteWidth, this->previewWidth);
+    // 3. Calculate preview scale to fit preview element
+    // ---------------------------------------------------------
+
+    // Get new sprite dimensions after the rotation
+    const float newSpriteWidth = sprite.getGlobalBounds().size.x;
+    const float newSpriteHeight = sprite.getGlobalBounds().size.y;
+
+    std::println("new after rotation sprite w {}, h {}", newSpriteWidth, newSpriteHeight);
+
+    // Calculate scales for both axis adn choose the smaller one
+    float scaleX = this->previewElementWidth / (1.0f * newSpriteWidth);
+    float scaleY = this->previewElementHeight / (1.0f * newSpriteHeight);
+    this->previewScaleX = this->previewScaleY = std::min(scaleX, scaleY);
+
+    // Update scale from mirroring info from orientation
+    switch (this->previewOrientation) {
+    case 2: // flip horizontal
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    case 4: // flip vertical
+        this->previewScaleY = -this->previewScaleY;
+        break;
+    case 5: // transpose (flip + rotate 90)
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    case 7: // transverse
+        this->previewScaleX = -this->previewScaleX;
+        break;
+    }
+
+    // Apply the scale to the sprite by taking into consideration the mirroring from orientation
+    this->previewSprite.setScale({this->previewScaleX, this->previewScaleY});
+
+    std::println("sprite scale is w {}, h {}", this->previewScaleX, this->previewScaleY);
+
+    // 4. Update previewSprite Position
+    // ---------------------------------------------------------
+
+    // Get new sprite dimensions after the scaling
+    const float finalSpriteWidth = sprite.getGlobalBounds().size.x;
+    const float finalSpriteHeight = sprite.getGlobalBounds().size.y;
+
+    std::println("final sprite w {}, h {}", finalSpriteWidth, finalSpriteHeight);
 
     // if sprite width < preview width then center horizontal
-    if (spriteWidth < this->previewWidth) {
-        std::println("center preview horizontal");
-        this->previewCenterOffsetX = (this->previewWidth-spriteWidth)/2.0f;
-        this->previewCenterOffsetY = 0.0f;
+    if (finalSpriteWidth < this->previewElementWidth) {
+        this->previewOffsetX = (this->previewElementWidth-finalSpriteWidth)/2.0f;
+        this->previewOffsetY = 0.0f;
     }
     // center vertical
     else {
-        std::println("center preview vertical");
-        this->previewCenterOffsetX = 0.0f;
-        this->previewCenterOffsetY = (this->previewHeight-spriteHeight)/2.0f;
+        this->previewOffsetX = 0.0f;
+        this->previewOffsetY = (this->previewElementHeight-finalSpriteHeight)/2.0f;
     }
 
-    this->previewX = previewElement->GetAbsoluteLeft()+this->previewCenterOffsetX;
-    this->previewY = previewElement->GetAbsoluteTop()+this->previewCenterOffsetY;
-    std::println("the preview will be drawn on {},{}", this->previewX, this->previewY);
+    std::println("sprite offsets are w {}, h {}", this->previewOffsetX, this->previewOffsetY);
+
+    this->previewX = this->previewElementLeft + this->previewOffsetX + finalSpriteWidth/2.0f;
+    this->previewY = this->previewElementTop + this->previewOffsetY + finalSpriteHeight/2.0f;
+    sprite.setPosition({this->previewX, this->previewY});
+
+    std::println("sprite location is w {}, h {}", this->previewX, this->previewY);
 }
 
+void View::setPreviewOrientation(int value) {
+    this->previewOrientation = value;
+    this->updatePreviewSpriteTransform();
+}
+
+// Written by ChatGPT based on my coordinate transforms with the preview above
 std::tuple<int, int> View::previewCoordsToTextureCoords(int x, int y) {
-    // First remove the preview offset, then remove the preview scale
-    // This should give us the original coords
-    float textureX = (x-this->previewX)*(1.0f/this->previewScale);
-    float textureY = (y-this->previewY)*(1.0f/this->previewScale);
-    std::println("the original coords are {},{}", textureX, textureY);
-    return std::tuple<int, int>(textureX, textureY);
+    sf::Sprite& sprite = previewSprite;
+
+    // 1. Convert from preview space into sprite local space
+    float localX = x - this->previewX;
+    float localY = y - this->previewY;
+
+    // 2. Undo scale (handle flip safely)
+    float sx = this->previewScaleX;
+    float sy = this->previewScaleY;
+
+    if (sx == 0.f || sy == 0.f)
+        return {0, 0};
+
+    localX /= sx;
+    localY /= sy;
+
+    // 3. Undo rotation (center-based)
+    sf::Angle rot = sprite.getRotation();
+    float deg = rot.asDegrees();
+
+    float x2, y2;
+
+    if (deg == 0.f)
+    {
+        x2 = localX;
+        y2 = localY;
+    }
+    else if (deg == 180.f)
+    {
+        x2 = -localX;
+        y2 = -localY;
+    }
+    else if (deg == 90.f)
+    {
+        x2 = localY;
+        y2 = -localX;
+    }
+    else // 270
+    {
+        x2 = -localY;
+        y2 = localX;
+    }
+
+    // 4. Convert from centered sprite space → texture space
+    const auto bounds = sprite.getLocalBounds();
+    float halfW = bounds.size.x / 2.0f;
+    float halfH = bounds.size.y / 2.0f;
+
+    int texX = static_cast<int>(x2 + halfW);
+    int texY = static_cast<int>(y2 + halfH);
+
+    return {texX, texY};
 }
 
+// Written by ChatGPT based on my coordinate transforms with the preview above
 std::tuple<int, int> View::textureCoordsToPreviewCoords(int x, int y) {
-    // First scale by preview scale, then add the preview offset
-    // This should give us the preview coords
-    float previewX = x*this->previewScale+this->previewX;
-    float previewY = y*this->previewScale+this->previewY;
-    std::println("the preview coords are {},{}", previewX, previewY);
-    return std::tuple<int, int>(previewX, previewY);
+    sf::Sprite& sprite = previewSprite;
+
+    const auto bounds = sprite.getLocalBounds();
+    float halfW = bounds.size.x / 2.0f;
+    float halfH = bounds.size.y / 2.0f;
+
+    // 1. texture → centered sprite space
+    float cx = x - halfW;
+    float cy = y - halfH;
+
+    // 2. apply rotation
+    sf::Angle rot = sprite.getRotation();
+    float deg = rot.asDegrees();
+
+    float lx, ly;
+
+    if (deg == 0.f)
+    {
+        lx = cx;
+        ly = cy;
+    }
+    else if (deg == 180.f)
+    {
+        lx = -cx;
+        ly = -cy;
+    }
+    else if (deg == 90.f)
+    {
+        lx = -cy;
+        ly = cx;
+    }
+    else // 270
+    {
+        lx = cy;
+        ly = -cx;
+    }
+
+    // 3. apply scale (including flip)
+    lx *= this->previewScaleX;
+    ly *= this->previewScaleY;
+
+    // 4. convert to preview space
+    int px = static_cast<int>(lx + this->previewX);
+    int py = static_cast<int>(ly + this->previewY);
+
+    return {px, py};
 }
 
 void View::updateFilmRollRenderArea() {
-    Rml::Element* filmRollElement = this->rmlDocument->GetElementById("filmRoll");
+    Rml::Element* filmRollElement = this->rmlDocumentUi->GetElementById("filmRoll");
 
     int width = filmRollElement->GetOffsetWidth();
     int height = filmRollElement->GetOffsetHeight();
@@ -213,18 +407,30 @@ void View::updateFilmRollRenderArea() {
     this->filmRollRenderArea = {left, top, left+width, top+height};
 }
 
+// POPUP MANAGEMENT
+
+void View::updatePopupElementSize() {
+    Rml::Element* popupElement = this->rmlDocumentPopups->GetElementById("exportSettings");
+    this->popupElementWidth = popupElement->GetOffsetWidth();
+    this->popupElementHeight = popupElement->GetOffsetHeight();
+
+    this->popupElementTop = popupElement->GetAbsoluteTop();
+    this->popupElementLeft = popupElement->GetAbsoluteLeft();
+}
+
 // SHARPENING MANAGEMENT
 // ----------------------------------------------------------------------------------------------------------------
 
 void View::updateSharpeningPreviewPos() {
-    Rml::Element* previewElement = this->rmlDocument->GetElementById("sharpeningPreview");
+    Rml::Element* previewElement = this->rmlDocumentUi->GetElementById("sharpeningPreview");
     float x = previewElement->GetAbsoluteLeft();
     float y = previewElement->GetAbsoluteTop();
     this->sharpeningPreviewSprite.setPosition({x, y});
+    this->sharpeningPreviewSprite.setScale({2.0f, 2.0f});
 }
 
 void View::updateSettingsRenderArea() {
-    Rml::Element* settingsRenderArea = this->rmlDocument->GetElementById("settings");
+    Rml::Element* settingsRenderArea = this->rmlDocumentUi->GetElementById("settings");
 
     int width = settingsRenderArea->GetOffsetWidth();
     int height = settingsRenderArea->GetOffsetHeight();
@@ -235,11 +441,36 @@ void View::updateSettingsRenderArea() {
     this->settingsRenderArea= {left, top, left+width, top+height};
 }
 
+void View::setCursorSampleDensest() {
+    if (this->cursorSampleDensest) {
+        this->window.setMouseCursor(*this->cursorSampleDensest);
+    }
+}
+
+void View::setCursorSampleBorder() {
+    if (this->cursorSampleBorder) {
+        this->window.setMouseCursor(*this->cursorSampleBorder);
+    }
+}
+
+void View::setCursorSampleNeutral() {
+    if (this->cursorSampleNeutral) {
+        this->window.setMouseCursor(*this->cursorSampleNeutral);
+    }
+}
+
+void View::setCursorDefault() {
+    sf::Cursor arrow = *sf::Cursor::createFromSystem(sf::Cursor::Type::Arrow);
+    this->window.setMouseCursor(arrow);
+}
+
 // SETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
+
+
 void View::setSliderValue(std::string name, float value) {
-    Rml::Element* slider = this->rmlDocument->GetElementById(name);
+    Rml::Element* slider = this->rmlDocumentUi->GetElementById(name);
     if (slider) {
         slider->SetAttribute("value", value);
     }
@@ -247,7 +478,7 @@ void View::setSliderValue(std::string name, float value) {
 
 void View::setCheckboxValue(std::string name, bool value) {
     std::println("settign checkbox value with name {} to value {}", name, value);
-    Rml::Element* checkbox = this->rmlDocument->GetElementById(name);
+    Rml::Element* checkbox = this->rmlDocumentUi->GetElementById(name);
     if (checkbox) {
         if (!value) {
             checkbox->RemoveAttribute("checked");
@@ -275,7 +506,7 @@ void View::setPreviewTexture(std::unique_ptr<sf::Texture> texture) {
     this->previewTexture = std::move(texture);
     this->previewSprite = sf::Sprite(*this->previewTexture);
     this->previewSprite.setPosition({this->previewX, this->previewY});
-    this->updatePreviewScale();
+    this->updatePreviewSpriteTransform();
 }
 
 void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
@@ -284,28 +515,39 @@ void View::setSharpeningPreviewTexture(std::unique_ptr<sf::Texture> texture) {
 }
 
 void View::setPopUp(std::string name, bool value) {
-    Rml::Element* popUpElement = this->rmlDocument->GetElementById(name);
-    if (popUpElement) {
-        if (value) {
-            std::println("popup shown");
-            popUpElement->SetClass("hidden", false);
-        }
-        else {
-            std::println("popup hidden");
-            popUpElement->SetClass("hidden", true);
+    if (this->rmlDocumentPopups) {
+        Rml::Element* popUpElement = this->rmlDocumentPopups->GetElementById(name);
+        if (popUpElement) {
+            if (value) {
+                this->popupVisible = true;
+                this->rmlDocumentPopups->Show();
+                std::println("popup shown");
+                popUpElement->SetClass("hidden", false);
+            }
+            else {
+                this->popupVisible = false;
+                this->rmlDocumentPopups->Hide();
+                std::println("popup hidden");
+                popUpElement->SetClass("hidden", true);
+            }
         }
     }
+    this->updatePopupElementSize();
 }
 
 // GETTERS
 // ----------------------------------------------------------------------------------------------------------------
 
-Rml::Context* View::getRmlContext() {
-    return this->rmlContext;
+Rml::Context* View::getRmlContextUi() {
+    return this->rmlContextUi;
+}
+
+Rml::Context* View::getRmlContextPopups() {
+    return this->rmlContextPopups;
 }
 
 ImageArea View::getPreviewArea() {
-    Rml::Element* preview = this->rmlDocument->GetElementById("preview");
+    Rml::Element* preview = this->rmlDocumentUi->GetElementById("preview");
     if (preview) {
         int left = preview->GetAbsoluteLeft();
         int top = preview->GetAbsoluteTop();
@@ -326,24 +568,80 @@ void View::render() {
 
     this->updateThumbnailsPos();
     this->updateSharpeningPreviewPos();
+    this->rmlContextUi->Update();
+    this->rmlContextPopups->Update();
 
     // -------------------------------------------------------
-    this->window.clear();
     // RENDERING
+    this->window.clear();
+    // Clears all OpenGlstates as well
+	window.resetGLStates();
 
-    // Update and render the RmlUi
+    //RmlUi
+
+    // Render the RmlUi main ui
     RmlBackend::BeginFrame();
-    this->rmlContext->Update();
-    this->rmlContext->Render();
+    this->rmlContextUi->Render();
+
+    // Render the RmlUi popups ui
+    this->rmlContextPopups->Render();
     RmlBackend::PresentFrame();
+
 
     // Draw the non RmlUi stuff
 
-    // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
+    // Needed for mixing SFML and RmlUi rendering apparently, I have no idea what it does
     window.pushGLStates();
 
+    // Stencil mask fof popup rendering. This is needed since for reasons I don't understand,
+    // RmlUi always wants to render as one layer in relation to SFML
+    glEnable(GL_STENCIL_TEST);
+
+    // Clear stencil buffer
+    glClearStencil(0);
+    glClear(GL_STENCIL_BUFFER_BIT);
+
+    // Write the "hole" into stencil buffer if popup is visible
+
+    if (this->popupVisible) {
+
+        // Disable color writes
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        // Always pass stencil test
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        // Replace stencil values with 1
+        glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+        // Draw rectangle into stencil buffer
+        float left   = this->popupElementLeft;
+        float top    = this->popupElementTop;
+        float width  = this->popupElementWidth;
+        float height = this->popupElementHeight;
+
+        // Convert SFML top-left coords -> OpenGL bottom-left coords
+        float winH = static_cast<float>(this->window.getSize().y);
+
+        glBegin(GL_QUADS);
+            glVertex2f(left, top);
+            glVertex2f(left + width, top);
+            glVertex2f(left + width, top + height);
+            glVertex2f(left, top + height);
+        glEnd();
+
+    }
+
+    // Re-enable rendering
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    // Only render where stencil != 1
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    // Keep stencil values unchanged
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    
     // Preview
     this->window.draw(previewSprite);
+
+    // Disable stencil mask
+    glDisable(GL_STENCIL_TEST);
 
     // Sharpness preview
     glEnable(GL_SCISSOR_TEST);    // This is some weird opengl stuff that i dont have experience with for maskign parts of the sprite
@@ -380,7 +678,7 @@ void View::render() {
 
     // Needed for mixing SFML and RmlUi rendering apparently, i have no idea what it does
     window.popGLStates();
-    
+
     this->window.display();
     // -------------------------------------------------------
 }

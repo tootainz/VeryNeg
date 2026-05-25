@@ -1,0 +1,228 @@
+<rml>
+	<head>
+		<title>VeryNeg</title>
+		<link type="text/rcss" href="./veryNegStyles.rcss"/>
+	</head>
+	<body>
+        <div id="left">
+            <div id="preview">
+                <div id="releaseVersion">
+                    <p>VeryNeg v0.5.0</p>
+                    <p>by Joonatan Koponen</p>
+                    <p>2026</p>
+                </div>
+            </div>
+            <div id="bottom">
+                <button id="previous"></button>
+                <div id="filmRoll"></div>
+                <button id="next"></button>
+            </div>
+        </div>
+        
+        <div id="right">
+            <div id="settings">
+
+                <div id="orientationSettings" class="settingsTab">
+                    
+                    <div class="settingHeader">
+                        <h2>Orientation & Crop</h2>
+
+                        <div class="horizontalFlex">
+                            <button class="resetButton" id="resetOrientationCrop">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdOrientationCrop">Hold</input>
+                        </div>
+                    </div>
+
+                    <div class="settingContent">
+                        <div class="horizontalFlexBetween">
+
+                            <div class="horizontalFlexStart">
+                                <button class="iconButton" id="rotateCounterClock"></button>
+                                <button class="iconButton" id="rotateClock"></button>
+                                <button class="iconButton" id="flipHorizontal"></button>
+                                <button class="iconButton" id="flipVertical"></button>
+                            </div>
+
+                            <div class="horizontalFlex">
+                                <input type="checkbox" class="areaBox iconButton" id="setCrop"></input>
+                                <input type="checkbox" id="crop">Crop</input>
+                            </div>
+                            
+                        </div>
+                    </div>
+
+                </div>
+
+                
+                <div id="preConvertSettings" class="settingsTab">
+                    
+                    <div class="settingHeader">
+                        <h2>Convert</h2>
+
+                        <div class="horizontalFlex">
+                            <button class="resetButton" id="resetConversion">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdConversion">Hold</input>
+                        </div>
+                    </div>
+
+                    <div class="settingContent">
+
+                        <div class="horizontalFlexStart">
+                            <label for="scanGamma">Scan Gamma</label>
+                            <select name="scanGamma" id="scanGamma">
+                                <option value="2.2">2.2</option>
+                                <option value="1.8">1.8</option>
+                                <option value="1.0">1.0</option>
+                            </select>
+                        </div>
+
+                        <div class="horizontalFlexBetween">
+                            
+                            <div class="verticalFlex">
+                                <div class="horizontalFlexStart">
+                                    <input type="checkbox" class="iconButton" id="sampleBorder"></input>
+                                    <input type="checkbox" id="border">Border</input>
+                                </div>
+                                <div class="horizontalFlexStart">
+                                    <input type="checkbox" class="iconButton" id="sampleDensest"></input>    
+                                    <input type="checkbox" id="densest">Densest</input>
+                                </div>
+                            </div>
+
+                            <div class="verticalDivider"></div>
+
+                            <div class="verticalFlexStart">
+                                <input type="checkbox" id="scanArea">Scan Area</input>
+                                <div class="horizontalFlexStart">
+                                    <input type="checkbox" class=" areaBox iconButton" id="setScanArea"></input>   
+                                    <input type="text" value="0" id="setScanBorder"></input>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div id="convertContainer">
+                            <div id="convertBG">
+                                <button id="convert">CONVERT</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div id="postConvertSettings" class="settingsTab">
+
+                    <div class="settingHeader">
+                        <h2>Edit</h2>
+                        <div class="horizontalFlex">
+                            <select name="preset" id="preset">
+                                <option value="standard">Standard</option>
+                                <option value="flat">Flat</option>
+                                <option value="all_soft">All soft</option>
+                                <option value="all_hard">All hard</option>
+                                <option value="shadows_soft">Shadows soft</option>
+                                <option value="shadows_hard">Shadows hard</option>
+                                <option value="highlights_soft">Highlights soft</option>
+                                <option value="highlights_hard">Highlights hard</option>
+                            </select>
+                            <button class="resetButton" id="resetEdits">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdEdits">Hold</input>
+                        </div>
+                    </div>
+                    
+                    <div class="settingHeader">
+                        <h2>Color</h2>
+                        <div class="horizontalFlex">
+                            <button class="resetButton" id="resetColor">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdColor">Hold</input>
+                        </div>
+                    </div>
+
+                    <div class="settingContent">
+
+                        <div id="wbContainer" class="horizontalFlexBetween">
+                            <div class="horizontalFlexStart">
+                                <input type="checkbox" class="iconButton" id="sampleNeutral" name="sampleNeutral"></input>
+                                <label for="sampleNeutral">Sample neutral</label>
+                            </div>
+                            <button id="autoWB">Auto balance</button>
+                        </div>
+
+                        <label class="cyan" for="c-r">Cyan-Red</label>
+                        <input type="range" id="c-r" name="c-r" min="5.0" max="-5.0" value="0" step="0.1"/>
+
+                        <label class="magenta" for="m-g">Magenta-Green</label>
+                        <input type="range" id="m-g" name="m-g" min="5.0" max="-5.0" value="0" step="0.1"/>
+
+                        <label class="yellow" for="y-b">Yellow-Blue</label>
+                        <input type="range" id="y-b" name="y-b" min="5.0" max="-5.0" value="0" step="0.1"/>
+
+                        <label for="saturation">Saturation</label>
+                        <input type="range" id="saturation" name="saturation" min="-5" max="5" value="0" step="0.1"/>
+
+                    </div>
+
+                    
+                    <div class="settingHeader">
+                        <h2>Intensity</h2>
+                        <div class="horizontalFlex">
+                            <button class="resetButton" id="resetIntensity">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdIntensity">Hold</input>
+                        </div>
+                    </div>
+
+                    <div class="settingContent">
+
+                        <label for="density">Density</label>
+                        <input type="range" id="density" name="density" min="-20" max="20" value="0" step="0.01"/>
+
+                        <label for="contrast">Contrast</label>
+                        <input type="range" id="contrast" name="contrast" min="-6.0" max="6.0" value="0" step="0.1"/>
+
+                        <label for="whites">Whites</label>
+                        <input type="range" id="whites" name="whites" min="-5" max="5" value="0" step="0.1"/>
+
+                        <label for="highlights">Highlights</label>
+                        <input type="range" id="highlights" name="highlights" min="-5" max="5" value="0" step="0.1"/>
+
+                        <label for="shadows">Shadows</label>
+                        <input type="range" id="shadows" name="shadows" min="-5" max="5" value="0" step="0.1"/>
+
+                        <label for="blacks">Blacks</label>
+                        <input type="range" id="blacks" name="blacks" min="-5" max="5" value="0" step="0.1"/>
+
+                    </div>
+
+
+                    <div class="settingHeader">
+                        <h2>Sharpening</h2>
+                        <div class="horizontalFlex">
+                            <button class="resetButton" id="resetSharpening">Reset</button>
+                            <input type="checkbox" class="holdBox" id="holdSharpening">Hold</input>
+                        </div>
+                    </div>
+
+                    <div class="settingContent">
+
+                        <div id="sharpeningContainer">
+                            <div id="sharpeningPreview"></div>
+                        </div>
+
+                        <label for="sharpeningAmount">Unsharp masking amount</label>
+                        <input type="range" id="sharpeningAmount" name="sharpeningAmount" min="0" max="10" value="0" step="0.1"/>
+                        <label for="sharpeningDiameter">Unsharp masking diameter</label>
+                        <input type="range" id="sharpeningDiameter" name="sharpeningDiameter" min="5" max="12" value="5" step="1"/>
+                    
+                    </div>
+
+                </div>
+            </div>
+            <div id="importExport">
+                <button id="import">Import</button>
+                <button id="export">Export</button>
+                <button id="remove">Remove</button>
+            </div>
+        </div>
+	</body>
+</rml>

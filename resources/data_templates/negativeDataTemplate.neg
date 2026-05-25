@@ -1,5 +1,5 @@
 {
-    "version": "0.3.0",
+    "version": "0.5.1",
 
     "general": {
         "isConverted": false,
@@ -9,7 +9,8 @@
             "top": 0,
             "right": 0,
             "bottom": 0
-        }
+        },
+        "orientation": null
     },
 
     "conversion": {
@@ -33,7 +34,7 @@
             "right": 0,
             "bottom": 0
         },
-        "scanGamma": 1.8
+        "scanGamma": 2.2
     },
 
     "edits": {
@@ -43,13 +44,7 @@
         "shadows": 0.0,
         "blacks": 0.0,
         "whites": 0.0,
-        "autoWB": true,
-        "hasNeutralPoint": false,
-        "neutralPoint": {
-            "r": 0.0,
-            "g": 0.0,
-            "b": 0.0
-        },
+        "hasAutoWB": false,
         "rBalance": 0.0,
         "gBalance": 0.0,
         "bBalance": 0.0,

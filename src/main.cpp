@@ -16,7 +16,7 @@
 #include "Model/Model.hpp"
 
 
-/**
+/*
 
 VeryNeg v0.4.0
 By Joonatan Koponen
@@ -27,7 +27,7 @@ to beautiful positive digital photographs.
 VeryNeg performs a fully automatic conversion but also allows manual setting of some parameters
 You can also apply edits to the image after the conversion to edit color balance, density, sharpness etc.
 
-Currently the only supported files are 16bit tiff file scans from a flatbed scanner
+Currently the only supported files are RGB 16bit tiff file scans from a flatbed scanner
 
 */ 
 
@@ -38,7 +38,8 @@ int main() {
 
     // SFML window
     sf::ContextSettings settings;
-    settings.antiAliasingLevel = 4; // 0 = no anti-aliasing, 4 = standard, 8 = better
+    settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, 4 = standard, 8 = better'
+    settings.stencilBits = 8;
     sf::RenderWindow window(sf::VideoMode({1600, 950}), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi
@@ -52,6 +53,9 @@ int main() {
 
     // Application logic following MVC pattern
     Model model;
+    if (!model.getWasConstructed()) {
+        return -1;
+    }
     View view(window);
     Controller controller(window, view, model);
 
@@ -65,6 +69,7 @@ int main() {
     // CLEANUP
     // ------------------------------------------------------------------------------------------------------
 
+    controller.cleanup();
     Rml::Shutdown();
     RmlBackend::Shutdown();
 

@@ -1,5 +1,5 @@
 {
-    "version": "0.2.0",
+    "version": "0.3.0",
     "name": "flat",
 
     "density": 0.0,
@@ -8,16 +8,10 @@
     "shadows": 0.0,
     "blacks": 0.0,
     "whites": 0.0,
-    "autoWB": false,
-    "hasNeutralPoint": false,
-    "neutralPoint": {
-        "r": 0.0,
-        "g": 0.0,
-        "b": 0.0
-    },
-    "rBalance": 0.0,
-    "gBalance": 0.0,
-    "bBalance": 0.0,
+    "hasAutoWB": false,
+    "rBalance": null,
+    "gBalance": null,
+    "bBalance": null,
     "saturation": 0.0,
     "sharpeningAmount": 0.0,
     "sharpeningDiameter": 5
