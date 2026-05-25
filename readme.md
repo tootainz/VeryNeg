@@ -6,7 +6,7 @@ You also have the option to crop and orient the image and to apply automatic or 
 You can hold (copy) settings from one negative to another and then export one or all of the negatives.
 VeryNEg provides non-destructive editing and saves edits to a sidecart .neg file automatically.
 
-VeryNeg was developed originally as a part of my master's thesis research. It is in currently beta development and still has many bugs, unsupprted features etc.
+VeryNeg was developed originally as a part of my master's thesis research for Master of Arts from Visual Communication Design, Aalto University. It is currently in beta development and still has many bugs, unsupported features etc. I don't even know if it works on any other machine than my own...
 
 ## Current state of the application:
 
@@ -19,39 +19,28 @@ At the moment supports only high DPI displays properly but this is an easy fix i
 
 ## Technologies used
 
-Written in C++
+Written in C++.
 
-Uses libraries:
-SFML, RmlUi, OpenImageIO, Little-CMS, nlohmann/json, portable file dialogs
-
-
-Architecture:
-
-Model View Controller
-
-Model has ColorProfiler and Negatives
-
-Negative uses imageAlgorithms
+### Libraries:
+SFML, RmlUi, OpenImageIO, Little-CMS, nlohmann/json, portable-file-dialogs.
 
 
-Known issues:
+### Architecture:
+Uses a basic Model-View-Controller.
+Model owns a ColorProfiler and Negatives that reference the ColorProfiler.
+Negatives use imageAlgorithms.
 
-reet doesnt work
 
-sometimes undo redo wont work
+## Known issues:
 
-Crop wont show up on the preview
+Reset buttons don't work reliably.
+Sometimes undo-redo won't work.
+Crop won't show up on the preview.
+The whole architecture has to be reconsidered and split into submodules. Now the classes are very crowded and hard to scale.
+Should be easy to compile for Windows and Linux as well in the future.
+The way each Negative object loads the full size image to memory has to be improved, since currently that uses a lot of memory.
+Importing images is slow and blocks the main thread.
+Exporting images is slow and has to be improved.
+Lack of camera raw file support, planned for the future.
 
-The whole architecture has to be reconsidered adn split into submodules. Now the classes are very crowded and hard to scale
-
-Should be easy to compile for windows and linux as well
-
-The way each Negative object loads the full size image to memeory has to be imporved, sicne currently uses a lot of memory.
-
-Laoding images is slow and blocks the main thread
-
-exporting the images is slow and has to be improved
-
-lack of camera raw file support
-
-Please consider that this is my first serious appliaction and c++ project :)
+Please consider that this is my first serious application and C++ project, so be kind :) All feedback or bug or error reports are appreciated. Make sure to take a look at my thesis as well. It explains some parts of VeryNeg in more detail.
