@@ -4,7 +4,7 @@ VeryNeg is a standalone open source application for the conversion of scanned fi
 It lets you import multiple negatives, convert the negative automatically or to select a custom scan area or sample the border and densest parts. You can also specify the gamma baked into the scan.
 You also have the option to crop and orient the image and to apply automatic or manual color correction, intensity edits and sharpening.
 You can hold (copy) settings from one negative to another and then export one or all of the negatives.
-VeryNEg provides non-destructive editing and saves edits to a sidecart .neg file automatically.
+VeryNeg provides non-destructive editing and saves edits to a sidecart .neg file automatically.
 
 VeryNeg was developed originally as a part of my master's thesis research for Master of Arts from Visual Communication Design, Aalto University. It is currently in beta development and still has many bugs, unsupported features etc. I don't even know if it works on any other machine than my own...
 
@@ -43,4 +43,4 @@ Importing images is slow and blocks the main thread.
 Exporting images is slow and has to be improved.
 Lack of camera raw file support, planned for the future.
 
-Please consider that this is my first serious application and C++ project, so be kind :) All feedback or bug or error reports are appreciated. Make sure to take a look at my thesis as well. It explains some parts of VeryNeg in more detail.
+Please consider that this is my first serious application and C++ project, so be kind :) All feedback or bug or error reports are appreciated. Make sure to take a look at my thesis as well. It explains some parts of VeryNeg in more detail. You can access it in my design portfolio [joonatankoponen.com/project/veryneg](https://joonatankoponen.com/project/veryneg)

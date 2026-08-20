@@ -1,5 +1,12 @@
 [![SFML logo](https://www.sfml-dev.org/images/logo.png)](https://www.sfml-dev.org)
 
+# Changes For VeryNeg
+
+This is a separate fork where the following files have been edited by Joonatan Koponen to allow high DPI for mac for the application VeryNeg.
+
+/src/SFML/Window/macOS/SFWindowController.mm
+/src/SFML/Window/macOS/SFOpenGLView.mm
+
 # SFML — Simple and Fast Multimedia Library
 
 SFML is a simple, fast, cross-platform and object-oriented multimedia API. It provides access to windowing, graphics, audio and network. It is written in C++ and has bindings for various languages such as C, .Net, Ruby, Python.
