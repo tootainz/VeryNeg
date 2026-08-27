@@ -101,7 +101,10 @@ if(APPLE)
         "-framework CoreFoundation"
     )
 elseif(WIN32)
-    # Add Windows-specific libraries here if needed.
+    target_link_libraries(VeryNeg PRIVATE
+        Gdi32
+        User32
+    )
 endif()
 
 # ------------------------------------------------

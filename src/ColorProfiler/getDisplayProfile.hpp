@@ -1,39 +1,105 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <filesystem>
 #include <optional>
+#include <fstream>
 #include <print>
 
 #if defined(_WIN32)
     #include <windows.h>
-    #include <icm.h>
+    #include <wingdi.h>
 #elif defined(__APPLE__)
     #include <ApplicationServices/ApplicationServices.h>
     #include <CoreGraphics/CoreGraphics.h>
 #endif
 
+// Gets the ICC profile of the main display. Please note that this does not support multiple displays!! Written by ChatGPT
 
 // WINDOWS
 #if defined(_WIN32)
-    // windows stuff
+
+inline std::optional<std::vector<uint8_t>> get_windows_display_icc()
+{
+    // Create a DC for the primary display.
+    HDC hdc = GetDC(nullptr);
+    if (!hdc)
+        return std::nullopt;
+
+    // First call asks Windows how large the filename buffer needs to be.
+    DWORD size = 0;
+
+    if (GetICMProfileW(hdc, &size, nullptr))
+    {
+        // Unexpected: normally the first call should fail with
+        // ERROR_INSUFFICIENT_BUFFER.
+        ReleaseDC(nullptr, hdc);
+        return std::nullopt;
+    }
+
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER || size == 0)
+    {
+        ReleaseDC(nullptr, hdc);
+        return std::nullopt;
+    }
+
+    std::vector<wchar_t> pathBuffer(size);
+
+    if (!GetICMProfileW(hdc, &size, pathBuffer.data()))
+    {
+        ReleaseDC(nullptr, hdc);
+        return std::nullopt;
+    }
+
+    ReleaseDC(nullptr, hdc);
+
+    // GetICMProfileW returns the path to the ICC profile.
+    std::filesystem::path profilePath(pathBuffer.data());
+
+    std::ifstream file(profilePath, std::ios::binary | std::ios::ate);
+
+    if (!file)
+        return std::nullopt;
+
+    const std::streamsize fileSize = file.tellg();
+
+    if (fileSize <= 0)
+        return std::nullopt;
+
+    file.seekg(0, std::ios::beg);
+
+    std::vector<uint8_t> result(static_cast<size_t>(fileSize));
+
+    if (!file.read(
+            reinterpret_cast<char*>(result.data()),
+            fileSize))
+    {
+        return std::nullopt;
+    }
+
+    std::println(
+        "Got Windows ICC profile: {} bytes ({})",
+        result.size(),
+        profilePath.string());
+
+    return result;
+}
+
 #endif
+
 
 // MAC
 #if defined(__APPLE__)
 
-#include <ApplicationServices/ApplicationServices.h>
-#include <CoreGraphics/CoreGraphics.h>
-
-inline std::optional<std::vector<uint8_t>> get_macos_display_icc() {
+inline std::optional<std::vector<uint8_t>> get_macos_display_icc()
+{
     CGDirectDisplayID display = CGMainDisplayID();
 
-    // Get display color space
     CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(display);
     if (!colorSpace)
         return std::nullopt;
 
-    // Extract ICC data from it
     CFDataRef iccData = CGColorSpaceCopyICCData(colorSpace);
     CGColorSpaceRelease(colorSpace);
 
@@ -60,16 +126,14 @@ inline std::optional<std::vector<uint8_t>> get_macos_display_icc() {
 
 #endif
 
-std::optional<std::vector<uint8_t>> getDisplayProfile() {
 
-    std::optional<std::vector<uint8_t>> profile;
-
-    #if defined(_WIN32)
-        profile = std::nullopt;
-    #elif defined(__APPLE__)
-        profile = get_macos_display_icc();
-    #else
-        profile = std::nullopt;
-    #endif
-    return profile;
+inline std::optional<std::vector<uint8_t>> getDisplayProfile()
+{
+#if defined(_WIN32)
+    return get_windows_display_icc();
+#elif defined(__APPLE__)
+    return get_macos_display_icc();
+#else
+    return std::nullopt;
+#endif
 }
