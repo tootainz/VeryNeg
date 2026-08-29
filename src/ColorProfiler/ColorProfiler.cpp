@@ -40,7 +40,7 @@ ColorProfiler::ColorProfiler() {
     // Get the profiles and open them
 
     // AdobeRGB profile
-    this->adobeRGB = cmsOpenProfileFromFile(getResourcesPath("iccProfiles/AdobeRGB1998.icc").c_str(), "r");
+    this->adobeRGB = cmsOpenProfileFromFile(getResourcesPath("iccProfiles/AdobeRGB1998.icc").string().c_str(), "r");
     if (!adobeRGB) {
         std::println("failed to open AdobeRGB profile");
         // failed to open the adobeRGB profile

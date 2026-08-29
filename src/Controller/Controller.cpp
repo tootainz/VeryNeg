@@ -865,7 +865,7 @@ void Controller::ButtonPressResetEdits() {
 
 void Controller::OptionPressSetPreset(std::string name) {
     Negative* negative = this->model.getCurrentNegative();
-    std::string resourcesPath = getResourcesPath("");
+    std::string resourcesPath = getResourcesPath("").string();
     std::filesystem::path path = std::format("{}presets/{}.json", resourcesPath, name);
     if (negative) {
         negative->applyPreset(path);
@@ -1288,7 +1288,7 @@ void Controller::ButtonPressExportAll() {
             for (auto& negative : negatives) {
 
                 std::filesystem::path currentPath = path;
-                std::string name = currentPath.filename();
+                std::string name = currentPath.filename().string();
                 std::string newName = std::format("{}_{}", name, negative.getId());
                 currentPath.replace_filename(newName);
 

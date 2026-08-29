@@ -88,7 +88,7 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
-    std::string defaultDataPath = getResourcesPath("/data_templates/negativeDataTemplate.neg");
+    std::string defaultDataPath = getResourcesPath("/data_templates/negativeDataTemplate.neg").string();
     std::string dataName = std::filesystem::path(this->path)
         .replace_extension(".neg")
         .string();
@@ -468,7 +468,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     const OIIO::ImageSpec& spec = input->spec();
 
-    this->name = imagePath.stem();
+    this->name = imagePath.stem().string();
     this->width = spec.width;
     this->height = spec.height;
     this->numberOfChannels = spec.nchannels;

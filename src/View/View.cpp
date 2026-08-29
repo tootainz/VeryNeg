@@ -22,7 +22,7 @@ View::View(sf::RenderWindow& window) :
     thumbnails()
 {
     // Create cursors
-    std::string resourcesPath = getResourcesPath("");
+    std::string resourcesPath = getResourcesPath("").string();
 
     // Densest
     std::filesystem::path densestPath = std::format("{}ui/graphics/cursor_densest.png", resourcesPath);
@@ -45,9 +45,9 @@ View::View(sf::RenderWindow& window) :
     this->rmlContextPopups->SetDensityIndependentPixelRatio(dp_ratio);
 
     // Rest of the constructor
-    Rml::LoadFontFace(getResourcesPath("fonts/Px437_SanyoMBC775-2y.ttf"));
-    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml"));
-    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml"));
+    Rml::LoadFontFace(getResourcesPath("fonts/Px437_SanyoMBC775-2y.ttf").string());
+    Rml::ElementDocument* uiDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegUi.rml").string());
+    Rml::ElementDocument* popupsDocument = this->rmlContextUi->LoadDocument(getResourcesPath("ui/veryNegPopups.rml").string());
     this->rmlDocumentUi = uiDocument;
     this->rmlDocumentPopups = popupsDocument;
     if (this->rmlDocumentUi) {
