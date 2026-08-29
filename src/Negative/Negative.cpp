@@ -88,7 +88,7 @@ bool Negative::readConversionCache() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::readNegativeData() {
-    std::string defaultDataPath = getResourcesPath("/data_templates/negativeDataTemplate.neg").string();
+    std::string defaultDataPath = getResourcesPath("data_templates/negativeDataTemplate.neg").string();
     std::string dataName = std::filesystem::path(this->path)
         .replace_extension(".neg")
         .string();
