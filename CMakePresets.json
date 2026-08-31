@@ -23,15 +23,15 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_OSX_ARCHITECTURES": "arm64",
-                "VCPKG_TARGET_TRIPLET": "arm64-osx",
                 "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "arm64-macos11",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg_triplets",
                 "VCPKG_APPLOCAL_DEPS": "ON",
-                "VCPKG_OSX_DEPLOYMENT_TARGET": "11.0",
                 "DEBUG_PRINT_ENABLED": "OFF"
             }
         },
@@ -42,15 +42,15 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_OSX_ARCHITECTURES": "x86_64",
-                "VCPKG_TARGET_TRIPLET": "x64-osx",
                 "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "x64-macos1015",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg_triplets",
                 "VCPKG_APPLOCAL_DEPS": "ON",
-                "VCPKG_OSX_DEPLOYMENT_TARGET": "10.15",
                 "DEBUG_PRINT_ENABLED": "OFF"
             }
         },
@@ -63,8 +63,8 @@
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_TARGET_TRIPLET": "x64-windows-static",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static",
                 "VCPKG_APPLOCAL_DEPS": "OFF",
                 "DEBUG_PRINT_ENABLED": "OFF"
             }
