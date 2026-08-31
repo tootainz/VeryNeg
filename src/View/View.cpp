@@ -1,10 +1,10 @@
 #include "View.hpp"
 
 #include <print>
-#include <format>
 
 #include "../RmlUi_Backend/RmlUi_Backend.hpp"
 #include "../getResourcesPath.hpp"
+#include "../debug_print.hpp"
 
 
 // CONSTRUCTOR
@@ -25,17 +25,17 @@ View::View(sf::RenderWindow& window) :
     std::string resourcesPath = getResourcesPath("").string();
 
     // Densest
-    std::filesystem::path densestPath = std::format("{}ui/graphics/cursor_densest.png", resourcesPath);
+    std::filesystem::path densestPath = resourcesPath + "ui/graphics/cursor_densest.png";
     sf::Image densestImage(densestPath);
     this->cursorSampleDensest = sf::Cursor::createFromPixels(densestImage.getPixelsPtr(), densestImage.getSize(), {0, 21});
 
     // Border
-    std::filesystem::path borderPath = std::format("{}ui/graphics/cursor_border.png", resourcesPath);
+    std::filesystem::path borderPath = resourcesPath + "ui/graphics/cursor_border.png";
     sf::Image borderImage(borderPath);
     this->cursorSampleBorder = sf::Cursor::createFromPixels(borderImage.getPixelsPtr(), borderImage.getSize(), {0, 21});
 
     // Border
-    std::filesystem::path neutralPath = std::format("{}ui/graphics/cursor_neutral.png", resourcesPath);
+    std::filesystem::path neutralPath = resourcesPath + "ui/graphics/cursor_neutral.png";
     sf::Image neutralImage(neutralPath);
     this->cursorSampleNeutral = sf::Cursor::createFromPixels(neutralImage.getPixelsPtr(), neutralImage.getSize(), {0, 21});
 
@@ -71,34 +71,34 @@ View::View(sf::RenderWindow& window) :
 void View::addThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id) {
     Rml::Element* filmRoll = this->rmlDocumentUi->GetElementById("filmRoll");
     Rml::ElementPtr thumbnailElement = this->rmlDocumentUi->CreateElement("div");
-    std::string name = std::format("thumbnail_{}", id);
+    std::string name = "thumbnail_" + std::to_string(id);
     thumbnailElement->SetId(name);
     thumbnailElement->SetClass("thumbnail", true);
     filmRoll->AppendChild(std::move(thumbnailElement));
-    std::println("added thumbnailElement");
+    DEBUG_PRINT("added thumbnailElement");
 
     this->rmlContextUi->Update();
 
     Rml::Element* thumbnailElementPointer = this->rmlDocumentUi->GetElementById(name);
 
     auto thumbnail = std::make_unique<Thumbnail>(id, std::move(thumbnailTexture));
-    std::println("created thumbnail struct");
+    DEBUG_PRINT("created thumbnail struct");
 
     // little help from chatgpt in getting the correct size since i was lazy and need to get this done
     const Rml::Box& box = thumbnailElementPointer->GetBox();
     Rml::Vector2f pos = thumbnailElementPointer->GetAbsoluteOffset(Rml::BoxArea::Padding);
     Rml::Vector2f size = box.GetSize(Rml::BoxArea::Padding);
-    std::println("got dimensions");
+    DEBUG_PRINT("got dimensions");
 
     thumbnail->sprite.setPosition(sf::Vector2f(pos.x, pos.y));
     thumbnail->sprite.setScale(sf::Vector2f(size.x / thumbnail->texture->getSize().x, size.y / thumbnail->texture->getSize().y));
-    std::println("set size and pos");
+    DEBUG_PRINT("set size and pos");
 
-    std::println("Texture size: {} x {}", thumbnail->texture->getSize().x, thumbnail->texture->getSize().y);
-    std::println("Sprite position: {}, {}", pos.x, pos.y);
+    DEBUG_PRINT("Texture size: {} x {}", thumbnail->texture->getSize().x, thumbnail->texture->getSize().y);
+    DEBUG_PRINT("Sprite position: {}, {}", pos.x, pos.y);
 
     this->thumbnails.push_back(std::move(thumbnail));
-    std::println("added to the vector");
+    DEBUG_PRINT("added to the vector");
 }
 
 // Written by AI since I was lazy
@@ -116,7 +116,7 @@ void View::removeThumbnail(int id) {
     }
 
     // Also remove from the RML document
-    std::string name = std::format("thumbnail_{}", id);
+    std::string name = "thumbnail_" + std::to_string(id);
     Rml::Element* element = this->rmlDocumentUi->GetElementById(name);
 
     if (element && element->GetParentNode()) {
@@ -132,7 +132,7 @@ void View::LoadThumbnails() {
 
 void View::updateThumbnailsPos() {
     for (const auto& thumbnail : this->thumbnails) {
-        std::string thumbnailName = std::format("thumbnail_{}", thumbnail->id);
+        std::string thumbnailName = "thumbnail_" + std::to_string(thumbnail->id);
         Rml::Element* thumbnailElement = this->rmlDocumentUi->GetElementById(thumbnailName);
 
         const Rml::Box& box = thumbnailElement->GetBox();
@@ -154,7 +154,7 @@ void View::updateThumbnail(std::unique_ptr<sf::Texture> thumbnailTexture, int id
     );
 
     if (iterator != this->thumbnails.end()) {
-        std::println("Updating thumbnail id: {}", (*iterator)->id);
+        DEBUG_PRINT("Updating thumbnail id: {}", (*iterator)->id);
         (*iterator)->updateTexture(std::move(thumbnailTexture));
     }
 }
@@ -181,7 +181,7 @@ void View::updatePreviewSpriteTransform() {
     const float spriteWidth = sprite.getLocalBounds().size.x;
     const float spriteHeight = sprite.getLocalBounds().size.y;
 
-    std::println("original sprite w {}, h {}", spriteWidth, spriteHeight);
+    DEBUG_PRINT("original sprite w {}, h {}", spriteWidth, spriteHeight);
 
     // 0. Reset everything
     // ---------------------------------------------------------
@@ -193,7 +193,7 @@ void View::updatePreviewSpriteTransform() {
     // ---------------------------------------------------------
     sprite.setOrigin({spriteWidth/2.0f, spriteHeight/2.0f});
 
-    std::println("set sprite origin {}, h {}", spriteWidth/2.0f, spriteHeight/2.0f);
+    DEBUG_PRINT("set sprite origin {}, h {}", spriteWidth/2.0f, spriteHeight/2.0f);
 
     // 2. Apply rotation to the sprite
     // ---------------------------------------------------------
@@ -227,7 +227,7 @@ void View::updatePreviewSpriteTransform() {
     const float newSpriteWidth = sprite.getGlobalBounds().size.x;
     const float newSpriteHeight = sprite.getGlobalBounds().size.y;
 
-    std::println("new after rotation sprite w {}, h {}", newSpriteWidth, newSpriteHeight);
+    DEBUG_PRINT("new after rotation sprite w {}, h {}", newSpriteWidth, newSpriteHeight);
 
     // Calculate scales for both axis adn choose the smaller one
     float scaleX = this->previewElementWidth / (1.0f * newSpriteWidth);
@@ -253,7 +253,7 @@ void View::updatePreviewSpriteTransform() {
     // Apply the scale to the sprite by taking into consideration the mirroring from orientation
     this->previewSprite.setScale({this->previewScaleX, this->previewScaleY});
 
-    std::println("sprite scale is w {}, h {}", this->previewScaleX, this->previewScaleY);
+    DEBUG_PRINT("sprite scale is w {}, h {}", this->previewScaleX, this->previewScaleY);
 
     // 4. Update previewSprite Position
     // ---------------------------------------------------------
@@ -262,7 +262,7 @@ void View::updatePreviewSpriteTransform() {
     const float finalSpriteWidth = sprite.getGlobalBounds().size.x;
     const float finalSpriteHeight = sprite.getGlobalBounds().size.y;
 
-    std::println("final sprite w {}, h {}", finalSpriteWidth, finalSpriteHeight);
+    DEBUG_PRINT("final sprite w {}, h {}", finalSpriteWidth, finalSpriteHeight);
 
     // if sprite width < preview width then center horizontal
     if (finalSpriteWidth < this->previewElementWidth) {
@@ -275,13 +275,13 @@ void View::updatePreviewSpriteTransform() {
         this->previewOffsetY = (this->previewElementHeight-finalSpriteHeight)/2.0f;
     }
 
-    std::println("sprite offsets are w {}, h {}", this->previewOffsetX, this->previewOffsetY);
+    DEBUG_PRINT("sprite offsets are w {}, h {}", this->previewOffsetX, this->previewOffsetY);
 
     this->previewX = this->previewElementLeft + this->previewOffsetX + finalSpriteWidth/2.0f;
     this->previewY = this->previewElementTop + this->previewOffsetY + finalSpriteHeight/2.0f;
     sprite.setPosition({this->previewX, this->previewY});
 
-    std::println("sprite location is w {}, h {}", this->previewX, this->previewY);
+    DEBUG_PRINT("sprite location is w {}, h {}", this->previewX, this->previewY);
 }
 
 void View::setPreviewOrientation(int value) {
@@ -477,7 +477,7 @@ void View::setSliderValue(std::string name, float value) {
 }
 
 void View::setCheckboxValue(std::string name, bool value) {
-    std::println("settign checkbox value with name {} to value {}", name, value);
+    DEBUG_PRINT("settign checkbox value with name {} to value {}", name, value);
     Rml::Element* checkbox = this->rmlDocumentUi->GetElementById(name);
     if (checkbox) {
         if (!value) {
@@ -521,13 +521,13 @@ void View::setPopUp(std::string name, bool value) {
             if (value) {
                 this->popupVisible = true;
                 this->rmlDocumentPopups->Show();
-                std::println("popup shown");
+                DEBUG_PRINT("popup shown");
                 popUpElement->SetClass("hidden", false);
             }
             else {
                 this->popupVisible = false;
                 this->rmlDocumentPopups->Hide();
-                std::println("popup hidden");
+                DEBUG_PRINT("popup hidden");
                 popUpElement->SetClass("hidden", true);
             }
         }

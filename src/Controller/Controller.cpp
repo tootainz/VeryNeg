@@ -1,6 +1,5 @@
 #include "Controller.hpp"
 
-#include <print>
 #include <filesystem>
 
 #include <RmlUi/Core.h>
@@ -13,6 +12,7 @@
 #include "commands.hpp"
 #include "../Negative/ImageArea.hpp"
 #include "../getResourcesPath.hpp"
+#include "../debug_print.hpp"
 
 
 // STATIC HELPERS
@@ -20,11 +20,11 @@
 
 // SFML specific helper function for transforming the preview ImageData from Negative to a texture for SFML
 static std::unique_ptr<sf::Texture> createPreviewtexture(ImageData previewData) {
-    std::println("creating preview texture");
+    DEBUG_PRINT("creating preview texture");
     sf::Vector2u size(previewData.width, previewData.height);
     sf::Image previewImage(size, previewData.data.data());
     auto previewTexture = std::make_unique<sf::Texture>(previewImage, false);
-    std::println("preview texture size is: x:{} y:{}", previewData.width, previewData.height);
+    DEBUG_PRINT("preview texture size is: x:{} y:{}", previewData.width, previewData.height);
     return previewTexture;
 }
 
@@ -70,32 +70,32 @@ void Controller::cleanup() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::updatePreview(bool dragging) {
-    std::println("updatign preview");
+    DEBUG_PRINT("updatign preview");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
-        std::println("preview negative exists");
+        DEBUG_PRINT("preview negative exists");
         std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getPreview(dragging)));
-        std::println("preview successfully recovered from model");
+        DEBUG_PRINT("preview successfully recovered from model");
         this->view.setPreviewTexture(std::move(previewTexture));
     }
     else {
-        std::println("preview negative doesnt exist");
+        DEBUG_PRINT("preview negative doesnt exist");
         // Clear the preview
         this->view.setPreviewTexture(std::make_unique<sf::Texture>());
     }
 }
 
 void Controller::updateSharpnessPreview() {
-    std::println("updatign sharpness preview");
+    DEBUG_PRINT("updatign sharpness preview");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
-        std::println("preview negative exists");
+        DEBUG_PRINT("preview negative exists");
         std::unique_ptr<sf::Texture> previewTexture = std::move(createPreviewtexture(negative->getSharpnessPreview()));
-        std::println("preview successfully recovered from model");
+        DEBUG_PRINT("preview successfully recovered from model");
         this->view.setSharpeningPreviewTexture(std::move(previewTexture));
     }
     else {
-        std::println("preview negative doesnt exist");
+        DEBUG_PRINT("preview negative doesnt exist");
         // Clear the preview
         this->view.setSharpeningPreviewTexture(std::make_unique<sf::Texture>());
     }
@@ -104,9 +104,9 @@ void Controller::updateSharpnessPreview() {
 void Controller::updateEditSettings(Negative& negative) {
     this->uiState.disableCallbacks = true;
 
-    std::println("gettingt orientation");
+    DEBUG_PRINT("gettingt orientation");
     int orientation = negative.getOrientation();
-    std::println("got orientation");
+    DEBUG_PRINT("got orientation");
 
     float scanGamma = negative.getScanGamma();
     ImageArea selectionArea = negative.getScanArea(negative.getWorkingScale());
@@ -203,7 +203,7 @@ void Controller::redo() {
 void Controller::applyHeld() {
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
-        std::println("applying held settings");
+        DEBUG_PRINT("applying held settings");
         if (this->uiState.heldConvert) {
             this->model.applyHoldPreConvert();
         }
@@ -244,22 +244,22 @@ void Controller::SliderReset(std::string name) {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressAddNegative() {
-    std::println("button pressed choose negative");
+    DEBUG_PRINT("button pressed choose negative");
 
     pfd::open_file fileOpener("Choose negative", "/", {"tiff images", "*.tif *.tiff *.TIFF *.TIF"}, pfd::opt::multiselect);
     std::vector<std::string> paths = fileOpener.result();
 
     if (paths.size() == 0) {
-        std::println("didn't choose a file");
+        DEBUG_PRINT("didn't choose a file");
         return;
     }
 
     auto idList = std::make_shared<std::vector<int>>();
 
     auto execute = [this, idList, paths]() -> void {
-        std::println("opened {} paths", paths.size());
+        DEBUG_PRINT("opened {} paths", paths.size());
         for (std::filesystem::path path : paths) {
-            std::println("Trying to open negative at: {}", path.string());
+            DEBUG_PRINT("Trying to open negative at: {}", path.string());
 
             Negative* negative = model.addNegative(path);
             if (negative) {
@@ -289,7 +289,7 @@ void Controller::ButtonPressAddNegative() {
 }
 
 void Controller::ButtonPressRemoveNegative(int id) {
-    std::println("button pressed remove negative");
+    DEBUG_PRINT("button pressed remove negative");
 
     Negative* negative = this->model.getNegativeById(id);
     if (negative) {
@@ -301,7 +301,7 @@ void Controller::ButtonPressRemoveNegative(int id) {
         };
 
         auto undo = [this, path, id]() -> void {
-            std::println("Trying to open negative at: {}", path.string());
+            DEBUG_PRINT("Trying to open negative at: {}", path.string());
             Negative* negative = model.addNegative(path, id);
             if (negative) {
                 ImageData thumbnail = negative->getThumbnail();
@@ -322,7 +322,7 @@ void Controller::ButtonPressRemoveNegative(int id) {
 }
 
 void Controller::ButtonPressNextNegative() {
-    std::println("button pressed next negative");
+    DEBUG_PRINT("button pressed next negative");
     auto execute = [this]() -> void {
         this->model.nextNegative();
     };
@@ -342,7 +342,7 @@ void Controller::ButtonPressNextNegative() {
 }
 
 void Controller::ButtonPressPreviousNegative() {
-    std::println("button pressed previous negative");
+    DEBUG_PRINT("button pressed previous negative");
 
     auto execute = [this]() -> void {
         this->model.previousNegative();
@@ -363,7 +363,7 @@ void Controller::ButtonPressPreviousNegative() {
 }
 
 void Controller::ButtonPressThumbnail(int id) {
-    std::println("thumbnail {} pressed", id);
+    DEBUG_PRINT("thumbnail {} pressed", id);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -393,7 +393,7 @@ void Controller::ButtonPressThumbnail(int id) {
 }
 
 void Controller::ButtonPressRotateClock() {
-    std::println("Rotate clockwise pressed");
+    DEBUG_PRINT("Rotate clockwise pressed");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -416,7 +416,7 @@ void Controller::ButtonPressRotateClock() {
 }
 
 void Controller::ButtonPressRotateCounterClock() {
-    std::println("Rotate counter clockwise pressed");
+    DEBUG_PRINT("Rotate counter clockwise pressed");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -439,7 +439,7 @@ void Controller::ButtonPressRotateCounterClock() {
 }
 
 void Controller::ButtonPressFlipHorizontal() {
-    std::println("flip horizontal pressed");
+    DEBUG_PRINT("flip horizontal pressed");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -459,7 +459,7 @@ void Controller::ButtonPressFlipHorizontal() {
 }
 
 void Controller::ButtonPressFlipVertical() {
-    std::println("flip vertical pressed");
+    DEBUG_PRINT("flip vertical pressed");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -479,7 +479,7 @@ void Controller::ButtonPressFlipVertical() {
 }
 
 void Controller::CheckboxPressCrop(bool checked) {
-    std::println("Crop pressed");
+    DEBUG_PRINT("Crop pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
@@ -503,7 +503,7 @@ void Controller::CheckboxPressCrop(bool checked) {
 
 void Controller::ButtonPressSetCrop()
 {
-    std::println("Set Crop pressed");
+    DEBUG_PRINT("Set Crop pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
         this->uiState.selectionArea = negative->getCropArea(negative->getWorkingScale());
@@ -518,8 +518,8 @@ void Controller::ButtonPressSetCrop()
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::CheckboxPressHoldConvert(bool checked) {
-    std::println("hold convert pressed");
-    std::println("value is {}", checked);
+    DEBUG_PRINT("hold convert pressed");
+    DEBUG_PRINT("value is {}", checked);
     bool previousChecked = !checked;
 
     auto execute = [this, checked]() {
@@ -553,7 +553,7 @@ void Controller::CheckboxPressHoldConvert(bool checked) {
 
 void Controller::OptionPressSetScanGamma(float value)
 {
-    std::println("scan gamma set to {}", value);
+    DEBUG_PRINT("scan gamma set to {}", value);
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
         float previousScanGamma = negative->getScanGamma();
@@ -574,7 +574,7 @@ void Controller::OptionPressSetScanGamma(float value)
 }
 
 void Controller::CheckboxPressBorder(bool checked) {
-    std::println("Border pressed");
+    DEBUG_PRINT("Border pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
@@ -599,7 +599,7 @@ void Controller::CheckboxPressBorder(bool checked) {
 }
 
 void Controller::ButtonPressSetBorder() {
-    std::println("Set Border pressed");
+    DEBUG_PRINT("Set Border pressed");
     // Turn on border if not already
     if (!this->uiState.hasBorder) {
         // Update the view to match UiState since this didn't come directly from the main checkbox
@@ -607,7 +607,7 @@ void Controller::ButtonPressSetBorder() {
         // Update the UiState and model
         this->CheckboxPressBorder(true);
     }
-    std::println("Setting Border");
+    DEBUG_PRINT("Setting Border");
     this->uiState.selectingBorder = !this->uiState.selectingBorder;
     this->uiState.readyToSelect = !this->uiState.readyToSelect;
     if (this->uiState.selectingBorder) {
@@ -619,7 +619,7 @@ void Controller::ButtonPressSetBorder() {
 }
 
 void Controller::SetBorder(int x, int y) {
-    std::println("Setting Border");
+    DEBUG_PRINT("Setting Border");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -643,7 +643,7 @@ void Controller::SetBorder(int x, int y) {
 }
 
 void Controller::CheckboxPressDensest(bool checked) {
-    std::println("Densest pressed");
+    DEBUG_PRINT("Densest pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
@@ -668,7 +668,7 @@ void Controller::CheckboxPressDensest(bool checked) {
 }
 
 void Controller::ButtonPressSetDensest() {
-    std::println("Set Densest pressed");
+    DEBUG_PRINT("Set Densest pressed");
     if (!this->uiState.hasDensest) {
         // Update the view to mach UiState since this didn't come directly from the main checkbox
         this->view.setCheckboxValue("densest", true);
@@ -686,7 +686,7 @@ void Controller::ButtonPressSetDensest() {
 }
 
 void Controller::SetDensest(int x, int y) {
-    std::println("Setting Densest");
+    DEBUG_PRINT("Setting Densest");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -709,7 +709,7 @@ void Controller::SetDensest(int x, int y) {
 }
 
 void Controller::CheckboxPressScanArea(bool checked) {
-    std::println("scan area pressed");
+    DEBUG_PRINT("scan area pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
@@ -729,15 +729,15 @@ void Controller::CheckboxPressScanArea(bool checked) {
             std::make_unique<Command_Lambda>(execute, undo)
         );
 
-        std::println("checked for scan area is: {}", checked);
-        std::println("uistate scan area is: {}", this->uiState.hasScanArea);
+        DEBUG_PRINT("checked for scan area is: {}", checked);
+        DEBUG_PRINT("uistate scan area is: {}", this->uiState.hasScanArea);
                 
         this->updatePreview(false);
     };
 }
 
 void Controller::ButtonPressSetScanArea() {
-    std::println("set scan area pressed");
+    DEBUG_PRINT("set scan area pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
         if (!this->uiState.hasScanArea) {
@@ -758,7 +758,7 @@ void Controller::ButtonPressSetScanAreaNumber() {
 }
 
 void Controller::ButtonPressConvert() {
-    std::println("Button pressed convert");
+    DEBUG_PRINT("Button pressed convert");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -788,7 +788,7 @@ void Controller::ButtonPressConvert() {
 }
 
 void Controller::ButtonPressResetConversion() {
-    std::println("Reset conversion pressed");
+    DEBUG_PRINT("Reset conversion pressed");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -819,7 +819,7 @@ void Controller::ButtonPressResetConversion() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::CheckboxPressHoldEdits(bool checked) {
-    std::println("hold edits pressed");
+    DEBUG_PRINT("hold edits pressed");
     bool previousChecked = !checked;
 
     auto execute = [this, checked]() {
@@ -866,7 +866,8 @@ void Controller::ButtonPressResetEdits() {
 void Controller::OptionPressSetPreset(std::string name) {
     Negative* negative = this->model.getCurrentNegative();
     std::string resourcesPath = getResourcesPath("").string();
-    std::filesystem::path path = std::format("{}presets/{}.json", resourcesPath, name);
+    
+    std::filesystem::path path = std::filesystem::path(resourcesPath) / "presets" / (name + ".json");
     if (negative) {
         negative->applyPreset(path);
         this->updateEditSettings(*negative);
@@ -878,7 +879,7 @@ void Controller::OptionPressSetPreset(std::string name) {
 }
 
 void Controller::CheckboxPressHoldIntensity(bool checked) {
-    std::println("hold intensity pressed");
+    DEBUG_PRINT("hold intensity pressed");
     bool previousChecked = !checked;
 
     auto execute = [this, checked]() {
@@ -925,13 +926,13 @@ void Controller::ButtonPressResetIntensity() {
 }
 
 void Controller::SliderChangeSetDensity(float value, bool dragging) {
-    std::println("Slider value was changed to {}", value);
+    DEBUG_PRINT("Slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
         if (dragging) {
-            std::println("we are dragging");
+            DEBUG_PRINT("we are dragging");
             negative->setDensity(value);
             negative->renderDraggingEdits();
             this->updatePreview(this->uiState.isDragging);
@@ -948,7 +949,7 @@ void Controller::SliderChangeSetDensity(float value, bool dragging) {
 }
 
 void Controller::SliderChangeSetContrast(float value) {
-    std::println("Contrast slider value was changed to {}", value);
+    DEBUG_PRINT("Contrast slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -963,7 +964,7 @@ void Controller::SliderChangeSetContrast(float value) {
 }
 
 void Controller::SliderChangeSetWhites(float value) {
-    std::println("Whites slider value was changed to {}", value);
+    DEBUG_PRINT("Whites slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -978,7 +979,7 @@ void Controller::SliderChangeSetWhites(float value) {
 }
 
 void Controller::SliderChangeSetHighlights(float value) {
-    std::println("Highlights slider value was changed to {}", value);
+    DEBUG_PRINT("Highlights slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -993,7 +994,7 @@ void Controller::SliderChangeSetHighlights(float value) {
 }
 
 void Controller::SliderChangeSetShadows(float value) {
-    std::println("Shadows slider value was changed to {}", value);
+    DEBUG_PRINT("Shadows slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1008,7 +1009,7 @@ void Controller::SliderChangeSetShadows(float value) {
 }
 
 void Controller::SliderChangeSetBlacks(float value) {
-    std::println("Blacks slider value was changed to {}", value);
+    DEBUG_PRINT("Blacks slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1023,7 +1024,7 @@ void Controller::SliderChangeSetBlacks(float value) {
 }
 
 void Controller::CheckboxPressHoldColor(bool checked) {
-    std::println("hold edits pressed");
+    DEBUG_PRINT("hold edits pressed");
     bool previousChecked = !checked;
 
     auto execute = [this, checked]() {
@@ -1079,7 +1080,7 @@ void Controller::ButtonPressResetColor() {
 }
 
 void Controller::ButtonPressAutoWhiteBalance() {
-    std::println("AutoWB pressed");
+    DEBUG_PRINT("AutoWB pressed");
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
@@ -1113,7 +1114,7 @@ void Controller::ButtonPressSetNeutralSample() {
 }
 
 void Controller::SetNeutralSample(int x, int y) {
-    std::println("Setting Neutral balance");
+    DEBUG_PRINT("Setting Neutral balance");
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1136,7 +1137,7 @@ void Controller::SetNeutralSample(int x, int y) {
 }
 
 void Controller::SliderChangeSetRBalance(float value) {
-    std::println("R balance slider value was changed to {}", value);
+    DEBUG_PRINT("R balance slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1151,7 +1152,7 @@ void Controller::SliderChangeSetRBalance(float value) {
 }
 
 void Controller::SliderChangeSetGBalance(float value) {
-    std::println("G balance slider value was changed to {}", value);
+    DEBUG_PRINT("G balance slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1166,7 +1167,7 @@ void Controller::SliderChangeSetGBalance(float value) {
 }
 
 void Controller::SliderChangeSetBBalance(float value) {
-    std::println("B balance slider value was changed to {}", value);
+    DEBUG_PRINT("B balance slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1181,7 +1182,7 @@ void Controller::SliderChangeSetBBalance(float value) {
 }
 
 void Controller::SliderChangeSetSaturation(float value) {
-    std::println("saturation slider value was changed to {}", value);
+    DEBUG_PRINT("saturation slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1196,7 +1197,7 @@ void Controller::SliderChangeSetSaturation(float value) {
 }
 
 void Controller::CheckboxPressHoldSharpening(bool checked) {
-    std::println("hold sharpening pressed");
+    DEBUG_PRINT("hold sharpening pressed");
     bool previousChecked = !checked;
 
     auto execute = [this, checked]() {
@@ -1233,7 +1234,7 @@ void Controller::ButtonPressResetSharpening()
 }
 
 void Controller::SliderChangeSetSharpeningAmount(float value) {
-    std::println("Sharpening amount slider value was changed to {}", value);
+    DEBUG_PRINT("Sharpening amount slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1246,7 +1247,7 @@ void Controller::SliderChangeSetSharpeningAmount(float value) {
 }
 
 void Controller::SliderChangeSetSharpeningDiameter(float value) {
-    std::println("Sharpening diameter slider value was changed to {}", value);
+    DEBUG_PRINT("Sharpening diameter slider value was changed to {}", value);
 
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
@@ -1262,7 +1263,7 @@ void Controller::SliderChangeSetSharpeningDiameter(float value) {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Controller::ButtonPressExport() {
-    std::println("button pressed export");
+    DEBUG_PRINT("button pressed export");
     this->view.setPopUp("exportSettings", true);
 }
 
@@ -1272,7 +1273,7 @@ void Controller::ButtonPressExportCurrent() {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
         if (!path.empty()) {
-            std::println("save path is {}", path.string());
+            DEBUG_PRINT("save path is {}", path.string());
             negative->exportPositive(path, this->uiState.exportFileFormat, this->uiState.exportProfile);
         }
     }
@@ -1284,12 +1285,12 @@ void Controller::ButtonPressExportAll() {
         pfd::save_file fileSaver("Choose positive location", "/");
         std::filesystem::path path = fileSaver.result();
         if (!path.empty()) {
-            std::println("save path is {}", path.string());
+            DEBUG_PRINT("save path is {}", path.string());
             for (auto& negative : negatives) {
 
                 std::filesystem::path currentPath = path;
                 std::string name = currentPath.filename().string();
-                std::string newName = std::format("{}_{}", name, negative.getId());
+                std::string newName = name + "_" + std::to_string(negative.getId());
                 currentPath.replace_filename(newName);
 
                 negative.exportPositive(currentPath, this->uiState.exportFileFormat, this->uiState.exportProfile);
@@ -1303,12 +1304,12 @@ void Controller::ButtonPressExportCancel() {
 }
 
 void Controller::OptionPressImageFormat(std::string format) {
-    std::println("Export image format is {}", format);
+    DEBUG_PRINT("Export image format is {}", format);
     this->uiState.exportFileFormat = format;
 }
 
 void Controller::OptionPressExportProfile(std::string name) {
-    std::println("Export image profile is {}", name);
+    DEBUG_PRINT("Export image profile is {}", name);
     this->uiState.exportProfile = name;
 }
 
@@ -1319,12 +1320,12 @@ void Controller::ProcessEvent(Rml::Event& event) {
     if (!this->uiState.disableCallbacks) {
         Rml::Element* element = event.GetTargetElement();
         const std::string id = element->GetId();
-        std::println("an event happened to element {}", id);
+        DEBUG_PRINT("an event happened to element {}", id);
 
         // BUTTONS & CHECKBOXES (Click)
         if (event.GetId() == Rml::EventId::Click) {
 
-            std::println("event is click");
+            DEBUG_PRINT("event is click");
 
             auto checkedAttribute = element->GetAttribute("checked");
             bool checked = false;
@@ -1366,7 +1367,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
                     thumbnailId = std::stoi(id.substr(pos + 1)); // substring after underscore
                 }
                 this->ButtonPressThumbnail(thumbnailId);
-                std::println("pressed thumbnail {}", thumbnailId);
+                DEBUG_PRINT("pressed thumbnail {}", thumbnailId);
             }
             else if (id == "next") {
                 this->ButtonPressNextNegative();
@@ -1469,7 +1470,7 @@ void Controller::ProcessEvent(Rml::Event& event) {
         // CHANGE
         else if (event.GetId() == Rml::EventId::Change) {
 
-            std::println("event is change");
+            DEBUG_PRINT("event is change");
 
             Rml::Variant* valueVar = element->GetAttribute("value");
             if (!valueVar) return;
@@ -1627,7 +1628,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                     correctedMouseY < selectionArea.top + selectionHandleBuffer &&
                     correctedMouseX > selectionArea.left &&
                     correctedMouseX < selectionArea.right) {
-                    std::println("clicking top");
+                    DEBUG_PRINT("clicking top");
                     this->uiState.selectingTop = true;
                 }
                 // We are clicking on the bottom of the selection
@@ -1635,7 +1636,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                     correctedMouseY < selectionArea.bottom + selectionHandleBuffer &&
                     correctedMouseX > selectionArea.left &&
                     correctedMouseX < selectionArea.right) {
-                    std::println("clicking bottom");
+                    DEBUG_PRINT("clicking bottom");
                     this->uiState.selectingBottom = true;
                 }
                 // We are clicking on the left side of the selection
@@ -1643,7 +1644,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                     correctedMouseY < selectionArea.bottom &&
                     correctedMouseX > selectionArea.left - selectionHandleBuffer &&
                     correctedMouseX < selectionArea.left + selectionHandleBuffer) {
-                    std::println("clicking right");
+                    DEBUG_PRINT("clicking right");
                     this->uiState.selectingLeft = true;
                 }
                 // We are clicking on the right side of the selection
@@ -1651,13 +1652,13 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                     correctedMouseY < selectionArea.bottom &&
                     correctedMouseX > selectionArea.right - selectionHandleBuffer &&
                     correctedMouseX < selectionArea.right + selectionHandleBuffer) {
-                    std::println("clicking right");
+                    DEBUG_PRINT("clicking right");
                     this->uiState.selectingRight = true;
                 }
                 else {
                     this->uiState.selectingWhole = true;
                 }
-                std::println("starting dragging");
+                DEBUG_PRINT("starting dragging");
                 this->uiState.selecting = true;
                 this->uiState.selectionStart = { correctedMouseX, correctedMouseY };
             }
@@ -1705,9 +1706,9 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                 this->view.setSelection(selectionArea);
                 Negative* negative = this->model.getCurrentNegative();
                 if (negative) {
-                    std::println("setting selection Area to left {}, top {}, right {}, bottom {}", selectionArea.left, selectionArea.top, selectionArea.right, selectionArea.bottom);
+                    DEBUG_PRINT("setting selection Area to left {}, top {}, right {}, bottom {}", selectionArea.left, selectionArea.top, selectionArea.right, selectionArea.bottom);
                     float scale = negative->getWorkingScale();
-                    std::println("selection Area scale = {}", scale);
+                    DEBUG_PRINT("selection Area scale = {}", scale);
                     if (this->uiState.selectingScanArea) {
                         negative->setScanArea(selectionArea, scale);
                     }
@@ -1728,7 +1729,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
     else if (auto mouseReleased = event->getIf<sf::Event::MouseButtonReleased>()) {
 
         // Process mouse after RmlUi
-        std::println("mouse Released at ({},{})", mouseReleased->position.x,  mouseReleased->position.y);
+        DEBUG_PRINT("mouse Released at ({},{})", mouseReleased->position.x,  mouseReleased->position.y);
 
         // SELECTING
         if (this->uiState.selecting) {
@@ -1769,13 +1770,13 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
                     }
             }
 
-            std::println("Finished dragging");
+            DEBUG_PRINT("Finished dragging");
             this->uiState.resetGeneralSelectionState();
         }
 
         // DRAGGING
         if (this->uiState.isDragging) {
-            std::println("dragging released");
+            DEBUG_PRINT("dragging released");
             this->uiState.isDragging = false;
             Negative* negative = this->model.getCurrentNegative();
             if (negative) {
@@ -1791,7 +1792,7 @@ bool Controller::handleMouseEvents(std::optional<sf::Event> event) {
             this->updateSharpnessPreview();
         }
 
-        std::println("handing mouseUp to rmlui");
+        DEBUG_PRINT("handing mouseUp to rmlui");
         // Hand the event over to the RmlUi context.
         RmlSFML::InputHandler(this->view.getRmlContextPopups(), *event);
         RmlSFML::InputHandler(this->view.getRmlContextUi(), *event);

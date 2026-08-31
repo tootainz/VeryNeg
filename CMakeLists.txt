@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Set wether to use debug printing, this uses C++23 std::println
+option(DEBUG_PRINT_ENABLED "Enable debug printing" OFF)
+
 # ------------------------------------------------
 # EXECUTABLE
 # ------------------------------------------------
@@ -20,6 +23,10 @@ add_executable(VeryNeg
     src/ColorProfiler/ColorProfiler.cpp
 )
 
+if(DEBUG_PRINT_ENABLED)
+    target_compile_definitions(VeryNeg PRIVATE DEBUG_PRINT_ENABLED)
+endif()
+
 # ------------------------------------------------
 # MACOS
 # ------------------------------------------------
@@ -30,9 +37,6 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST
             "${CMAKE_SOURCE_DIR}/Info.plist"
     )
-
-    # target for which OS version is supported
-    # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.3" CACHE STRING "" FORCE)
 endif()
 
 # ------------------------------------------------

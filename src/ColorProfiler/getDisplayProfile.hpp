@@ -5,7 +5,8 @@
 #include <filesystem>
 #include <optional>
 #include <fstream>
-#include <print>
+
+#include "../debug_print.hpp"
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -78,7 +79,7 @@ inline std::optional<std::vector<uint8_t>> get_windows_display_icc()
         return std::nullopt;
     }
 
-    std::println(
+    DEBUG_PRINT(
         "Got Windows ICC profile: {} bytes ({})",
         result.size(),
         profilePath.string());
@@ -119,7 +120,7 @@ inline std::optional<std::vector<uint8_t>> get_macos_display_icc()
 
     CFRelease(iccData);
 
-    std::println("Got ICC profile: {} bytes", result.size());
+    DEBUG_PRINT("Got ICC profile: {} bytes", result.size());
 
     return result;
 }

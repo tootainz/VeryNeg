@@ -1,9 +1,9 @@
 #pragma once
 
 #include <deque>
-#include <print>
 
 #include "Command.hpp"
+#include "../debug_print.hpp"
 
 
 /**
@@ -59,23 +59,23 @@ public:
 
     bool undo() {
         if (!this->commands.empty() && this->currentCommand < this->commands.size()) {
-            std::println("undoing history");
+            DEBUG_PRINT("undoing history");
             this->commands[currentCommand]->undo();
             this->currentCommand++;
             return true;
         }
-        std::println("cannot undo");
+        DEBUG_PRINT("cannot undo");
         return false;
     }
 
     bool redo() {
         if (!this->commands.empty() && this->currentCommand > 0) {
-        std::println("redoing history");
+        DEBUG_PRINT("redoing history");
             this->currentCommand--;
             this->commands[currentCommand]->execute();
             return true;
         }
-        std::println("cannot redo");
+        DEBUG_PRINT("cannot redo");
         return false;
     }
 };

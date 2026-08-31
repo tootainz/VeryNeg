@@ -1,8 +1,6 @@
 #include "Negative.hpp"
 
 #include <iostream>
-#include <print>
-#include <format>
 #include <filesystem>
 
 #include <OpenImageIO/imageio.h>
@@ -26,6 +24,7 @@
 #include "../imageAlgorithms/unsharpMask.hpp"
 #include "../imageAlgorithms/saturation.hpp"
 #include "../getResourcesPath.hpp"
+#include "../debug_print.hpp"
 
 
 // STATIC HELPER FUNCTIONS
@@ -48,8 +47,8 @@ const float Negative::DRAGGING_SCALE = 0.4f;
 // ----------------------------------------------------------------------------------------------------------------
 
 bool Negative::writeConversionCache() {
-    std::println("Saving cached conversion");
-    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
+    DEBUG_PRINT("Saving cached conversion");
+    std::string fileName = "./cache/" + this->name + "_chache.tif";
 
     // Use OIIO::ImageBuf for ease of transformign the pixel data type
     OIIO::ImageSpec convertedSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -57,27 +56,27 @@ bool Negative::writeConversionCache() {
 
     // Save the converted pixels vector
     if (!convertedBuf.write(fileName, OIIO::TypeDesc::FLOAT)) {
-        std::println("Failed to save image");
+        DEBUG_PRINT("Failed to save image");
         return false;
     }
-    std::println("Saved positive successfully");
+    DEBUG_PRINT("Saved positive successfully");
     
     return true;
 }
 
 bool Negative::readConversionCache() {
 
-    std::println("trying to open cache");
-    std::string fileName = std::format("./cache/{}_chache.tif", this->name);
+    DEBUG_PRINT("trying to open cache");
+    std::string fileName = "./cache/" + this->name + "_chache.tif";
     auto input = OIIO::ImageInput::open(fileName);
 
     if (!input) {
-        std::println("Failed to open/find cache");
+        DEBUG_PRINT("Failed to open/find cache");
         return false;
     }
 
     input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->convertedPixels[0]);
-    std::println("loaded cahce");
+    DEBUG_PRINT("loaded cahce");
     input->close();
     this->renderDraggingConversion();
     return true;
@@ -95,21 +94,21 @@ void Negative::readNegativeData() {
     std::ifstream file(dataName);
     // No .neg file with this name exists
     if (!file) {
-        std::println("failed to find negativeData file called {}", dataName);
-        std::println("generating default data");
+        DEBUG_PRINT("failed to find negativeData file called {}", dataName);
+        DEBUG_PRINT("generating default data");
         file.open(defaultDataPath);
     }
     // Try to parse the .neg file
     try {
         this->negativeData = nlohmann::json::parse(file);
-        std::println("read NegativeData succesfully");
+        DEBUG_PRINT("read NegativeData succesfully");
         file.close();
     }
     // Error parsing the .neg file to json
     catch (const std::exception& e) {
-        std::println("failed to parse negativeData file called {}", dataName);
-        std::println("Error message: {}", e.what());
-        std::println("generating default data");
+        DEBUG_PRINT("failed to parse negativeData file called {}", dataName);
+        DEBUG_PRINT("Error message: {}", e.what());
+        DEBUG_PRINT("generating default data");
         file.close();
         file.clear();
         file.open(defaultDataPath);
@@ -118,8 +117,8 @@ void Negative::readNegativeData() {
     }
     // Parsed succesfully but wrong version
     if (this->negativeData["version"] != this->NEGATIVEDATA_VERSION) {
-        std::println("Incompatible NegativeData version");
-        std::println("generating default data");
+        DEBUG_PRINT("Incompatible NegativeData version");
+        DEBUG_PRINT("generating default data");
         file.open(defaultDataPath);
         this->negativeData = nlohmann::json::parse(file);
         file.close();
@@ -143,25 +142,25 @@ std::unique_ptr<nlohmann::json> Negative::readPresetdata(std::filesystem::path p
     std::unique_ptr<nlohmann::json> presetData;
     // No preset file with this path exists
     if (!file) {
-        std::println("failed to open file at path {}", path.string());
+        DEBUG_PRINT("failed to open file at path {}", path.string());
         return nullptr;
     }
     // Try to parse the preset file
     try {
         presetData = std::make_unique<nlohmann::json>(nlohmann::json::parse(file));
-        std::println("read preset succesfully");
+        DEBUG_PRINT("read preset succesfully");
         file.close();
     }
     // Error parsing the preset file to json
     catch (const std::exception& e) {
-        std::println("failed to read preset");
-        std::println("Error message: {}", e.what());
+        DEBUG_PRINT("failed to read preset");
+        DEBUG_PRINT("Error message: {}", e.what());
         file.close();
         return nullptr;
     }
     // Parsed succesfully but wrong version
     if ((*presetData)["version"] != this->PRESETDATA_VERSION) {
-        std::println("Incompatible PresetData version");
+        DEBUG_PRINT("Incompatible PresetData version");
         return nullptr;
     }
     return presetData;
@@ -200,7 +199,7 @@ std::unique_ptr<std::vector<float>> Negative::renderFinal() {
 
 void Negative::renderEdits(std::vector<float>& pixels, int channels) {
 
-    std::println("Editing the image");
+    DEBUG_PRINT("Editing the image");
 
     // Collect all the edit values needed from negativedata
 
@@ -281,9 +280,9 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
     // If the scan has a baked in gamma, remove that and convert into linear
     float correctionGamma = this->negativeData["conversion"]["scanGamma"];
     gamma(pixels, correctionGamma, EditChannel::RGB);
-    std::println("Transformed image into linear by correcting a gamma of {}", correctionGamma);
+    DEBUG_PRINT("Transformed image into linear by correcting a gamma of {}", correctionGamma);
 
-    std::println("starting negative conversion pipeline");
+    DEBUG_PRINT("starting negative conversion pipeline");
 
     // 2. DETERMINE THE DENSEST VALUES AND THE FILM BORDER VALUES
 
@@ -305,11 +304,11 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
         ImageArea scanArea;
 
         // Check if we are using scan area
-        std::println("has scan area: {}", this->getHasScanArea());
+        DEBUG_PRINT("has scan area: {}", this->getHasScanArea());
         if (this->getHasScanArea()) {
             scanArea = this->getScanArea(scale);
-            std::println("image dimensions are {} * {}", width, height);
-            std::println("scanarea dimesnions are x {} - {}, y {} - {}", scanArea.left, scanArea.right, scanArea.top, scanArea.bottom);
+            DEBUG_PRINT("image dimensions are {} * {}", width, height);
+            DEBUG_PRINT("scanarea dimesnions are x {} - {}, y {} - {}", scanArea.left, scanArea.right, scanArea.top, scanArea.bottom);
         }
         else {
             scanArea = ImageArea{0, 0, width, height};
@@ -317,11 +316,11 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
         
         // the blur will be stored in a separate vector, crop the blur vector to this->scanArea
         auto [blurredPixels, blurredWidth, blurredHeight] = crop(pixels, width, height, scanArea);
-        std::println("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
+        DEBUG_PRINT("the dimensions after the crop are: w: {}, h: {}", blurredWidth, blurredHeight);
 
         int blurRadius = this->negativeData["conversion"]["samplingBlur"];
         blurRadius = blurRadius * scale;
-        std::println("blur radius is: {}", blurRadius);
+        DEBUG_PRINT("blur radius is: {}", blurRadius);
 
         // Perform the actual blur
         boxFilter(blurredPixels, blurredWidth, blurredHeight, blurRadius);
@@ -330,12 +329,12 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
         // Brightest = most transparent = low density
         // Darkest = most opaque = high density
 
-        std::println("getting the brightest and darkest pixels");
+        DEBUG_PRINT("getting the brightest and darkest pixels");
 
         // The border has not been sampled by the user
         if (!this->negativeData["conversion"]["hasBorder"]) {
             // Sampling border
-            std::println("sampling border");
+            DEBUG_PRINT("sampling border");
             transparentsR = std::get<0>(getBrightestPixel(blurredPixels, EditChannel::R));
             transparentsG = std::get<1>(getBrightestPixel(blurredPixels, EditChannel::G));
             transparentsB = std::get<2>(getBrightestPixel(blurredPixels, EditChannel::B));
@@ -349,7 +348,7 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
 
         // The densest has not been sampled by the user
         if (!this->negativeData["conversion"]["hasDensest"]) {
-            std::println("sampling densest");
+            DEBUG_PRINT("sampling densest");
             // Sampling densest
             opaquestsR = std::get<0>(getDarkestPixel(blurredPixels, EditChannel::R));
             opaquestsG = std::get<1>(getDarkestPixel(blurredPixels, EditChannel::G));
@@ -393,22 +392,22 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
     float darkestBDensity = scanToDensity(transparentsB);
 
     // Logging for debugging
-    std::println("-------------------------------");
-    std::println("Transparents:");
-    std::println("  R: {}, G: {}, B: {}", transparentsR, transparentsG, transparentsB);
+    DEBUG_PRINT("-------------------------------");
+    DEBUG_PRINT("Transparents:");
+    DEBUG_PRINT("  R: {}, G: {}, B: {}", transparentsR, transparentsG, transparentsB);
 
-    std::println("Opaquests:");
-    std::println("  R: {}, G: {}, B: {}", opaquestsR, opaquestsG, opaquestsB);
+    DEBUG_PRINT("Opaquests:");
+    DEBUG_PRINT("  R: {}, G: {}, B: {}", opaquestsR, opaquestsG, opaquestsB);
 
-    std::println("-------------------------------");
+    DEBUG_PRINT("-------------------------------");
 
-    std::println("Darkest Density:");
-    std::println("  R: {}, G: {}, B: {}", darkestRDensity, darkestGDensity, darkestBDensity);
+    DEBUG_PRINT("Darkest Density:");
+    DEBUG_PRINT("  R: {}, G: {}, B: {}", darkestRDensity, darkestGDensity, darkestBDensity);
 
-    std::println("Brightest Density:");
-    std::println("  R: {}, G: {}, B: {}", brightestRDensity, brightestGDensity, brightestBDensity);
+    DEBUG_PRINT("Brightest Density:");
+    DEBUG_PRINT("  R: {}, G: {}, B: {}", brightestRDensity, brightestGDensity, brightestBDensity);
         
-    std::println("-------------------------------");
+    DEBUG_PRINT("-------------------------------");
 
     // 3. BALANCE CHANNELS ACCORDING TO MEASURED VALUES
 
@@ -427,7 +426,7 @@ void Negative::renderConversion(std::vector<float>& pixels, int width, int heigh
 }
 
 void Negative::initializeSharpnessPreview() {
-    std::println("initializing sharpness preview");
+    DEBUG_PRINT("initializing sharpness preview");
 
     // Use OIIO::ImageBuf for ease of scaling resizing etc
     OIIO::ImageSpec originalSpec(this->width, this->height, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -442,14 +441,14 @@ void Negative::initializeSharpnessPreview() {
     int xEnd = x + halfSize;
     int yEnd = y + halfSize;
 
-    std::println("the sharpness preview area is defined by left {}, top {}, right {}, bottom {}", xBegin, yBegin, xEnd, yEnd);
+    DEBUG_PRINT("the sharpness preview area is defined by left {}, top {}, right {}, bottom {}", xBegin, yBegin, xEnd, yEnd);
 
     OIIO::ROI previewRoi(xBegin, xEnd, yBegin, yEnd);
 
     this->sharpnessPreviewOriginalPixels.resize(this->SHARPNESS_PREVIEW_SIZE*this->SHARPNESS_PREVIEW_SIZE*3);
     originalBuf.get_pixels(previewRoi, OIIO::TypeDesc::FLOAT, this->sharpnessPreviewOriginalPixels.data());
 
-    std::println("initialized sharpness preview");
+    DEBUG_PRINT("initialized sharpness preview");
 }
 
 // INITIALIZER
@@ -462,7 +461,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     // 1. Read the full original image
     std::unique_ptr<OIIO::ImageInput> input = OIIO::ImageInput::open(imagePath.string());
     if (!input) {
-        std::println("Failed to open file");
+        DEBUG_PRINT("Failed to open file");
         return false;
     }
 
@@ -497,19 +496,19 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
 
     // not RGB or Grayscale
     if (this->numberOfChannels != 3 && this->numberOfChannels != 1) {
-        std::println("The image contains wrong amount of channels");
+        DEBUG_PRINT("The image contains wrong amount of channels");
         return false;
     }
 
     this->originalPixels.resize(this->width * this->height * this->numberOfChannels);
     input->read_image(0, 0, 0, this->numberOfChannels, OIIO::TypeDesc::FLOAT, &this->originalPixels[0]);
-    std::println("Opened negative successfully");
+    DEBUG_PRINT("Opened negative successfully");
 
     // Prints handy knowledge about the image
-    std::println("Read a file and created a Negative object");
-    std::println("This image has the following data");
+    DEBUG_PRINT("Read a file and created a Negative object");
+    DEBUG_PRINT("This image has the following data");
     std::string metadata = spec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
-    std::println("{}", metadata);
+    DEBUG_PRINT("{}", metadata);
     
     input->close();
 
@@ -538,8 +537,8 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     const float heightScale = this->PREVIEW_SIZE / (1.0f * this->height);
     this->workingScale = std::min(widthScale, heightScale);
 
-    std::println("the working scale for this image is {}", this->workingScale);
-    std::println("Generating working pixels");
+    DEBUG_PRINT("the working scale for this image is {}", this->workingScale);
+    DEBUG_PRINT("Generating working pixels");
 
     // Then generate the workingPixels array with this info
     // Use OIIO::ImageBuf for ease of scaling resizing etc
@@ -549,17 +548,17 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     // Calculate new dimensions for the working image
     this->workingWidth = std::ceil(this->width*this->workingScale);
     this->workingHeight = std::ceil(this->height*this->workingScale);
-    std::println("trying to resize resolution to width: {} height: {}", this->workingWidth, this->workingHeight);
+    DEBUG_PRINT("trying to resize resolution to width: {} height: {}", this->workingWidth, this->workingHeight);
 
     // Resize the working image
     OIIO::ROI roi(0, this->workingWidth, 0, this->workingHeight, 0, 1, /*chans:*/ 0, 3);
     OIIO::ImageBuf workingBuf = OIIO::ImageBufAlgo::resample(originalBuf, true, roi);
-    std::println("resized resolution to width: {} height: {}", workingBuf.spec().width, workingBuf.spec().height);
+    DEBUG_PRINT("resized resolution to width: {} height: {}", workingBuf.spec().width, workingBuf.spec().height);
     
     // Extract the working data from the ImageBuf
     this->workingPixels.resize(this->workingWidth*this->workingHeight*3);
     workingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->workingPixels.data());
-    std::println("Working pixels generated");
+    DEBUG_PRINT("Working pixels generated");
 
     // Generate the sharpness preview
     this->initializeSharpnessPreview();
@@ -576,7 +575,7 @@ bool Negative::initializeNegative(std::filesystem::path imagePath) {
     if (this->negativeData["general"].contains("orientation") &&
         !this->negativeData["general"]["orientation"].is_null()) {
         
-        std::println("There is a custom orientation in the .neg file");
+        DEBUG_PRINT("There is a custom orientation in the .neg file");
         orientation = this->negativeData["general"]["orientation"].get<int>();
     }
 
@@ -643,7 +642,7 @@ bool Negative::wasCreated() {
 // An optimized version by ChatGPT mixed with my additions of the original getpreview by me that used OIIO::ImageBufs and many copies.
 // I couldn't easily do that much betetr so i think its better to let AI optimize for me
 ImageData Negative::getPreview(bool dragging) {
-    std::println("generating preview");
+    DEBUG_PRINT("generating preview");
 
     int srcChannels = this->numberOfChannels;
     int previewWidth = dragging ? this->workingWidth*this->DRAGGING_SCALE : this->workingWidth;
@@ -665,7 +664,7 @@ ImageData Negative::getPreview(bool dragging) {
         previewData[i*4 + 3] = static_cast<uint8_t>(std::clamp(a, 0.0f, 1.0f) * 255.0f);
     }
 
-    std::println("generated preview data");
+    DEBUG_PRINT("generated preview data");
 
     // Transform from working space to display space
     this->profiler->adobeToDisplay(previewData);
@@ -687,7 +686,7 @@ ImageData Negative::getThumbnail() {
 }
 
 ImageData Negative::getSharpnessPreview() {
-    std::println("generating sharpness preview");
+    DEBUG_PRINT("generating sharpness preview");
 
     int srcChannels = this->numberOfChannels;
     int previewWidth = this->SHARPNESS_PREVIEW_SIZE;
@@ -710,7 +709,7 @@ ImageData Negative::getSharpnessPreview() {
         previewData[i*4 + 3] = static_cast<uint8_t>(std::clamp(a, 0.0f, 1.0f) * 255.0f);
     }
 
-    std::println("generated sharpness preview data");
+    DEBUG_PRINT("generated sharpness preview data");
 
     return {
         previewData,
@@ -732,7 +731,7 @@ int Negative::getWorkingHeight() {
 }
 
 float Negative::getWorkingScale() {
-    std::println("working scale inside getworkingscale function is: {}", this->workingScale);
+    DEBUG_PRINT("working scale inside getworkingscale function is: {}", this->workingScale);
     return this->workingScale;
 }
 
@@ -745,7 +744,7 @@ std::filesystem::path Negative::getPath() {
 
 bool Negative::exportPositive(std::filesystem::path imagePath, std::string imageFormat, std::string iccProfile) {
 
-    std::println("Saving positive");
+    DEBUG_PRINT("Saving positive");
 
     // Render final
     std::unique_ptr<std::vector<float>> finalPixels = this->renderFinal();
@@ -755,7 +754,7 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
 
     // Crop
     if (this->getHasCrop()) {
-        std::println("Cropping");
+        DEBUG_PRINT("Cropping");
         auto cropResults = crop(*finalPixels, this->width, this->height, this->getCropArea(1.0f));
         croppedPixels = std::get<0>(cropResults);
         cropWidth = std::get<1>(cropResults);
@@ -784,9 +783,9 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     originalSpec.attribute("Orientation", this->getOrientation());
 
     // Prints handy knowledge about the image
-    std::println("This image has the following data");
+    DEBUG_PRINT("This image has the following data");
     std::string metadata = originalSpec.serialize(OIIO::ImageSpec::SerialText, OIIO::ImageSpec::SerialDetailedHuman);
-    std::println("{}", metadata);
+    DEBUG_PRINT("{}", metadata);
 
     // Actually rotate the pixels
     OIIO::ImageBuf originalBuf(originalSpec, croppedPixels.data());
@@ -794,26 +793,26 @@ bool Negative::exportPositive(std::filesystem::path imagePath, std::string image
     OIIO::ImageBufAlgo::reorient(orientedBuf, originalBuf);
 
     if (imageFormat == "jpeg") {
-        std::string filePath = std::format("{}.jpeg", imagePath.string());
+        std::string filePath = imagePath.string() + ".jpeg";
 
         // Save 8bit for jpeg
         if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT8)) {
-            std::println("Failed to save image");
+            DEBUG_PRINT("Failed to save image");
             return false;
         }
-        std::println("Saved positive successfully");
+        DEBUG_PRINT("Saved positive successfully");
         return true;
     }
 
     else if (imageFormat == "tiff") {
-        std::string filePath = std::format("{}.tiff", imagePath.string());
+        std::string filePath = imagePath.string() + ".tiff";
 
         // For now we want to save images as 16bit
         if (!orientedBuf.write(filePath, OIIO::TypeDesc::UINT16)) {
-            std::println("Failed to save image");
+            DEBUG_PRINT("Failed to save image");
             return false;
         }
-        std::println("Saved positive successfully");
+        DEBUG_PRINT("Saved positive successfully");
         return true;
     }
     else {
@@ -829,9 +828,9 @@ void Negative::setHasCrop(bool has) {
 }
 
 void Negative::setCropArea(ImageArea area, float scale) {
-    std::println("setCropArea called");
-    std::println("scale = {}", scale);
-    std::println("incoming cropArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
+    DEBUG_PRINT("setCropArea called");
+    DEBUG_PRINT("scale = {}", scale);
+    DEBUG_PRINT("incoming cropArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
     this->negativeData["general"]["crop"]["left"] = area.left * (1.0f/scale);
     this->negativeData["general"]["crop"]["top"] = area.top * (1.0f/scale);
     this->negativeData["general"]["crop"]["right"] = area.right * (1.0f/scale);
@@ -923,9 +922,9 @@ void Negative::setHasScanArea(bool has) {
 }
 
 void Negative::setScanArea(ImageArea area, float scale) {
-    std::println("setScanArea called");
-    std::println("scale = {}", scale);
-    std::println("incoming scanArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
+    DEBUG_PRINT("setScanArea called");
+    DEBUG_PRINT("scale = {}", scale);
+    DEBUG_PRINT("incoming scanArea to negative has left {}, top {}, right {}, bottom {}", area.left, area.top, area.right, area.bottom);
     this->negativeData["conversion"]["scanArea"]["left"] = area.left * (1.0f/scale);
     this->negativeData["conversion"]["scanArea"]["top"] = area.top * (1.0f/scale);
     this->negativeData["conversion"]["scanArea"]["right"] = area.right * (1.0f/scale);
@@ -976,13 +975,13 @@ void Negative::resetConversion() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::applyPreset(std::filesystem::path presetPath) {
-    std::println("applying preset");
+    DEBUG_PRINT("applying preset");
 
     std::unique_ptr<nlohmann::json> presetDataPointer = std::move(this->readPresetdata(presetPath));
 
     if (!presetDataPointer) return;
 
-    std::println("preset exists");
+    DEBUG_PRINT("preset exists");
     const auto& presetData = *presetDataPointer;
 
     auto it = presetData.find("density");
@@ -1039,7 +1038,7 @@ void Negative::applyPreset(std::filesystem::path presetPath) {
 }
 
 float Negative::setDensity(float value) {
-    std::println("exposure was set to: {}", value);
+    DEBUG_PRINT("exposure was set to: {}", value);
     this->negativeData["edits"]["density"] = value;
     return this->getDensity();
 }
@@ -1118,13 +1117,13 @@ float Negative::setSaturation(float value) {
 }
 
 float Negative::setSharpeningAmount(float value) {
-    std::println("setting sharpening amount to {}", value);
+    DEBUG_PRINT("setting sharpening amount to {}", value);
     this->negativeData["edits"]["sharpeningAmount"] = value;
     return this->getSharpeningAmount();
 }
 
 float Negative::setSharpeningDiameter(float value) {
-    std::println("setting sharpening diameter to {}", value);
+    DEBUG_PRINT("setting sharpening diameter to {}", value);
     this->negativeData["edits"]["sharpeningDiameter"] = value;
     return this->getSharpeningDiameter();
 }
@@ -1141,8 +1140,8 @@ bool Negative::getHasCrop() {
 }
 
 ImageArea Negative::getCropArea(float scale) {
-    std::println("getCropArea called");
-    std::println("scale = {}", scale);
+    DEBUG_PRINT("getCropArea called");
+    DEBUG_PRINT("scale = {}", scale);
     ImageArea cropArea;
     float left = this->negativeData["general"]["crop"]["left"];
     float top = this->negativeData["general"]["crop"]["top"];
@@ -1152,7 +1151,7 @@ ImageArea Negative::getCropArea(float scale) {
     cropArea.top = top * scale;
     cropArea.right = right * scale;
     cropArea.bottom = bottom * scale;
-    std::println("reading cropArea from negative has left {}, top {}, right {}, bottom {}", cropArea.left, cropArea.top, cropArea.right, cropArea.bottom);
+    DEBUG_PRINT("reading cropArea from negative has left {}, top {}, right {}, bottom {}", cropArea.left, cropArea.top, cropArea.right, cropArea.bottom);
     return cropArea;
 }
 
@@ -1169,8 +1168,8 @@ bool Negative::getHasBorder() {
 }
 
 ImageArea Negative::getScanArea(float scale) {
-    std::println("getScanArea called");
-    std::println("scale = {}", scale);
+    DEBUG_PRINT("getScanArea called");
+    DEBUG_PRINT("scale = {}", scale);
     ImageArea scanArea;
     float left = this->negativeData["conversion"]["scanArea"]["left"];
     float top = this->negativeData["conversion"]["scanArea"]["top"];
@@ -1180,7 +1179,7 @@ ImageArea Negative::getScanArea(float scale) {
     scanArea.top = top * scale;
     scanArea.right = right * scale;
     scanArea.bottom = bottom * scale;
-    std::println("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
+    DEBUG_PRINT("reading scanArea from negative has left {}, top {}, right {}, bottom {}", scanArea.left, scanArea.top, scanArea.right, scanArea.bottom);
     return scanArea;
 }
 
@@ -1269,7 +1268,7 @@ float Negative::getSharpeningDiameter() {
 // ----------------------------------------------------------------------------------------------------------------
 
 void Negative::renderThumbnail() {
-    std::println("generating thumbnail");
+    DEBUG_PRINT("generating thumbnail");
 
     // Use OIIO::ImageBuf for ease of scaling resizing etc
     OIIO::ImageSpec workingSpec(this->workingWidth, this->workingHeight, this->numberOfChannels, OIIO::TypeDesc::FLOAT);
@@ -1295,7 +1294,7 @@ void Negative::renderThumbnail() {
     this->thumbnailPixels.resize(this->THUMBNAIL_SIZE*this->THUMBNAIL_SIZE*4);
     thumbnailBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::UINT8, this->thumbnailPixels.data());
 
-    std::println("generated thumbnail data");
+    DEBUG_PRINT("generated thumbnail data");
 }
 
 void Negative::renderDraggingConversion() {
@@ -1314,7 +1313,7 @@ void Negative::renderDraggingConversion() {
     // Extract the dragging data from the ImageBuf
     this->convertedDraggingPixels.resize(draggingWidth * draggingHeight * 3);
     draggingBuf.get_pixels(OIIO::ROI::All(), OIIO::TypeDesc::FLOAT, this->convertedDraggingPixels.data());
-    std::println("Dragging pixels generated");
+    DEBUG_PRINT("Dragging pixels generated");
 
     // Copy the converted pixels to the edited pixels as well
     this->editedDraggingPixels = this->convertedDraggingPixels;
