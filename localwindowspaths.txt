@@ -1,0 +1,8 @@
+Shortcuts with aalto windows computer compiling
+
+$env:VCPKG_ROOT = "C:\Users\koponet5\vcpkg"
+$env:PATH = "$env:VCPKG_ROOT;$env:PATH"
+
+$env:PATH = "C:\Users\koponet5\cmake-4.4.3-windows-x86_64\bin;$env:PATH”
+
+"CMAKE_TOOLCHAIN_FILE": "C:/Users/koponet5/vcpkg/scripts/buildsystems/vcpkg.cmake",

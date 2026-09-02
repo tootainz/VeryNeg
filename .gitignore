@@ -3,4 +3,4 @@
 plan.txt
 /.VSCodeCounter
 /.vscode
-localwindowspaths.txt
+localwindowspaths.txtgit rm -r --cached my-folder
