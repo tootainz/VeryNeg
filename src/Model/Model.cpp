@@ -5,6 +5,7 @@
 
 #include "getCacheDir.hpp"
 #include "../debug_print.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // CONSTRUCTOR
@@ -177,7 +178,16 @@ void Model::applyHoldPreConvert() {
             negative->setBorder(borderR, borderG, borderB);
         }
 
-        if (isConverted) negative->convert();
+        if (isConverted) {
+            negative->convert();
+
+            std::string presetName = "standard";
+            std::string resourcesPath = getResourcesPath("").string();
+            std::filesystem::path presetPath = std::filesystem::path(resourcesPath) / "presets" / (presetName + ".json");
+            
+            negative->applyPreset(presetPath);
+            negative->autoWB();
+        }
     }
 }
 

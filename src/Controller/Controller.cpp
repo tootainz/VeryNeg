@@ -207,6 +207,7 @@ void Controller::applyHeld() {
         if (this->uiState.heldConvert) {
             this->model.applyHoldPreConvert();
         }
+
         if (this->uiState.heldEdits) {
             this->model.applyHoldPostConvert();
         }
@@ -754,7 +755,51 @@ void Controller::ButtonPressSetScanArea() {
     }
 }
 
-void Controller::ButtonPressSetScanAreaNumber() {
+void Controller::TextareaSetScanAreaNumber(float value) {
+    DEBUG_PRINT("set scan area number changed");
+    Negative* negative = this->model.getCurrentNegative();
+    if (negative) {
+
+        int width = negative->getWorkingWidth();
+        int height = negative->getWorkingHeight();
+
+        // Convert the input to percentage
+
+        const float percentage = std::clamp(value, 0.0f, 40.0f);
+
+        // Convert percentage to a 0.0 - 1.0 fraction
+        float factor = percentage / 100.0f;
+
+        ImageArea scanArea = {0, 0, width, height};
+
+        // Convert percentage to pixels
+        float horizontalInset = width * factor;
+        float verticalInset = height * factor;
+
+        // Subtract the area
+        scanArea.top += verticalInset;
+        scanArea.bottom -= verticalInset;
+        scanArea.left += horizontalInset;
+        scanArea.right -= horizontalInset;
+
+        negative->setScanArea(scanArea, negative->getWorkingScale());
+
+        // Update UI state
+        if (!this->uiState.hasScanArea) {
+            // Update the view to match UiState since this didn't come directly from selectionArea checkbox
+            this->view.setCheckboxValue("scanArea", true);
+            // Update the UiState and model
+            this->CheckboxPressScanArea(true);
+        }
+
+        this->view.setCheckboxValue("setScanArea", true);
+        
+        this->uiState.selectionArea = negative->getScanArea(negative->getWorkingScale());
+        this->uiState.selectingScanArea = true;
+        this->uiState.readyToSelect = true;
+        this->view.setSelection(this->uiState.selectionArea);
+        this->view.displaySelection = true;
+    }
 }
 
 void Controller::ButtonPressConvert() {
@@ -763,8 +808,16 @@ void Controller::ButtonPressConvert() {
     Negative* negative = this->model.getCurrentNegative();
     if (negative) {
 
-        auto execute = [this, negative]() {
+        std::string presetName = "standard";
+        std::string resourcesPath = getResourcesPath("").string();
+        std::filesystem::path presetPath = std::filesystem::path(resourcesPath) / "presets" / (presetName + ".json");
+
+        auto execute = [this, negative, presetPath]() {
             negative->convert();
+            negative->applyPreset(presetPath);
+            negative->autoWB();
+            negative->renderWorkingEdits();
+            this->updateEditSettings(*negative);
             negative->renderSharpnessPreviewConversion();
             int id = negative->getId();
             negative->renderThumbnail();
@@ -774,6 +827,7 @@ void Controller::ButtonPressConvert() {
 
         auto undo = [this, negative]() {
             negative->resetConversion();
+            this->updateEditSettings(*negative);
             negative->renderSharpnessPreviewConversion();
             int id = negative->getId();
             negative->renderThumbnail();
@@ -1491,8 +1545,15 @@ void Controller::ProcessEvent(Rml::Event& event) {
                         this->OptionPressImageFormat(stringValue);
                     }
             }
-            // SLIDERS
+            // SLIDERS & INPUTFIELDS
             else if (element->GetTagName() == "input") {
+
+                // Input field
+                if (id == "scanBorder") {
+                    this->TextareaSetScanAreaNumber(value);
+                }
+
+                // Slider
 
                 this->uiState.isDragging = true;
 

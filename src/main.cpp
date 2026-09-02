@@ -17,7 +17,7 @@
 
 /*
 
-VeryNeg v0.4.0
+VeryNeg v0.5.1
 By Joonatan Koponen
 
 VeryNeg is an image editor for converting scanned film negative files

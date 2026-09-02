@@ -10,7 +10,7 @@ VeryNeg was developed originally as a part of my master's thesis research for Ma
 
 ## Current state of the application:
 
-Version 0.5.0
+Version 0.5.1
 Mac only with MacOS 15 minimum required currently, can support older systems in the future and Windows and Linux as well.
 Supports 16bit tiff files from flatbed scanner only (I guess you could convert your raw's into tiffs as a kind of a hack).
 Only color negative film currently, BW will come in the future and should be easy to implement.

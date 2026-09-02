@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(VeryNeg VERSION 0.5.0 LANGUAGES CXX)
+project(VeryNeg VERSION 0.5.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

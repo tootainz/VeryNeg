@@ -7,7 +7,7 @@
         <div id="left">
             <div id="preview">
                 <div id="releaseVersion">
-                    <p>VeryNeg v0.5.0</p>
+                    <p>VeryNeg v0.5.1</p>
                     <p>by Joonatan Koponen</p>
                     <p>2026</p>
                 </div>
@@ -95,7 +95,7 @@
                                 <input type="checkbox" id="scanArea">Scan Area</input>
                                 <div class="horizontalFlexStart">
                                     <input type="checkbox" class=" areaBox iconButton" id="setScanArea"></input>   
-                                    <input type="text" value="0" id="setScanBorder"></input>
+                                    <input type="text" value="0" id="scanBorder"></input>
                                 </div>
                             </div>
 
