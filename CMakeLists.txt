@@ -35,7 +35,7 @@ if(APPLE)
     set_target_properties(VeryNeg PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST
-            "${CMAKE_SOURCE_DIR}/Info.plist"
+            "${CMAKE_SOURCE_DIR}/macos/Info.plist"
     )
 endif()
 
@@ -45,7 +45,7 @@ endif()
 
 if(WIN32)
     target_sources(VeryNeg PRIVATE
-        VeryNeg.rc
+        windows/VeryNeg.rc
     )
 endif()
 
@@ -134,6 +134,11 @@ if(APPLE)
 
     install(DIRECTORY
         "${CMAKE_SOURCE_DIR}/resources/"
+        DESTINATION VeryNeg.app/Contents/Resources
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/macos/VeryNeg_light.icns"
         DESTINATION VeryNeg.app/Contents/Resources
     )
 
