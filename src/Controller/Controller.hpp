@@ -103,7 +103,7 @@ private:
     void SetDensest(int x, int y);
     void CheckboxPressScanArea(bool checked);
     void ButtonPressSetScanArea();
-    void ButtonPressSetScanAreaNumber();
+    void TextareaSetScanAreaNumber(float value);
     void ButtonPressConvert();
     void ButtonPressResetConversion();
 

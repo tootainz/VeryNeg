@@ -1,18 +1,19 @@
 #pragma once
 
 #include <vector>
-#include <print>
 #include <algorithm>
+
+#include "../debug_print.hpp"
 
 
 inline std::vector<double> makeIntegralImage(std::vector<float>& image, int imageWidth, int imageHeight) {
     
-    std::println("Generating an integral image");
+    DEBUG_PRINT("Generating an integral image");
     
     std::vector<double> integralImage(imageWidth*imageHeight*3);
 
-    std::println("image size: {}", image.size());
-    std::println("integralimage size: {}", integralImage.size());
+    DEBUG_PRINT("image size: {}", image.size());
+    DEBUG_PRINT("integralimage size: {}", integralImage.size());
 
     for (int pixel = 0; pixel < integralImage.size()/3; pixel++) {
 
@@ -65,7 +66,7 @@ inline void boxFilter(std::vector<float>& image, int imageWidth, int imageHeight
         return (x + y*imageWidth)*3 + channel;
     };
     
-    std::println("performing a pro box blur with a diameter of: {}", filterDiameter);
+    DEBUG_PRINT("performing a pro box blur with a diameter of: {}", filterDiameter);
 
     // Calculate the integral image
     std::vector<double> integralImage = makeIntegralImage(image, imageWidth, imageHeight);
@@ -79,7 +80,7 @@ inline void boxFilter(std::vector<float>& image, int imageWidth, int imageHeight
 
     int filterRadius = correctedFilterDiameter/2;
 
-    std::println("filtering");
+    DEBUG_PRINT("filtering");
 
     for (int pixel = 0; pixel < image.size()/3; pixel++) {
 
@@ -128,7 +129,7 @@ inline void boxFilter(std::vector<float>& image, int imageWidth, int imageHeight
 
 inline void boxFilterSlow(std::vector<float>& image, int imageWidth, int imageHeight, int filterDiameter) {
     
-    std::println("performing a box blur with a diameter of: {}", filterDiameter);
+    DEBUG_PRINT("performing a box blur with a diameter of: {}", filterDiameter);
 
     // Make sure that the diameter is odd
     int correctedFilterDiameter = filterDiameter;

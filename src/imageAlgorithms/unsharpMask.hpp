@@ -3,10 +3,11 @@
 #include <vector>
 
 #include "gaussianFilter.hpp"
+#include "../debug_print.hpp"
 
 inline void unsharpMask(std::vector<float>& image, int imageWidth, int imageHeight, float amount,  int filterDiameter = 5, int gaussianResolution = 3) {
    
-   std::println("performing unsharp mask with amount {} and diameter {}", amount, filterDiameter);
+   DEBUG_PRINT("performing unsharp mask with amount {} and diameter {}", amount, filterDiameter);
 
     // Create copy of the original image for makign the unsharp mask
     std::vector<float> mask = image;

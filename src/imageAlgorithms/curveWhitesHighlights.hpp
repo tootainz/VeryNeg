@@ -1,11 +1,11 @@
 #pragma once
 
-#include <print>
 #include <algorithm>
 #include <cmath> 
 
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
+#include "../debug_print.hpp"
 
 // Whites
 const float WHITES_DECREASE_DAMPENING = 0.1f;
@@ -42,7 +42,7 @@ inline float whitesFunction(float input, float value) {
 }
 
 inline void whites(std::vector<float>& image, float value) {
-    std::println("exposure value is: {}", value);
+    DEBUG_PRINT("exposure value is: {}", value);
 
     auto applyWhites = [&](float& red, float& green, float& blue) {
         red = whitesFunction(red, value);
@@ -78,7 +78,7 @@ inline float highlightsFunction(float input, float value) {
 }
 
 inline void highlights(std::vector<float>& image, float value) {
-    std::println("exposure value is: {}", value);
+    DEBUG_PRINT("exposure value is: {}", value);
 
     auto applyHighlights = [&](float& red, float& green, float& blue) {
         red = highlightsFunction(red, value);

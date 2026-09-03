@@ -2,9 +2,10 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <print>
 
 #include "getCacheDir.hpp"
+#include "../debug_print.hpp"
+#include "../getResourcesPath.hpp"
 
 
 // CONSTRUCTOR
@@ -35,19 +36,19 @@ void Model::changeCurrentNegativeById(int id) {
         int index = std::distance(this->negatives.begin(), iterator);
         this->currentNegativeIndex = index;
     }
-    std::println("current negative is: {}", this->currentNegativeIndex);
+    DEBUG_PRINT("current negative is: {}", this->currentNegativeIndex);
 }
 
 void Model::previousNegative() {
     this->currentNegativeIndex = std::max(0, this->currentNegativeIndex - 1);
-    std::println("current negative is: {}", this->currentNegativeIndex);
+    DEBUG_PRINT("current negative is: {}", this->currentNegativeIndex);
 }
 
 void Model::nextNegative() {
     int size = this->negatives.size();
     this->currentNegativeIndex = std::min(size - 1, this->currentNegativeIndex + 1);
     this->currentNegativeIndex = std::max(0, this->currentNegativeIndex); // make sure the index is not negative
-    std::println("current negative is: {}", this->currentNegativeIndex);
+    DEBUG_PRINT("current negative is: {}", this->currentNegativeIndex);
 }
 
 
@@ -103,7 +104,7 @@ void Model::removeNegativeById(int id) {
     if (iterator != this->negatives.end()) {
         // Remove the negative
         this->negatives.erase(iterator);
-        std::println("negative with id {} was deleted", id);
+        DEBUG_PRINT("negative with id {} was deleted", id);
     }
 
     this->currentNegativeIndex = std::max(0, this->currentNegativeIndex - 1);
@@ -111,11 +112,11 @@ void Model::removeNegativeById(int id) {
 
 void Model::holdSettings(bool hold) {
     if (hold) {
-        std::println("settings held");
+        DEBUG_PRINT("settings held");
         this->heldNegative = this->getCurrentNegative();
     }
     else {
-        std::println("settings unheld");
+        DEBUG_PRINT("settings unheld");
         this->heldNegative = nullptr;
     }
 }
@@ -124,7 +125,7 @@ void Model::applyHoldOrientationCrop() {
     Negative* negative = this->getCurrentNegative();
     if (negative && this->heldNegative) {
 
-        std::println("applying held orientation and crop settings");
+        DEBUG_PRINT("applying held orientation and crop settings");
 
         // Get held settings
         int orientation = this->heldNegative->getOrientation();
@@ -145,7 +146,7 @@ void Model::applyHoldPreConvert() {
     Negative* negative = this->getCurrentNegative();
     if (negative && this->heldNegative) {
 
-        std::println("applying held pre convert settings");
+        DEBUG_PRINT("applying held pre convert settings");
 
         // Get held settings
         float scanGamma = this->heldNegative->getScanGamma();
@@ -177,7 +178,16 @@ void Model::applyHoldPreConvert() {
             negative->setBorder(borderR, borderG, borderB);
         }
 
-        if (isConverted) negative->convert();
+        if (isConverted) {
+            negative->convert();
+
+            std::string presetName = "standard";
+            std::string resourcesPath = getResourcesPath("").string();
+            std::filesystem::path presetPath = std::filesystem::path(resourcesPath) / "presets" / (presetName + ".json");
+            
+            negative->applyPreset(presetPath);
+            negative->autoWB();
+        }
     }
 }
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <print>
 #include <algorithm>
 #include <cmath> 
 
 #include "EditChannel.hpp"
 #include "iterateImage.hpp"
+#include "../debug_print.hpp"
 
 inline const float HIGHLIGHT_PROTECTION_AMOUNT = 1.14f;
 inline const float SHADOW_DAMPENER_FIXER = 1.075f;
@@ -28,7 +28,7 @@ inline float curveExposureFunction(float input, float value) {
 }
 
 inline void curveExposure(std::vector<float>& image, float value, EditChannel channel) {
-    std::println("exposure value is: {}", value);
+    DEBUG_PRINT("exposure value is: {}", value);
 
     auto applyCurveExposure = [&](float& red, float& green, float& blue) {
         if (channel == EditChannel::RGB) {

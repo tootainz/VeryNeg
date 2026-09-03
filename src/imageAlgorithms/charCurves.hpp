@@ -32,11 +32,11 @@ and transmittance is what we get as the pixel value from the scan
 
 #include <vector>
 #include <cmath>
-#include <print>
 
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 #include "normalize.hpp"
+#include "../debug_print.hpp"
 
 enum class FilmStock {
     Gold_200,
@@ -115,7 +115,7 @@ inline float charCurveInverse(float density, FilmStock filmStock, EditChannel ch
 }
 
 inline void charCurveInvert(std::vector<float>& image, float maxTransmission, float minTransmission) {
-    std::println("inverting the image with the char curves");
+    DEBUG_PRINT("inverting the image with the char curves");
 
     const float maxExposure = logToExposure(charCurveInverse(scanToDensity(maxTransmission), FilmStock::Gold_200, EditChannel::B));
     const float minExposure = logToExposure(charCurveInverse(scanToDensity(minTransmission), FilmStock::Gold_200, EditChannel::R));

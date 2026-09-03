@@ -1,0 +1,11 @@
+{
+    "name": "veryneg",
+    "version": "0.5.1",
+    "dependencies": [
+        "openimageio",
+        "lcms",
+        "nlohmann-json",
+        "rmlui",
+        "harfbuzz"
+    ]
+}

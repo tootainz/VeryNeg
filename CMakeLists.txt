@@ -1,24 +1,19 @@
 cmake_minimum_required(VERSION 3.24)
 
-# create project
-project("VeryNeg" VERSION 0.5.0)
+project(VeryNeg VERSION 0.5.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# # Uncomment this for just making an executable and not app bundle
-# # add executable
-# add_executable(VeryNeg
-#     src/main.cpp
-#     src/Controller/Controller.cpp
-#     src/Negative/Negative.cpp
-#     src/Model/Model.cpp
-#     src/View/View.cpp
-#     src/RmlUi_Backend/RmlUi_Backend_SFML_GL2.cpp
-#     src/ColorProfiler/ColorProfiler.cpp
-# )
+# Set wether to use debug printing, this uses C++23 std::println
+option(DEBUG_PRINT_ENABLED "Enable debug printing" OFF)
 
-# add executable with MacOs .app bundle
-add_executable(VeryNeg MACOSX_BUNDLE
+# ------------------------------------------------
+# EXECUTABLE
+# ------------------------------------------------
+
+add_executable(VeryNeg
     src/main.cpp
     src/Controller/Controller.cpp
     src/Negative/Negative.cpp
@@ -28,89 +23,90 @@ add_executable(VeryNeg MACOSX_BUNDLE
     src/ColorProfiler/ColorProfiler.cpp
 )
 
-set_target_properties(VeryNeg PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist
-)
+if(DEBUG_PRINT_ENABLED)
+    target_compile_definitions(VeryNeg PRIVATE DEBUG_PRINT_ENABLED)
+endif()
 
-# target for which os is supported
-# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.3" CACHE STRING "" FORCE)
-
-
-# RESOURCES
+# ------------------------------------------------
+# MACOS
 # ------------------------------------------------
 
-# # Uncomment to use this with a raw executable and not .app bundle
-# # Create a target that copies the resources folder
-# add_custom_target(CopyResources ALL
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#             "${CMAKE_SOURCE_DIR}/resources"
-#             "$<TARGET_FILE_DIR:VeryNeg>/resources"
-#     COMMENT "Copying resources to build folder"
-# )
+if(APPLE)
+    set_target_properties(VeryNeg PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST
+            "${CMAKE_SOURCE_DIR}/macos/Info.plist"
+    )
+endif()
 
-# # Make sure VeryNeg depends on the resources target
-# add_dependencies(VeryNeg CopyResources)
+# ------------------------------------------------
+# WINDOWS
+# ------------------------------------------------
 
+if(WIN32)
+    target_sources(VeryNeg PRIVATE
+        windows/VeryNeg.rc
+    )
+endif()
 
+# ------------------------------------------------
 # LIBRARIES
 # ------------------------------------------------
 
-# OpenGL
 find_package(OpenGL REQUIRED)
-
-# OIIO
 find_package(OpenImageIO CONFIG REQUIRED)
-
-# Lcms
 find_package(lcms2 CONFIG REQUIRED)
-
-# Json
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# RmlUi
 set(RMLUI_BACKEND "SFML_GL2" CACHE STRING "" FORCE)
 find_package(RmlUi CONFIG REQUIRED)
 
-# Add SFML from vcpkg if no need to edit the source
-# find_package(SFML COMPONENTS Graphics Window System CONFIG REQUIRED)
-
-# Add SFML as a submodule for editing the source for high DPI
-
-# SFML build options
+# SFML
 set(BUILD_SHARED_LIBS OFF)
 set(SFML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_DOC OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_TEST_SUITE OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_NETWORK OFF CACHE BOOL "" FORCE)
 set(SFML_BUILD_AUDIO OFF CACHE BOOL "" FORCE)
-
 set(SFML_USE_SYSTEM_DEPS ON CACHE BOOL "" FORCE)
 
 add_subdirectory(libraries/SFML-3.1.0)
 
-# RmlUi_sfml_backend
+# RmlUi SFML backend
 add_library(rmlui_sfml STATIC
-  libraries/rmlui-backends/RmlUi_Platform_SFML.cpp
-  libraries/rmlui-backends/RmlUi_Renderer_GL2.cpp
+    libraries/rmlui-backends/RmlUi_Platform_SFML.cpp
+    libraries/rmlui-backends/RmlUi_Renderer_GL2.cpp
 )
+
 target_include_directories(rmlui_sfml
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/rmlui-backends
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/libraries/rmlui-backends"
 )
-target_link_libraries(rmlui_sfml PRIVATE RmlUi::RmlUi SFML::Graphics)
 
+target_link_libraries(rmlui_sfml
+    PRIVATE
+        RmlUi::RmlUi
+        SFML::Graphics
+)
 
+# ------------------------------------------------
 # LINK
 # ------------------------------------------------
 
-target_link_libraries(VeryNeg PRIVATE
-    OpenImageIO::OpenImageIO
-    SFML::Graphics
-    nlohmann_json::nlohmann_json
-    RmlUi::RmlUi
-    lcms2::lcms2
-    rmlui_sfml
-    ${OPENGL_LIBRARIES}
+target_link_libraries(VeryNeg
+    PRIVATE
+        OpenImageIO::OpenImageIO
+        SFML::Graphics
+        nlohmann_json::nlohmann_json
+        RmlUi::RmlUi
+        lcms2::lcms2
+        rmlui_sfml
+        ${OPENGL_LIBRARIES}
 )
+
+# ------------------------------------------------
+# PLATFORM-SPECIFIC LIBRARIES
+# ------------------------------------------------
 
 if(APPLE)
     target_link_libraries(VeryNeg PRIVATE
@@ -118,22 +114,47 @@ if(APPLE)
         "-framework ApplicationServices"
         "-framework CoreFoundation"
     )
+elseif(WIN32)
+    target_link_libraries(VeryNeg PRIVATE
+        Gdi32
+        User32
+    )
 endif()
 
-
+# ------------------------------------------------
 # INSTALL
 # ------------------------------------------------
 
-# Install app bundle
-install(TARGETS VeryNeg
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION VeryNeg.app/Contents/MacOS
-)
+if(APPLE)
 
-# Resources
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources/"
-    DESTINATION VeryNeg.app/Contents/Resources
-)
+    install(TARGETS VeryNeg
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION VeryNeg.app/Contents/MacOS
+    )
 
-# Use this command for installing the app bundle
-# cmake --install out/build/default_release --prefix out/install
+    install(DIRECTORY
+        "${CMAKE_SOURCE_DIR}/resources/"
+        DESTINATION VeryNeg.app/Contents/Resources
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/macos/VeryNeg_light.icns"
+        DESTINATION VeryNeg.app/Contents/Resources
+    )
+
+    # Use this command for installing the app bundle on MacOS
+    # cmake --install out/build/mac_intel_release --prefix out/install/mac_intel_release
+    # cmake --install out/build/mac_arm_release --prefix out/install/mac_arm_release
+
+elseif(WIN32)
+
+    install(TARGETS VeryNeg
+        RUNTIME DESTINATION .
+    )
+
+    install(DIRECTORY
+        "${CMAKE_SOURCE_DIR}/resources/"
+        DESTINATION resources
+    )
+
+endif()

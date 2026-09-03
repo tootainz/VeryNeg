@@ -1,5 +1,3 @@
-#include <print>
-
 #include <OpenImageIO/imageio.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
@@ -14,11 +12,12 @@
 #include "View/View.hpp"
 #include "Controller/Controller.hpp"
 #include "Model/Model.hpp"
+#include "debug_print.hpp"
 
 
 /*
 
-VeryNeg v0.4.0
+VeryNeg v0.5.1
 By Joonatan Koponen
 
 VeryNeg is an image editor for converting scanned film negative files
@@ -47,7 +46,7 @@ int main() {
     Rml::SetRenderInterface(RmlBackend::GetRenderInterface());
     Rml::SetSystemInterface(RmlBackend::GetSystemInterface());
     if (!Rml::Initialise()) {
-        std::println("RmlUi failed to initialise");
+        DEBUG_PRINT("RmlUi failed to initialise");
         return -1;
     }
 

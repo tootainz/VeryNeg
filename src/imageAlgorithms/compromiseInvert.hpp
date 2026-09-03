@@ -2,11 +2,11 @@
 
 #include <vector>
 #include <cmath>
-#include <print>
 
 #include "iterateImage.hpp"
 #include "EditChannel.hpp"
 #include "normalize.hpp"
+#include "../debug_print.hpp"
 
 
 // HELPERS
@@ -35,7 +35,7 @@ inline float charCurve(float density, float slope, float xPos, float yPos) {
 // THE ACTUAL INVERSION FUNCTION
 
 inline void compromiseInvert(std::vector<float>& image, float minDensity, float maxDensity) {
-    std::println("inverting the image with the compromise invert");
+    DEBUG_PRINT("inverting the image with the compromise invert");
 
     const float maxExposure = logToExposure(charCurve(maxDensity, 1.0f, 0.0f, 1.0f));
     const float minExposure = logToExposure(charCurve(minDensity, 1.0f, 0.0f, 1.0f));

@@ -2,8 +2,8 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "default_debug",
-            "description": "Default Debug",
+            "name": "mac_debug",
+            "description": "Mac debug",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
@@ -11,54 +11,62 @@
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_APPLOCAL_DEPS": "ON"
-            }
-        },
-        {
-            "name": "default_release",
-            "description": "Default Release",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-                "CMAKE_C_COMPILER": "/usr/bin/clang",
-                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_APPLOCAL_DEPS": "ON"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_APPLOCAL_DEPS": "ON",
+                "DEBUG_PRINT_ENABLED": "ON"
             }
         },
         {
             "name": "mac_arm_release",
-            "description": "Mac arm Release",
+            "description": "Mac arm release",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_OSX_ARCHITECTURES": "arm64",
-                "VCPKG_TARGET_TRIPLET": "arm64-osx",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_APPLOCAL_DEPS": "ON"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "arm64-macos11",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg_triplets",
+                "VCPKG_APPLOCAL_DEPS": "ON",
+                "DEBUG_PRINT_ENABLED": "OFF"
             }
         },
         {
             "name": "mac_intel_release",
-            "description": "Mac intel Release",
+            "description": "Mac intel release",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_OSX_ARCHITECTURES": "x86_64",
-                "VCPKG_TARGET_TRIPLET": "x64-osx",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_TOOLCHAIN_FILE": "/Users/joonatan/vcpkg/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_APPLOCAL_DEPS": "ON"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "x64-macos1015",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg_triplets",
+                "VCPKG_APPLOCAL_DEPS": "ON",
+                "DEBUG_PRINT_ENABLED": "OFF"
+            }
+        },
+        {
+            "name": "windows_release",
+            "description": "Windows x64 release",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+                "VCPKG_APPLOCAL_DEPS": "OFF",
+                "DEBUG_PRINT_ENABLED": "OFF"
             }
         }
     ]
