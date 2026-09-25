@@ -10,6 +10,8 @@ VeryNeg provides non-destructive editing and saves edits to a sidecart .neg file
 
 VeryNeg was developed originally as a part of my master's thesis research for Master of Arts from Visual Communication Design, Aalto University. It is currently in beta development and still has many bugs, unsupported features etc.
 
+Visit the VeryNeg website at [joonatankoponen.com/veryneg](https://joonatankoponen.com/veryneg)
+
 
 ## Current state of the application:
 
