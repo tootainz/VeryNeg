@@ -1,6 +1,9 @@
 # VeryNeg
 
+<img src="windows/VeryNeg_win.ico" alt="VeryNeg logo" width="120">
+
 VeryNeg is a standalone free, source available application for the conversion of scanned film negatives.
+
 It let's you import multiple negatives, convert the negative automatically or to select a custom scan area or sample the border and densest parts. You can also specify the gamma baked into the scan. You also have the option to crop and orient the image and to apply automatic or manual color correction, intensity edits and sharpening.
 You can hold (copy) settings from one negative to another and then export one or all of the negatives.
 VeryNeg provides non-destructive editing and saves edits to a sidecart .neg file automatically. It also includes a color managed workflow
