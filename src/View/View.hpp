@@ -64,6 +64,7 @@ private:
     Rml::ElementDocument* rmlDocumentUi;
     Rml::Context* rmlContextPopups; // This is for rendering stuff that should be on top of sfml sprites
     Rml::ElementDocument* rmlDocumentPopups;
+    float dp_ratio = 1.0f;
 
     // Popup
     bool popupVisible = false;

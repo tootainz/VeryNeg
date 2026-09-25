@@ -13,6 +13,7 @@
 #include "Controller/Controller.hpp"
 #include "Model/Model.hpp"
 #include "debug_print.hpp"
+#include "getSystemScale.hpp"
 
 
 /*
@@ -39,7 +40,13 @@ int main() {
     sf::ContextSettings settings;
     settings.antiAliasingLevel = 0; // 0 = no anti-aliasing, 4 = standard, 8 = better'
     settings.stencilBits = 8;
-    sf::RenderWindow window(sf::VideoMode({1600, 950}), "VeryNeg", sf::State::Windowed, settings);
+    sf::Vector2u screenSize = sf::VideoMode::getDesktopMode().size;
+    sf::Vector2u windowSize = {
+        screenSize.x - 150,
+        screenSize.y - 150
+    };
+    
+    sf::RenderWindow window(sf::VideoMode(windowSize), "VeryNeg", sf::State::Windowed, settings);
 
     // RmlUi
     RmlBackend::Initialize(window, true);

@@ -44,6 +44,9 @@ endif()
 # ------------------------------------------------
 
 if(WIN32)
+    # This is to allow usign std::min or std::max if windows.h is included
+    target_compile_definitions(VeryNeg PRIVATE NOMINMAX)
+
     target_sources(VeryNeg PRIVATE
         windows/VeryNeg.rc
     )

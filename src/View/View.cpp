@@ -3,6 +3,7 @@
 #include <print>
 
 #include "../RmlUi_Backend/RmlUi_Backend.hpp"
+#include "../getSystemScale.hpp"
 #include "../getResourcesPath.hpp"
 #include "../debug_print.hpp"
 
@@ -40,9 +41,9 @@ View::View(sf::RenderWindow& window) :
     this->cursorSampleNeutral = sf::Cursor::createFromPixels(neutralImage.getPixelsPtr(), neutralImage.getSize(), {0, 21});
 
     // Set the context ui ratios
-    float dp_ratio = 2.0f;
-    this->rmlContextUi->SetDensityIndependentPixelRatio(dp_ratio);
-    this->rmlContextPopups->SetDensityIndependentPixelRatio(dp_ratio);
+    this->dp_ratio = getSystemScale();
+    this->rmlContextUi->SetDensityIndependentPixelRatio(this->dp_ratio);
+    this->rmlContextPopups->SetDensityIndependentPixelRatio(this->dp_ratio);
 
     // Rest of the constructor
     Rml::LoadFontFace(getResourcesPath("fonts/Px437_SanyoMBC775-2y.ttf").string());
